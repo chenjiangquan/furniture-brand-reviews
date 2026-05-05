@@ -4,21 +4,40 @@ import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL("https://www.furniturebrandreviews.com"),
   title: {
-    default: "Furniture Brand Reviews",
+    default: "Furniture Brand Reviews | Real Reviews of Furniture Brands Worldwide",
     template: "%s | Furniture Brand Reviews"
   },
-  description: "Read real reviews, delivery feedback and ratings for furniture brands worldwide.",
+  description:
+    "Read real customer reviews of furniture brands worldwide. Compare ratings, delivery experiences, product quality and customer service before buying furniture.",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png"
   },
   openGraph: {
-    title: "Furniture Brand Reviews",
-    description: "Honest customer experiences for furniture brands worldwide.",
+    title: "Furniture Brand Reviews | Real Reviews of Furniture Brands Worldwide",
+    description:
+      "Read real customer reviews of furniture brands worldwide. Compare ratings, delivery experiences, product quality and customer service before buying furniture.",
+    url: "https://www.furniturebrandreviews.com",
+    siteName: "Furniture Brand Reviews",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Furniture Brand Reviews"
+      }
+    ],
     type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Furniture Brand Reviews | Real Reviews of Furniture Brands Worldwide",
+    description:
+      "Read real customer reviews of furniture brands worldwide. Compare ratings, delivery experiences, product quality and customer service before buying furniture.",
+    images: ["/logo.png"]
   }
 };
 

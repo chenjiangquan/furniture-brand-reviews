@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 import { getCompanies } from "@/lib/data";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = "https://www.furniturebrandreviews.com";
   const companies = await getCompanies();
-  const staticRoutes = ["", "/brands", "/about", "/contact", "/review-guidelines", "/privacy-policy", "/terms", "/report-review"];
+  const staticRoutes = ["", "/brands"];
 
   return [
     ...staticRoutes.map((route) => ({

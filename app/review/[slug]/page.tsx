@@ -18,7 +18,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: {
       absolute: `${company.name} Reviews | Furniture Brand Reviews`
     },
-    description: `Read customer reviews, ratings and delivery feedback for ${company.name}.`
+    description: `Read real reviews of ${company.name}. See customer ratings, delivery feedback and furniture shopping experiences.`,
+    openGraph: {
+      title: `${company.name} Reviews | Furniture Brand Reviews`,
+      description: `Read real reviews of ${company.name}. See customer ratings, delivery feedback and furniture shopping experiences.`,
+      url: `https://www.furniturebrandreviews.com/review/${company.slug}`,
+      siteName: "Furniture Brand Reviews",
+      images: [
+        {
+          url: company.logo_url ?? company.og_image_url ?? "/logo.png",
+          alt: `${company.name} Reviews`
+        }
+      ],
+      type: "website"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${company.name} Reviews | Furniture Brand Reviews`,
+      description: `Read real reviews of ${company.name}. See customer ratings, delivery feedback and furniture shopping experiences.`,
+      images: [company.logo_url ?? company.og_image_url ?? "/logo.png"]
+    }
   };
 }
 
