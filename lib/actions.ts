@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getBrandImageCandidates } from "@/lib/brand-images";
 import { parseCsv } from "@/lib/csv";
+import { slugifyBrandName } from "@/lib/slug";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
 import type { Company } from "@/lib/types";
 
@@ -96,7 +97,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, name, slug, website, category, description, logo_url, favicon_url, og_image_url, cover_image_url, average_rating, review_count")
+    .select("id, name, slug, website, category, description, logo_url, favicon_url, og_image_url, cover_image_url, website_screenshot_url, average_rating, review_count")
     .eq("slug", slug)
     .single<Company>();
 
@@ -172,6 +173,87 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   };
 }
 
+export async function submitFirstReview(_state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
+  const brandName = String(formData.get("brandName") ?? "").trim();
+  const pendingBrandSlug = slugifyBrandName(brandName);
+  const rating = Number(formData.get("rating"));
+  const title = String(formData.get("title") ?? "").trim();
+  const content = String(formData.get("content") ?? "").trim();
+  const reviewerName = String(formData.get("name") ?? "").trim();
+  const reviewerEmail = String(formData.get("email") ?? "").trim();
+  const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
+
+  if (!brandName || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
+    return { ok: false, message: "Please complete all required fields before submitting." };
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return {
+      ok: false,
+      message: "Supabase is not configured yet. Add the Supabase environment variables and try again."
+    };
+  }
+
+  const { data: company, error: companyError } = await supabase
+    .from("companies")
+    .select("id, slug")
+    .eq("slug", pendingBrandSlug)
+    .maybeSingle();
+
+  if (companyError) {
+    console.error("Supabase first review company lookup failed", {
+      brandName,
+      pendingBrandSlug,
+      message: formatSupabaseError(companyError),
+      error: companyError
+    });
+    return { ok: false, message: `Brand lookup failed: ${formatSupabaseError(companyError)}` };
+  }
+
+  const reviewPayload = {
+    company_id: company?.id ?? null,
+    pending_brand_name: company ? null : brandName,
+    pending_brand_slug: company ? null : pendingBrandSlug,
+    rating,
+    title,
+    content,
+    reviewer_name: reviewerName,
+    reviewer_email: reviewerEmail,
+    order_number: orderNumber,
+    proof_image_url: null,
+    status: "pending",
+    is_verified: false
+  };
+
+  const { error } = await supabase.from("reviews").insert(reviewPayload);
+
+  if (error) {
+    console.error(
+      "Supabase first review insert failed",
+      JSON.stringify(
+        {
+          brandName,
+          pendingBrandSlug,
+          payload: { ...reviewPayload, reviewer_email: "[redacted]" },
+          error,
+          message: formatSupabaseError(error)
+        },
+        null,
+        2
+      )
+    );
+    return { ok: false, message: `Review insert failed: ${formatSupabaseError(error)}` };
+  }
+
+  revalidatePath("/admin/reviews");
+
+  return {
+    ok: true,
+    message: "Thank you. Your review has been submitted and will be checked before publishing."
+  };
+}
+
 export async function moderateReview(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const reviewId = String(formData.get("reviewId") ?? "");
@@ -186,7 +268,7 @@ export async function moderateReview(formData: FormData) {
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
-    .select("id, company_id, status, is_verified, companies(slug)")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, status, is_verified, companies(slug)")
     .eq("id", reviewId)
     .single();
 
@@ -196,10 +278,62 @@ export async function moderateReview(formData: FormData) {
     adminRedirect(password, { error: message });
   }
 
-  let updatePayload: { status?: "approved" | "rejected"; is_verified?: boolean } | null = null;
+  let updatePayload: { status?: "approved" | "rejected"; is_verified?: boolean; company_id?: string } | null = null;
+
+  let approvedCompanySlug: string | null = null;
 
   if (action === "approve") {
     updatePayload = { status: "approved" };
+
+    if (!review.company_id && review.pending_brand_slug) {
+      const pendingBrandName = review.pending_brand_name || review.pending_brand_slug;
+      const pendingBrandSlug = review.pending_brand_slug;
+
+      const { data: existingCompany, error: existingCompanyError } = await supabase
+        .from("companies")
+        .select("id, slug")
+        .eq("slug", pendingBrandSlug)
+        .maybeSingle();
+
+      if (existingCompanyError) {
+        adminRedirect(password, { error: formatSupabaseError(existingCompanyError) });
+      }
+
+      let companyId = existingCompany?.id ?? null;
+      approvedCompanySlug = existingCompany?.slug ?? pendingBrandSlug;
+
+      if (!companyId) {
+        const { data: createdCompany, error: createCompanyError } = await supabase
+          .from("companies")
+          .insert({
+            name: pendingBrandName,
+            slug: pendingBrandSlug,
+            status: "published",
+            website: "",
+            category: "Furniture brand",
+            description: null,
+            logo_url: null,
+            favicon_url: null,
+            og_image_url: null,
+            cover_image_url: null,
+            website_screenshot_url: null
+          })
+          .select("id, slug")
+          .single();
+
+        if (createCompanyError || !createdCompany) {
+          adminRedirect(password, { error: createCompanyError ? formatSupabaseError(createCompanyError) : "Could not create brand profile." });
+        }
+
+        companyId = createdCompany.id;
+        approvedCompanySlug = createdCompany.slug;
+      }
+
+      updatePayload = {
+        ...updatePayload,
+        company_id: companyId
+      };
+    }
   }
 
   if (action === "reject") {
@@ -233,8 +367,8 @@ export async function moderateReview(formData: FormData) {
   revalidatePath("/brands");
 
   const companyRelation = Array.isArray(review.companies) ? review.companies[0] : review.companies;
-  if (companyRelation?.slug) {
-    revalidatePath(`/review/${companyRelation.slug}`);
+  if (companyRelation?.slug || approvedCompanySlug) {
+    revalidatePath(`/review/${companyRelation?.slug ?? approvedCompanySlug}`);
   }
 
   adminRedirect(password);
@@ -284,7 +418,8 @@ export async function importCsv(_state: ImportState, formData: FormData): Promis
         logo_url: row.logo_url || candidates.logoUrl || null,
         favicon_url: candidates.faviconUrl,
         og_image_url: candidates.ogImageUrl,
-        cover_image_url: row.cover_image_url || null
+        cover_image_url: row.cover_image_url || null,
+        website_screenshot_url: row.website_screenshot_url || null
       };
 
       const { error } = await supabase.from("companies").upsert(payload, { onConflict: "slug" });
@@ -402,7 +537,8 @@ export async function upsertCompanyFromAdmin(_state: ImportState, formData: Form
     logo_url: String(formData.get("logo_url") ?? "").trim() || null,
     favicon_url: String(formData.get("favicon_url") ?? "").trim() || null,
     og_image_url: String(formData.get("og_image_url") ?? "").trim() || null,
-    cover_image_url: String(formData.get("cover_image_url") ?? "").trim() || null
+    cover_image_url: String(formData.get("cover_image_url") ?? "").trim() || null,
+    website_screenshot_url: String(formData.get("website_screenshot_url") ?? "").trim() || null
   };
 
   if (!payload.name || !payload.slug || !payload.website || !payload.category) {
@@ -460,7 +596,8 @@ export async function importCompaniesFromAdmin(_state: ImportState, formData: Fo
       logo_url: row.logo_url || null,
       favicon_url: row.favicon_url || null,
       og_image_url: row.og_image_url || null,
-      cover_image_url: row.cover_image_url || null
+      cover_image_url: row.cover_image_url || null,
+      website_screenshot_url: row.website_screenshot_url || null
     };
 
     const { error } = await supabase.from("companies").upsert(payload, { onConflict: "slug" });

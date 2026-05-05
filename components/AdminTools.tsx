@@ -19,7 +19,7 @@ const initialState: ImportState = {
   errors: []
 };
 
-const companiesTemplate = "name,slug,website,category,description,logo_url,favicon_url,og_image_url,cover_image_url\n";
+const companiesTemplate = "name,slug,website,category,description,logo_url,favicon_url,og_image_url,cover_image_url,website_screenshot_url\n";
 const reviewsTemplate =
   "company_slug,rating,title,content,reviewer_name,reviewer_email,order_number,proof_image_url,is_verified,status,created_at\n";
 
@@ -133,7 +133,7 @@ function ManualBrandForm({ password }: { password: string }) {
           <span className="font-semibold text-ink">Description</span>
           <textarea name="description" rows={4} className="rounded-xl border border-line px-4 py-3" />
         </label>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Logo URL optional</span>
             <input name="logo_url" type="url" className="rounded-xl border border-line px-4 py-3" />
@@ -149,6 +149,10 @@ function ManualBrandForm({ password }: { password: string }) {
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Cover Image URL optional</span>
             <input name="cover_image_url" type="url" className="rounded-xl border border-line px-4 py-3" />
+          </label>
+          <label className="grid gap-2">
+            <span className="font-semibold text-ink">Website Screenshot URL optional</span>
+            <input name="website_screenshot_url" type="url" className="rounded-xl border border-line px-4 py-3" />
           </label>
         </div>
         <div>

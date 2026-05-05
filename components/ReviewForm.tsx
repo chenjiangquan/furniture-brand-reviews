@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
-import { submitReview, type ReviewFormState } from "@/lib/actions";
+import { submitFirstReview, submitReview, type ReviewFormState } from "@/lib/actions";
 
 const initialState: ReviewFormState = { ok: false, message: "" };
 
@@ -18,8 +18,8 @@ function SubmitButton() {
   );
 }
 
-export function ReviewForm({ slug }: { slug: string }) {
-  const [state, action] = useFormState(submitReview.bind(null, slug), initialState);
+export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: string }) {
+  const [state, action] = useFormState(slug ? submitReview.bind(null, slug) : submitFirstReview, initialState);
 
   return (
     <form action={action} className="grid gap-5 rounded-2xl border border-line bg-white p-5 shadow-sm">
@@ -27,6 +27,12 @@ export function ReviewForm({ slug }: { slug: string }) {
         <div className={`rounded-xl p-4 text-sm font-semibold ${state.ok ? "bg-purple-50 text-trust-dark" : "bg-red-50 text-red-700"}`}>
           {state.message}
         </div>
+      )}
+      {!slug && (
+        <label className="grid gap-2">
+          <span className="font-semibold">Brand name</span>
+          <input name="brandName" required defaultValue={brandName} className="rounded-xl border border-line px-4 py-3" />
+        </label>
       )}
       <label className="grid gap-2">
         <span className="font-semibold">Rating</span>
@@ -47,24 +53,29 @@ export function ReviewForm({ slug }: { slug: string }) {
         <span className="font-semibold">Review content</span>
         <textarea name="content" required rows={7} className="rounded-xl border border-line px-4 py-3" />
       </label>
-      <div className="grid gap-5 md:grid-cols-2">
-        <label className="grid gap-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Name</span>
-          <input name="name" required className="rounded-xl border border-line px-4 py-3" />
+          <input name="name" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
         </label>
-        <label className="grid gap-2">
+        <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Email</span>
-          <input name="email" type="email" required className="rounded-xl border border-line px-4 py-3" />
+          <input name="email" type="email" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
         </label>
       </div>
-      <div className="grid gap-5 md:grid-cols-2">
-        <label className="grid gap-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Order number optional</span>
-          <input name="orderNumber" className="rounded-xl border border-line px-4 py-3" />
+          <input name="orderNumber" className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
         </label>
-        <label className="grid gap-2">
+        <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Proof image optional</span>
-          <input name="proofImage" type="file" accept="image/*" className="rounded-xl border border-line px-4 py-3" />
+          <input
+            name="proofImage"
+            type="file"
+            accept="image/*"
+            className="block w-full max-w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+          />
         </label>
       </div>
       <SubmitButton />

@@ -4,6 +4,7 @@ create table if not exists companies (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text not null unique,
+  status text not null default 'published' check (status in ('published', 'draft')),
   website text not null,
   category text not null,
   description text,
@@ -11,19 +12,24 @@ create table if not exists companies (
   favicon_url text,
   og_image_url text,
   cover_image_url text,
+  website_screenshot_url text,
   average_rating numeric(2, 1) not null default 0,
   review_count integer not null default 0,
   created_at timestamptz not null default now()
 );
 
 alter table companies add column if not exists logo_url text;
+alter table companies add column if not exists status text not null default 'published' check (status in ('published', 'draft'));
 alter table companies add column if not exists favicon_url text;
 alter table companies add column if not exists og_image_url text;
 alter table companies add column if not exists cover_image_url text;
+alter table companies add column if not exists website_screenshot_url text;
 
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
-  company_id uuid not null references companies(id) on delete cascade,
+  company_id uuid references companies(id) on delete cascade,
+  pending_brand_name text,
+  pending_brand_slug text,
   rating integer not null check (rating between 1 and 5),
   title text not null,
   content text not null,
@@ -40,6 +46,9 @@ alter table reviews add column if not exists order_number text;
 alter table reviews add column if not exists proof_image_url text;
 alter table reviews add column if not exists is_verified boolean not null default false;
 alter table reviews add column if not exists status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'));
+alter table reviews add column if not exists pending_brand_name text;
+alter table reviews add column if not exists pending_brand_slug text;
+alter table reviews alter column company_id drop not null;
 
 create table if not exists company_replies (
   id uuid primary key default gen_random_uuid(),

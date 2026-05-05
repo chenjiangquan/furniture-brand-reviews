@@ -51,7 +51,7 @@ export default async function AdminReviewsPage({
           <tbody>
             {reviews.map((review) => (
               <tr key={review.id} className="border-t border-line">
-                <td className="px-4 py-3">{review.companies?.name ?? review.company_id}</td>
+                <td className="px-4 py-3">{review.companies?.name ?? review.pending_brand_name ?? review.company_id}</td>
                 <td className="px-4 py-3">{review.rating}</td>
                 <td className="px-4 py-3 font-semibold">{review.title}</td>
                 <td className="px-4 py-3">{review.reviewer_email}</td>

@@ -19,7 +19,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="home-hero overflow-hidden bg-wash md:flex md:items-center">
+      <section className="home-hero bg-wash md:flex md:items-center">
         <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 lg:px-10 md:py-20">
           <div className="max-w-[600px]">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-trust-dark shadow-sm">

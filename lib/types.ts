@@ -4,6 +4,7 @@ export type Company = {
   id: string;
   name: string;
   slug: string;
+  status?: "published" | "draft" | null;
   website: string;
   category: string;
   description: string | null;
@@ -11,6 +12,7 @@ export type Company = {
   favicon_url?: string | null;
   og_image_url?: string | null;
   cover_image_url?: string | null;
+  website_screenshot_url?: string | null;
   average_rating: number;
   review_count: number;
   created_at?: string;
@@ -18,7 +20,9 @@ export type Company = {
 
 export type Review = {
   id: string;
-  company_id: string;
+  company_id: string | null;
+  pending_brand_name: string | null;
+  pending_brand_slug: string | null;
   rating: number;
   title: string;
   content: string;
@@ -29,7 +33,7 @@ export type Review = {
   status: ReviewStatus;
   is_verified: boolean;
   created_at: string;
-  companies?: Pick<Company, "name" | "slug">;
+  companies?: Pick<Company, "name" | "slug"> | null;
 };
 
 export type CompanyReply = {
