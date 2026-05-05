@@ -308,15 +308,9 @@ export async function moderateReview(formData: FormData) {
           .insert({
             name: pendingBrandName,
             slug: pendingBrandSlug,
-            status: "published",
             website: "",
             category: "Furniture brand",
-            description: null,
-            logo_url: null,
-            favicon_url: null,
-            og_image_url: null,
-            cover_image_url: null,
-            website_screenshot_url: null
+            description: null
           })
           .select("id, slug")
           .single();
