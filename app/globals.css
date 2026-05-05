@@ -27,3 +27,19 @@ select,
 button {
   font: inherit;
 }
+
+.home-hero-mobile-image {
+  min-height: 260px;
+  background-image: linear-gradient(to top, rgba(250, 247, 255, 0.12), rgba(255, 255, 255, 0.86)), url("/hero.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+@media (min-width: 768px) {
+  .home-hero {
+    min-height: 560px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.88) 38%, rgba(255, 255, 255, 0.18) 68%, rgba(255, 255, 255, 0) 100%), url("/hero.jpg");
+    background-position: center right;
+    background-size: cover;
+  }
+}

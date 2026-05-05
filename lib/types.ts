@@ -10,6 +10,7 @@ export type Company = {
   logo_url?: string | null;
   favicon_url?: string | null;
   og_image_url?: string | null;
+  cover_image_url?: string | null;
   average_rating: number;
   review_count: number;
   created_at?: string;

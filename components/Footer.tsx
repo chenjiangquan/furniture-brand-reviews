@@ -66,7 +66,7 @@ const socialLinks: Array<[string, LucideIcon]> = [
 export function Footer() {
   return (
     <footer className="bg-[#171744] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-10">
         <div className="grid gap-9 lg:grid-cols-[1.35fr_3fr]">
           <div>
             <Link href="/" aria-label="Furniture Brand Reviews" className="inline-block rounded-lg bg-white p-2">
@@ -88,7 +88,7 @@ export function Footer() {
                 <h2 className="text-sm font-bold text-white">{column.title}</h2>
                 <nav className="mt-4 grid gap-3 text-sm text-white/70">
                   {column.links.map(([label, href]) => (
-                    <Link key={`${column.title}-${label}`} href={href} className="hover:text-[#f6b73c]">
+                    <Link key={`${column.title}-${label}`} href={href} className="hover:text-[#A855F7]">
                       {label}
                     </Link>
                   ))}
@@ -108,7 +108,7 @@ export function Footer() {
                 key={label}
                 href="#"
                 aria-label={label}
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white/70 hover:border-[#f6b73c] hover:text-[#f6b73c]"
+                className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white/70 hover:border-[#A855F7] hover:text-[#A855F7]"
               >
                 <Icon size={17} />
               </Link>

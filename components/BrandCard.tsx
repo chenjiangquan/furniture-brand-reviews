@@ -7,10 +7,10 @@ import type { Company } from "@/lib/types";
 export function BrandCard({ company }: { company: Company }) {
   return (
     <article className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
           <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.favicon_url ?? company.og_image_url} size="sm" />
-          <div>
+          <div className="min-w-0">
             <h3 className="text-lg font-bold text-ink">{company.name}</h3>
             <a
               href={company.website}
@@ -22,7 +22,9 @@ export function BrandCard({ company }: { company: Company }) {
             </a>
           </div>
         </div>
-        <Rating value={company.average_rating} />
+        <div className="max-w-full shrink-0">
+          <Rating value={company.average_rating} />
+        </div>
       </div>
       <p className="mt-4 text-sm font-medium text-muted">{company.category}</p>
       <p className="mt-2 min-h-12 text-sm leading-6 text-muted">{company.description}</p>

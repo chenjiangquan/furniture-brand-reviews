@@ -26,12 +26,12 @@ export function BrandGrid({ companies }: { companies: Company[] }) {
           className="w-full outline-none placeholder:text-muted"
         />
       </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredCompanies.map((company) => (
           <BrandCard key={company.id} company={company} />
         ))}
         {filteredCompanies.length === 0 && (
-          <p className="rounded-2xl border border-line p-5 text-muted md:col-span-2 lg:col-span-3">
+          <p className="rounded-2xl border border-line p-5 text-muted md:col-span-2 lg:col-span-3 xl:col-span-4">
             No furniture brands match your search.
           </p>
         )}

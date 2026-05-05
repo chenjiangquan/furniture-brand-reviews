@@ -17,7 +17,7 @@ export default async function AdminReviewsPage({
   const errorMessage = searchParams.error && searchParams.error !== "1" ? searchParams.error : null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
       <h1 className="text-4xl font-bold tracking-tight text-ink">Pending reviews</h1>
       <form className="mt-6 flex flex-col gap-3 rounded-2xl border border-line bg-white p-5 sm:flex-row">
         <input

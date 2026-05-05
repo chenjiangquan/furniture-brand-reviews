@@ -10,6 +10,7 @@ create table if not exists companies (
   logo_url text,
   favicon_url text,
   og_image_url text,
+  cover_image_url text,
   average_rating numeric(2, 1) not null default 0,
   review_count integer not null default 0,
   created_at timestamptz not null default now()
@@ -18,6 +19,7 @@ create table if not exists companies (
 alter table companies add column if not exists logo_url text;
 alter table companies add column if not exists favicon_url text;
 alter table companies add column if not exists og_image_url text;
+alter table companies add column if not exists cover_image_url text;
 
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
@@ -33,6 +35,11 @@ create table if not exists reviews (
   is_verified boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table reviews add column if not exists order_number text;
+alter table reviews add column if not exists proof_image_url text;
+alter table reviews add column if not exists is_verified boolean not null default false;
+alter table reviews add column if not exists status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'));
 
 create table if not exists company_replies (
   id uuid primary key default gen_random_uuid(),
@@ -91,7 +98,7 @@ create policy "Public can submit pending reviews" on reviews
 
 drop policy if exists "MVP admin can import reviews" on reviews;
 create policy "MVP admin can import reviews" on reviews
-  for insert with check (status in ('pending', 'approved'));
+  for insert with check (status in ('pending', 'approved', 'rejected'));
 
 drop policy if exists "MVP admin can moderate pending reviews" on reviews;
 create policy "MVP admin can moderate pending reviews" on reviews

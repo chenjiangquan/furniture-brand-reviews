@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 export function Header() {
   return (
     <header className="border-b border-line bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
         <Link href="/" aria-label="Furniture Brand Reviews" className="block">
           <Image
             src="/logo.png"

@@ -11,7 +11,7 @@ export default async function BrandsPage() {
   const companies = await getCompanies();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
       <h1 className="text-4xl font-bold tracking-tight text-ink">Furniture Brand Reviews</h1>
       <BrandGrid companies={companies} />
     </div>

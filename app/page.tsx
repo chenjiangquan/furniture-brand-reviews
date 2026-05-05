@@ -19,25 +19,28 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="bg-wash">
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center md:py-20">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-trust-dark">
-            <ShieldCheck size={17} />
-            The world&apos;s most authoritative furniture brand review platform
-          </div>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-6xl">
-            Read real reviews of furniture brands worldwide
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted">
-            Find honest customer experiences, delivery feedback and ratings for furniture brands around the world.
-          </p>
-          <div className="mt-9">
-            <SearchBar companies={companies} />
+      <section className="home-hero overflow-hidden bg-wash md:flex md:items-center">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 lg:px-10 md:py-20">
+          <div className="max-w-[600px]">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-trust-dark shadow-sm">
+              <ShieldCheck size={17} />
+              The world&apos;s most authoritative furniture brand review platform
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-5xl md:text-6xl">
+              Discover real customer reviews of furniture brands worldwide
+            </h1>
+            <p className="mt-5 text-lg leading-8 text-muted">
+              Find honest customer experiences, delivery feedback and ratings for furniture brands around the world.
+            </p>
+            <div className="mt-9">
+              <SearchBar companies={companies} />
+            </div>
           </div>
         </div>
+        <div className="home-hero-mobile-image md:hidden" aria-hidden="true" />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-ink">Popular furniture brands</h2>
           <Link href="/brands" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
@@ -52,7 +55,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-wash">
-        <div className="mx-auto max-w-6xl px-4 py-12">
+        <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
           <h2 className="text-2xl font-bold text-ink">Latest reviews</h2>
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             {latestReviews.slice(0, 4).map((review) => (
@@ -62,7 +65,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
         <h2 className="text-2xl font-bold text-ink">Top rated brands</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {topRated.map((company) => (
@@ -72,7 +75,7 @@ export default async function HomePage() {
       </section>
 
       <section className="border-y border-line bg-ink">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-10 text-white md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
           <div>
             <h2 className="text-2xl font-bold">Own a furniture brand? Claim your profile</h2>
             <p className="mt-2 text-white/75">Help customers understand your service, replies and delivery standards.</p>

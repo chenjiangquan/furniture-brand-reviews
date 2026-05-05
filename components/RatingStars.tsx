@@ -1,10 +1,10 @@
 import { Star } from "lucide-react";
 
 const ratingColours: Record<number, string> = {
-  5: "#F5B301",
-  4: "#F59E0B",
-  3: "#F97316",
-  2: "#EF4444",
+  5: "#7C3AED",
+  4: "#A855F7",
+  3: "#D946EF",
+  2: "#F97316",
   1: "#DC2626"
 };
 
@@ -45,8 +45,8 @@ export function RatingStars({
   const styles = sizeStyles[size];
 
   return (
-    <span className="inline-flex items-center gap-2" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
-      <span className="inline-flex items-center gap-[2px]">
+    <span className="inline-flex max-w-full flex-wrap items-center gap-2" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
+      <span className="inline-flex shrink-0 items-center gap-[2px]">
         {[1, 2, 3, 4, 5].map((star) => (
           <span
             key={star}

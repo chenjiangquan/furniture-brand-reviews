@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Furniture Brand Reviews",
       images: [
         {
-          url: company.logo_url ?? company.og_image_url ?? "/logo.png",
+          url: company.cover_image_url ?? company.logo_url ?? company.og_image_url ?? "/logo.png",
           alt: `${company.name} Reviews`
         }
       ],
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: `${company.name} Reviews | Furniture Brand Reviews`,
       description: `Read real reviews of ${company.name}. See customer ratings, delivery feedback and furniture shopping experiences.`,
-      images: [company.logo_url ?? company.og_image_url ?? "/logo.png"]
+      images: [company.cover_image_url ?? company.logo_url ?? company.og_image_url ?? "/logo.png"]
     }
   };
 }
@@ -70,7 +70,7 @@ export default async function CompanyReviewPage({ params }: Props) {
       )}
 
       <div className="border-b border-line bg-wash">
-        <section className="mx-auto max-w-6xl px-4 py-8 md:py-10">
+        <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:py-10 lg:px-10">
           <div className="rounded-3xl border border-line bg-white p-5 shadow-card md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-5">
@@ -119,7 +119,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </section>
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_340px]">
+      <div className="mx-auto grid max-w-[1600px] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-10">
         <main className="grid gap-6">
           <section className="rounded-2xl border border-line bg-white p-5 shadow-sm md:p-6">
             <div className="grid gap-6 md:grid-cols-[220px_1fr]">
@@ -185,6 +185,15 @@ export default async function CompanyReviewPage({ params }: Props) {
         </main>
 
         <aside className="grid h-fit gap-5 lg:sticky lg:top-6">
+          {company.cover_image_url && (
+            <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+              <div
+                className="aspect-video bg-wash bg-cover bg-center"
+                style={{ backgroundImage: `url("${company.cover_image_url}")` }}
+                aria-label={`${company.name} cover image`}
+              />
+            </section>
+          )}
           <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-ink">Company details</h2>
             <div className="mt-5 grid gap-5 text-sm">
@@ -227,7 +236,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </aside>
       </div>
 
-      <section className="mx-auto max-w-6xl px-4 pb-10">
+      <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
         <h2 className="text-2xl font-bold text-ink">People also viewed</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {similarBrands.map((brand) => (
@@ -236,7 +245,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-10">
+      <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
         <div className="rounded-2xl border border-line bg-wash p-6">
         <h2 className="text-2xl font-bold text-ink">FAQ</h2>
         <div className="mt-5 grid gap-5 md:grid-cols-3">

@@ -86,7 +86,7 @@ export function AdminImportForm({ initialPassword = "" }: { initialPassword?: st
             className="rounded-xl border border-line px-4 py-3 font-mono text-sm"
             placeholder={
               importType === "companies"
-                ? "name,slug,website,category,description,logo_url"
+                ? "name,slug,website,category,description,logo_url,favicon_url,og_image_url,cover_image_url"
                 : "company_slug,rating,title,content,reviewer_name,reviewer_email,order_number,is_verified,status,created_at"
             }
           />

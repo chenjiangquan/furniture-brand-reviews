@@ -11,6 +11,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 4.7,
     review_count: 128
   },
@@ -24,6 +25,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 4.4,
     review_count: 91
   },
@@ -37,6 +39,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 4.2,
     review_count: 64
   },
@@ -50,6 +53,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 4.8,
     review_count: 47
   },
@@ -63,6 +67,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 0,
     review_count: 0
   },
@@ -76,6 +81,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 0,
     review_count: 0
   },
@@ -89,6 +95,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 0,
     review_count: 0
   },
@@ -102,6 +109,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 0,
     review_count: 0
   },
@@ -115,6 +123,7 @@ export const sampleCompanies: Company[] = [
     logo_url: null,
     favicon_url: null,
     og_image_url: null,
+    cover_image_url: null,
     average_rating: 0,
     review_count: 0
   }

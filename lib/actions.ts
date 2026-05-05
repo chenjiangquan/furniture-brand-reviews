@@ -53,6 +53,26 @@ function adminRedirect(password: string, params?: Record<string, string>): never
   redirect(`/admin/reviews?${searchParams.toString()}`);
 }
 
+function validateAdminPassword(password: string): ImportState | null {
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
+    return { ...initialImportResult, message: "Invalid admin password." };
+  }
+
+  return null;
+}
+
+function getAdminSupabaseClient() {
+  return getSupabaseAdmin() ?? getSupabase();
+}
+
+function isValidReviewStatus(status: string): status is "pending" | "approved" | "rejected" {
+  return ["pending", "approved", "rejected"].includes(status);
+}
+
+function parseBooleanValue(value: string | undefined) {
+  return ["true", "1", "yes", "y"].includes((value || "").toLowerCase());
+}
+
 export async function submitReview(slug: string, _state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
   const rating = Number(formData.get("rating"));
   const title = String(formData.get("title") ?? "").trim();
@@ -76,7 +96,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, name, slug, website, category, description, logo_url, favicon_url, og_image_url, average_rating, review_count")
+    .select("id, name, slug, website, category, description, logo_url, favicon_url, og_image_url, cover_image_url, average_rating, review_count")
     .eq("slug", slug)
     .single<Company>();
 
@@ -263,7 +283,8 @@ export async function importCsv(_state: ImportState, formData: FormData): Promis
         description: row.description || null,
         logo_url: row.logo_url || candidates.logoUrl || null,
         favicon_url: candidates.faviconUrl,
-        og_image_url: candidates.ogImageUrl
+        og_image_url: candidates.ogImageUrl,
+        cover_image_url: row.cover_image_url || null
       };
 
       const { error } = await supabase.from("companies").upsert(payload, { onConflict: "slug" });
@@ -361,5 +382,217 @@ export async function importCsv(_state: ImportState, formData: FormData): Promis
     successCount,
     failureCount,
     errors: errors.slice(0, 20)
+  };
+}
+
+export async function upsertCompanyFromAdmin(_state: ImportState, formData: FormData): Promise<ImportState> {
+  const password = String(formData.get("password") ?? "");
+  const invalidPassword = validateAdminPassword(password);
+  if (invalidPassword) return invalidPassword;
+
+  const supabase = getAdminSupabaseClient();
+  if (!supabase) return { ...initialImportResult, message: "Supabase is not configured yet." };
+
+  const payload = {
+    name: String(formData.get("name") ?? "").trim(),
+    slug: String(formData.get("slug") ?? "").trim(),
+    website: String(formData.get("website") ?? "").trim(),
+    category: String(formData.get("category") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || null,
+    logo_url: String(formData.get("logo_url") ?? "").trim() || null,
+    favicon_url: String(formData.get("favicon_url") ?? "").trim() || null,
+    og_image_url: String(formData.get("og_image_url") ?? "").trim() || null,
+    cover_image_url: String(formData.get("cover_image_url") ?? "").trim() || null
+  };
+
+  if (!payload.name || !payload.slug || !payload.website || !payload.category) {
+    return { ...initialImportResult, message: "Brand name, slug, website and category are required." };
+  }
+
+  const { error } = await supabase.from("companies").upsert(payload, { onConflict: "slug" });
+  if (error) {
+    return { ...initialImportResult, message: `Brand save failed: ${formatSupabaseError(error)}` };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/brands");
+  revalidatePath(`/review/${payload.slug}`);
+  revalidatePath("/admin/tools");
+
+  return {
+    ok: true,
+    message: `Brand profile saved for ${payload.name}.`,
+    successCount: 1,
+    failureCount: 0,
+    errors: []
+  };
+}
+
+export async function importCompaniesFromAdmin(_state: ImportState, formData: FormData): Promise<ImportState> {
+  const password = String(formData.get("password") ?? "");
+  const invalidPassword = validateAdminPassword(password);
+  if (invalidPassword) return invalidPassword;
+
+  const supabase = getAdminSupabaseClient();
+  if (!supabase) return { ...initialImportResult, message: "Supabase is not configured yet." };
+
+  const rows = parseCsv(String(formData.get("csvText") ?? "").trim());
+  if (rows.length === 0) return { ...initialImportResult, message: "CSV is empty or invalid." };
+
+  let successCount = 0;
+  let failureCount = 0;
+  const errors: string[] = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (!row.name || !row.slug || !row.website || !row.category) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: missing required company fields.`);
+      continue;
+    }
+
+    const payload = {
+      name: row.name,
+      slug: row.slug,
+      website: row.website,
+      category: row.category,
+      description: row.description || null,
+      logo_url: row.logo_url || null,
+      favicon_url: row.favicon_url || null,
+      og_image_url: row.og_image_url || null,
+      cover_image_url: row.cover_image_url || null
+    };
+
+    const { error } = await supabase.from("companies").upsert(payload, { onConflict: "slug" });
+    if (error) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: ${formatSupabaseError(error)}`);
+    } else {
+      successCount += 1;
+      revalidatePath(`/review/${payload.slug}`);
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/brands");
+  revalidatePath("/admin/tools");
+
+  return {
+    ok: failureCount === 0,
+    message: `Companies import finished. Success: ${successCount}. Failed: ${failureCount}.`,
+    successCount,
+    failureCount,
+    errors: errors.slice(0, 20)
+  };
+}
+
+export async function importReviewsFromAdmin(_state: ImportState, formData: FormData): Promise<ImportState> {
+  const password = String(formData.get("password") ?? "");
+  const invalidPassword = validateAdminPassword(password);
+  if (invalidPassword) return invalidPassword;
+
+  const supabase = getAdminSupabaseClient();
+  if (!supabase) return { ...initialImportResult, message: "Supabase is not configured yet." };
+
+  const rows = parseCsv(String(formData.get("csvText") ?? "").trim());
+  if (rows.length === 0) return { ...initialImportResult, message: "CSV is empty or invalid." };
+
+  let successCount = 0;
+  let failureCount = 0;
+  const errors: string[] = [];
+  const touchedSlugs = new Set<string>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const rating = Number(row.rating);
+    const status = row.status || "pending";
+    const createdAt = row.created_at || new Date().toISOString();
+
+    if (!row.company_slug || !row.title || !row.content || !row.reviewer_name || !row.reviewer_email) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: missing required review fields.`);
+      continue;
+    }
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: rating must be a whole number from 1 to 5.`);
+      continue;
+    }
+
+    if (!isValidReviewStatus(status)) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: status must be pending, approved or rejected.`);
+      continue;
+    }
+
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("id, slug")
+      .eq("slug", row.company_slug)
+      .single();
+
+    if (companyError || !company) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: company_slug "${row.company_slug}" was not found.`);
+      continue;
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from("reviews")
+      .select("id")
+      .eq("company_id", company.id)
+      .eq("title", row.title)
+      .eq("reviewer_email", row.reviewer_email)
+      .eq("created_at", createdAt)
+      .maybeSingle();
+
+    if (existingError) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: duplicate check failed. ${formatSupabaseError(existingError)}`);
+      continue;
+    }
+
+    if (existing) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: duplicate review skipped.`);
+      continue;
+    }
+
+    const { error } = await supabase.from("reviews").insert({
+      company_id: company.id,
+      rating,
+      title: row.title,
+      content: row.content,
+      reviewer_name: row.reviewer_name,
+      reviewer_email: row.reviewer_email,
+      order_number: row.order_number || null,
+      proof_image_url: row.proof_image_url || null,
+      status,
+      is_verified: parseBooleanValue(row.is_verified),
+      created_at: createdAt
+    });
+
+    if (error) {
+      failureCount += 1;
+      errors.push(`Row ${index + 2}: ${formatSupabaseError(error)}`);
+    } else {
+      successCount += 1;
+      touchedSlugs.add(company.slug);
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/brands");
+  revalidatePath("/admin/reviews");
+  revalidatePath("/admin/tools");
+  touchedSlugs.forEach((slug) => revalidatePath(`/review/${slug}`));
+
+  return {
+    ok: failureCount === 0,
+    message: `Reviews import finished. Success: ${successCount}. Failed: ${failureCount}.`,
+    successCount,
+    failureCount,
+    errors: errors.slice(0, 30)
   };
 }

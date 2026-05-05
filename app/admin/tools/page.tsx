@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
-import { AdminImportForm } from "@/components/AdminImportForm";
+import { AdminTools } from "@/components/AdminTools";
 
 export const metadata: Metadata = {
-  title: "Admin CSV Import",
-  description: "Import furniture brand profiles and reviews."
+  title: "Admin Tools",
+  description: "Manage furniture brand profiles and review imports."
 };
 
-export default function AdminImportPage({ searchParams }: { searchParams: { password?: string } }) {
+export default function AdminToolsPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";
   const isAllowed = Boolean(process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD);
 
   if (!isAllowed) {
     return (
       <div className="mx-auto max-w-xl px-4 py-10 sm:px-6 lg:px-10">
-        <h1 className="text-4xl font-bold tracking-tight text-ink">Admin CSV import</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-ink">Admin tools</h1>
+        <p className="mt-3 leading-7 text-muted">Enter the admin password to manage brand profiles and review imports.</p>
         <form className="mt-6 grid gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm">
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Admin password</span>
             <input name="password" type="password" className="rounded-xl border border-line px-4 py-3" />
           </label>
-          <button className="rounded-full bg-ink px-5 py-3 font-bold text-white">Open import tool</button>
+          <button className="rounded-full bg-ink px-5 py-3 font-bold text-white">Open admin tools</button>
         </form>
       </div>
     );
@@ -28,14 +29,13 @@ export default function AdminImportPage({ searchParams }: { searchParams: { pass
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
       <div className="max-w-3xl">
-        <h1 className="text-4xl font-bold tracking-tight text-ink">Admin CSV import</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-ink">Admin tools</h1>
         <p className="mt-3 leading-7 text-muted">
-          Upload CSV files to create or update brand profiles and import reviews. Reviews are matched to companies by
-          <span className="font-semibold text-ink"> company_slug</span>.
+          Add brand profiles, upload company CSV files and import reviews for moderated publishing.
         </p>
       </div>
       <div className="mt-8">
-        <AdminImportForm initialPassword={password} />
+        <AdminTools password={password} />
       </div>
     </div>
   );
