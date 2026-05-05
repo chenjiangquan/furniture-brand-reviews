@@ -1,0 +1,87 @@
+import type { Metadata } from "next";
+import { moderateReview } from "@/lib/actions";
+import { getPendingReviews } from "@/lib/data";
+
+export const metadata: Metadata = {
+  title: "Admin Review Approval",
+  description: "Approve, reject and verify pending reviews."
+};
+
+export default async function AdminReviewsPage({
+  searchParams
+}: {
+  searchParams: { password?: string; error?: string };
+}) {
+  const password = searchParams.password ?? "";
+  const reviews = password ? await getPendingReviews(password) : [];
+  const errorMessage = searchParams.error && searchParams.error !== "1" ? searchParams.error : null;
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      <h1 className="text-4xl font-bold tracking-tight text-ink">Pending reviews</h1>
+      <form className="mt-6 flex flex-col gap-3 rounded-2xl border border-line bg-white p-5 sm:flex-row">
+        <input
+          name="password"
+          type="password"
+          defaultValue={password}
+          placeholder="Admin password"
+          className="min-h-12 flex-1 rounded-xl border border-line px-4"
+        />
+        <button className="rounded-full bg-ink px-5 py-3 font-bold text-white">View reviews</button>
+      </form>
+      {searchParams.error === "1" && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">Invalid admin password.</p>}
+      {errorMessage && (
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">
+          Supabase error: {errorMessage}
+        </p>
+      )}
+
+      <div className="mt-8 overflow-x-auto rounded-2xl border border-line bg-white">
+        <table className="w-full min-w-[860px] border-collapse text-left text-sm">
+          <thead className="bg-wash text-ink">
+            <tr>
+              <th className="px-4 py-3">Brand</th>
+              <th className="px-4 py-3">Rating</th>
+              <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Created</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reviews.map((review) => (
+              <tr key={review.id} className="border-t border-line">
+                <td className="px-4 py-3">{review.companies?.name ?? review.company_id}</td>
+                <td className="px-4 py-3">{review.rating}</td>
+                <td className="px-4 py-3 font-semibold">{review.title}</td>
+                <td className="px-4 py-3">{review.reviewer_email}</td>
+                <td className="px-4 py-3">{new Intl.DateTimeFormat("en-GB").format(new Date(review.created_at))}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {["approve", "reject", "verify"].map((actionName) => (
+                      <form key={actionName} action={moderateReview}>
+                        <input type="hidden" name="password" value={password} />
+                        <input type="hidden" name="reviewId" value={review.id} />
+                        <input type="hidden" name="action" value={actionName} />
+                        <button className="rounded-full border border-line px-3 py-2 font-semibold capitalize hover:border-trust hover:text-trust-dark">
+                          {actionName === "verify" ? "Mark as verified" : actionName}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {password && reviews.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                  No pending reviews found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
