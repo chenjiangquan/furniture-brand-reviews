@@ -23,7 +23,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-16 text-center md:py-20">
           <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-trust-dark">
             <ShieldCheck size={17} />
-            The world's most authoritative furniture brand review platform
+            The world&apos;s most authoritative furniture brand review platform
           </div>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-6xl">
             Read real reviews of furniture brands worldwide
