@@ -266,7 +266,7 @@ export default async function CompanyReviewPage({ params }: Props) {
                 <div className="mt-3">
                   <RatingStars rating={company.average_rating || 0} size="large" />
                 </div>
-                <p className="mt-2 text-sm text-muted">{reviews.length} total reviews</p>
+                <p className="mt-2 text-base text-ink underline underline-offset-4">{reviews.length} total reviews</p>
               </div>
               <div className="grid gap-3">
                 {breakdown.map((item) => (
