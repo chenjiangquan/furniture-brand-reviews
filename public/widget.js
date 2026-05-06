@@ -33,10 +33,12 @@
       ".fbrw-count{font-size:14px;color:#66657b;margin:0}" +
       ".fbrw-summary .fbrw-count{text-decoration:underline}" +
       ".fbrw-stars{display:inline-flex;align-items:center;gap:2px;flex-wrap:nowrap}" +
-      ".fbrw-star{display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;min-width:22px;border-radius:3px;color:#fff;font-size:13px;line-height:1;font-family:Arial,Helvetica,sans-serif;font-weight:900;overflow:hidden}" +
-      ".fbrw-star-small{width:18px;height:18px;min-width:18px;font-size:11px;border-radius:3px}" +
-      ".fbrw-star-active{background:#7C3AED}" +
-      ".fbrw-star-inactive{background:#E5E7EB}" +
+      ".fbrw-star-box{position:relative;display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;min-width:22px;border:0;border-radius:3px;background:#E5E7EB;color:#fff;font-size:13px;line-height:1;font-family:Arial,Helvetica,sans-serif;font-weight:900;overflow:hidden}" +
+      ".fbrw-star-box-small{width:18px;height:18px;min-width:18px;font-size:11px;border-radius:3px}" +
+      ".fbrw-star-bg{position:absolute;inset:0;display:grid;place-items:center;color:#fff}" +
+      ".fbrw-star-fill{position:absolute;inset:0 auto 0 0;display:block;overflow:hidden;color:#fff}" +
+      ".fbrw-star-fill-inner{display:grid;place-items:center;width:22px;height:22px}" +
+      ".fbrw-star-box-small .fbrw-star-fill-inner{width:18px;height:18px}" +
       ".fbrw-carousel{min-width:0;display:grid;gap:14px}" +
       ".fbrw-carousel-window{min-width:0;overflow:hidden}" +
       ".fbrw-track{display:flex;gap:16px;transition:transform 300ms ease;will-change:transform}" +
@@ -61,36 +63,48 @@
   }
 
   function ratingColour(rating) {
-    var roundedRating = Math.max(1, Math.min(5, Math.round(Number(rating) || 0)));
+    var numericRating = Number(rating);
+    if (!Number.isFinite(numericRating) || numericRating <= 0) return "#E5E7EB";
+    var ratingBand = numericRating >= 5 ? 5 : Math.max(1, Math.min(4, Math.floor(numericRating)));
     var colours = {
       5: "#7C3AED",
-      4: "#A855F7",
-      3: "#D946EF",
-      2: "#F97316",
-      1: "#DC2626"
+      4: "#AF66F2",
+      3: "#FFCC00",
+      2: "#FF8A00",
+      1: "#FF3B30"
     };
 
-    return colours[roundedRating] || colours[5];
+    return colours[ratingBand] || colours[5];
   }
 
-  function stars(rating, size) {
+  function renderStars(rating, size) {
     var numericRating = Number(rating);
     if (!Number.isFinite(numericRating)) numericRating = 0;
-    var activeStars = Math.max(0, Math.min(5, Math.round(numericRating)));
-    var activeColour = ratingColour(activeStars);
+    var safeRating = Math.max(0, Math.min(5, numericRating));
+    var activeColour = ratingColour(safeRating);
     var wrapper = document.createElement("span");
     wrapper.className = "fbrw-stars";
-    wrapper.setAttribute("aria-label", numericRating.toFixed(1) + " out of 5 stars");
+    wrapper.setAttribute("aria-label", safeRating.toFixed(1) + " out of 5 stars");
 
     for (var index = 1; index <= 5; index += 1) {
       var box = document.createElement("span");
-      var isActive = index <= activeStars;
-      box.className =
-        "fbrw-star " +
-        (size === "small" ? "fbrw-star-small " : "") +
-        (isActive ? "fbrw-star-active" : "fbrw-star-inactive");
-      box.style.backgroundColor = isActive ? activeColour : "#E5E7EB";
-      box.textContent = "★";
+      var fillPercent = Math.max(0, Math.min(100, (safeRating - (index - 1)) * 100));
+      var fill = document.createElement("span");
+      var fillInner = document.createElement("span");
+      var bg = document.createElement("span");
+
+      box.className = "fbrw-star-box" + (size === "small" ? " fbrw-star-box-small" : "");
+      bg.className = "fbrw-star-bg";
+      bg.textContent = "★";
+      fill.className = "fbrw-star-fill";
+      fill.style.width = fillPercent + "%";
+      fill.style.backgroundColor = activeColour;
+      fillInner.className = "fbrw-star-fill-inner";
+      fillInner.textContent = "★";
+
+      fill.appendChild(fillInner);
+      box.appendChild(bg);
+      box.appendChild(fill);
       wrapper.appendChild(box);
     }
 
@@ -130,7 +144,7 @@
 
     var top = document.createElement("div");
     top.className = "fbrw-card-top";
-    top.appendChild(stars(review.rating, "small"));
+    top.appendChild(renderStars(review.rating, "small"));
 
     var badge = textElement("span", "fbrw-badge", review.verified ? "Verified" : "Customer review");
     top.appendChild(badge);
@@ -205,7 +219,7 @@
     var ratingLine = document.createElement("div");
     ratingLine.className = "fbrw-rating-line";
     ratingLine.appendChild(textElement("span", "fbrw-score", Number(data.rating || 0).toFixed(1)));
-    ratingLine.appendChild(stars(data.rating || 0, "medium"));
+    ratingLine.appendChild(renderStars(data.rating || 0, "medium"));
     summaryTop.appendChild(ratingLine);
     summaryTop.appendChild(textElement("p", "fbrw-count", "Based on " + Number(data.reviewCount || 0).toLocaleString() + " reviews"));
 

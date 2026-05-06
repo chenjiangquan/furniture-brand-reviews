@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { RatingStars, getRatingColour } from "@/components/RatingStars";
-import { ReviewFilters, type RatingFilter } from "@/components/ReviewFilters";
+import { ReviewFilters, type RatingFilter, type RatingValue } from "@/components/ReviewFilters";
 import type { ReviewWithReply } from "@/lib/types";
 
 type RatingBreakdownItem = {
@@ -28,10 +28,16 @@ export function ReviewSummaryWithFilters({
   brandSlug: string;
   writeReviewHref: string;
 }) {
-  const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>([]);
 
-  function toggleRatingFilter(rating: number) {
-    setRatingFilter((current) => (current === rating ? "all" : (rating as RatingFilter)));
+  function toggleRatingFilter(rating: RatingValue) {
+    setRatingFilter((current) => (current.includes(rating) ? current.filter((item) => item !== rating) : [...current, rating]));
+  }
+
+  function formatPercentage(percentage: number) {
+    if (percentage === 0) return "0%";
+    if (percentage < 1) return "<1%";
+    return `${Math.round(percentage)}%`;
   }
 
   return (
@@ -49,29 +55,33 @@ export function ReviewSummaryWithFilters({
             </div>
             <p className="mt-2 text-base text-ink underline underline-offset-4">{reviews.length} total reviews</p>
           </div>
-          <div className="grid gap-3">
+          <div className="grid gap-2.5">
             {breakdown.map((item) => {
-              const isActive = ratingFilter === item.rating;
+              const rating = item.rating as RatingValue;
+              const isActive = ratingFilter.includes(rating);
 
               return (
-                <button
+                <label
                   key={item.rating}
-                  type="button"
-                  onClick={() => toggleRatingFilter(item.rating)}
-                  className={`grid cursor-pointer grid-cols-[54px_1fr_42px] items-center gap-3 rounded-xl border p-2 text-left text-sm transition hover:bg-wash focus:outline-none focus-visible:border-trust focus-visible:ring-4 focus-visible:ring-[#A855F7]/20 ${
-                    isActive ? "border-trust bg-wash font-bold text-ink" : "border-transparent text-ink"
+                  className={`grid cursor-pointer grid-cols-[20px_58px_1fr_44px] items-center gap-3 rounded-lg border px-2 py-1.5 text-left text-sm transition hover:bg-wash ${
+                    isActive ? "border-[#A855F7] bg-wash font-bold text-ink" : "border-transparent text-ink"
                   }`}
-                  aria-pressed={isActive}
                 >
-                  <span className="font-semibold">{item.rating} stars</span>
-                  <span className="h-3 overflow-hidden rounded-full bg-[#E5E7EB]">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={() => toggleRatingFilter(rating)}
+                    className="h-4 w-4 rounded border-gray-300 accent-[#A855F7] outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/25"
+                  />
+                  <span className="font-semibold">{item.rating}-star</span>
+                  <span className="h-2.5 overflow-hidden rounded-full bg-[#E5E7EB]">
                     <span
                       className="block h-full rounded-full"
                       style={{ width: `${item.percentage}%`, backgroundColor: getRatingColour(item.rating) }}
                     />
                   </span>
-                  <span className="text-right text-muted">{item.count}</span>
-                </button>
+                  <span className="text-right text-muted">{formatPercentage(item.percentage)}</span>
+                </label>
               );
             })}
           </div>
