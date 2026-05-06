@@ -9,6 +9,9 @@
       return script.src && script.src.indexOf("/widget.js") !== -1;
     });
   var baseUrl = currentScript && currentScript.src ? new URL(currentScript.src).origin : "https://www.furniturebrandreviews.com";
+  if (window.console && typeof window.console.debug === "function") {
+    window.console.debug("FBR widget script loaded");
+  }
 
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -136,9 +139,27 @@
     return window.matchMedia("(max-width: 760px)").matches ? 1 : 3;
   }
 
+  function brandReviewUrl(brandSlug) {
+    var slug = brandSlug || "";
+    return (
+      baseUrl +
+      "/review/" +
+      encodeURIComponent(slug) +
+      "?utm_source=widget&utm_medium=embed&utm_campaign=" +
+      encodeURIComponent(slug)
+    );
+  }
+
   function renderWidget(target, data) {
     var index = 0;
     var reviews = Array.isArray(data.reviews) ? data.reviews : [];
+    if (reviews.length === 0 && window.console && typeof window.console.warn === "function") {
+      window.console.warn("[Furniture Brand Reviews Widget] No reviews returned for brand:", data.brandSlug || "unknown");
+    }
+    if (reviews.length === 0) {
+      renderError(target);
+      return false;
+    }
     var root = document.createElement("div");
     root.className = "fbrw-root";
 
@@ -167,7 +188,7 @@
 
     var summaryLink = document.createElement("a");
     summaryLink.className = "fbrw-link";
-    summaryLink.href = baseUrl + "/review/" + encodeURIComponent(data.brandSlug || "");
+    summaryLink.href = brandReviewUrl(data.brandSlug || "");
     summaryLink.target = "_blank";
     summaryLink.rel = "noopener noreferrer";
     summaryLink.textContent = "Read more reviews";
@@ -236,13 +257,14 @@
 
     target.textContent = "";
     target.appendChild(root);
+    return true;
   }
 
   function renderError(target) {
     target.textContent = "";
     var error = document.createElement("div");
     error.className = "fbrw-root";
-    error.appendChild(textElement("div", "fbrw-error", "Furniture Brand Reviews widget is temporarily unavailable."));
+    error.appendChild(textElement("div", "fbrw-error", "Reviews are currently unavailable."));
     target.appendChild(error);
   }
 
@@ -252,6 +274,9 @@
 
     var brand = (target.getAttribute("data-brand") || "").trim();
     if (!brand) {
+      if (window.console && typeof window.console.warn === "function") {
+        window.console.warn("[Furniture Brand Reviews Widget] Missing required data-brand attribute.");
+      }
       renderError(target);
       return;
     }
@@ -262,16 +287,26 @@
         return response.json();
       })
       .then(function (data) {
-        renderWidget(target, data);
+        var didRender = renderWidget(target, data);
+        if (didRender && window.console && typeof window.console.debug === "function") {
+          window.console.debug("FBR widget rendered for:", brand);
+        }
       })
       .catch(function () {
+        if (window.console && typeof window.console.warn === "function") {
+          window.console.warn("[Furniture Brand Reviews Widget] API request failed for brand:", brand);
+        }
         renderError(target);
       });
   }
 
   function init() {
     injectStyles();
-    Array.prototype.slice.call(document.querySelectorAll(WIDGET_SELECTOR)).forEach(initWidget);
+    var widgets = Array.prototype.slice.call(document.querySelectorAll(WIDGET_SELECTOR));
+    if (window.console && typeof window.console.debug === "function") {
+      window.console.debug("FBR widgets found:", widgets.length);
+    }
+    widgets.forEach(initWidget);
   }
 
   if (document.readyState === "loading") {
