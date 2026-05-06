@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminTools } from "@/components/AdminTools";
+import { getCompanies } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Admin Tools",
   description: "Manage furniture brand profiles and review imports."
 };
 
-export default function AdminToolsPage({ searchParams }: { searchParams: { password?: string } }) {
+export default async function AdminToolsPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";
   const isAllowed = Boolean(process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD);
 
@@ -27,6 +28,8 @@ export default function AdminToolsPage({ searchParams }: { searchParams: { passw
     );
   }
 
+  const companies = await getCompanies();
+
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
       <div className="max-w-3xl">
@@ -42,7 +45,7 @@ export default function AdminToolsPage({ searchParams }: { searchParams: { passw
         </Link>
       </div>
       <div className="mt-8">
-        <AdminTools password={password} />
+        <AdminTools password={password} companies={companies} />
       </div>
     </div>
   );

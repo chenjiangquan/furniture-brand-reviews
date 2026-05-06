@@ -93,7 +93,7 @@ export default async function HomePage() {
                   </span>
                   <CompanyLogo
                     name={company.name}
-                    logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.favicon_url ?? company.og_image_url}
+                    logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.cover_image_url ?? company.og_image_url}
                     size="sm"
                   />
                   <div className="min-w-0">

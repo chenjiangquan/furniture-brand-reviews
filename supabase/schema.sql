@@ -25,6 +25,10 @@ alter table companies add column if not exists og_image_url text;
 alter table companies add column if not exists cover_image_url text;
 alter table companies add column if not exists website_screenshot_url text;
 
+insert into storage.buckets (id, name, public)
+values ('brand-screenshots', 'brand-screenshots', true)
+on conflict (id) do update set public = true;
+
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
   company_id uuid references companies(id) on delete cascade,

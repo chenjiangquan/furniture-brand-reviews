@@ -54,14 +54,15 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
 
   if (!isBrandProfilePage) return null;
 
-  function goToCompany(company: Company) {
+  function goToCompany(company?: Company) {
+    if (!company) return;
     setIsOpen(false);
     setQuery("");
     router.push(`/review/${company.slug}`);
   }
 
   return (
-    <div ref={rootRef} className="order-last w-full lg:order-none lg:mx-8 lg:max-w-[520px] lg:flex-1">
+    <div ref={rootRef} className="relative order-last w-full lg:order-none lg:mx-8 lg:max-w-[520px] lg:flex-1">
       <label className="relative block">
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
         <input
@@ -99,7 +100,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
       </label>
 
       {isOpen && (
-        <div className="absolute left-4 right-4 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:left-auto lg:right-auto lg:w-[520px]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-line bg-white shadow-card">
           {matches.length > 0 ? (
             matches.map((company, index) => (
               <button
@@ -111,7 +112,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
                   activeIndex === index ? "bg-wash" : "bg-white hover:bg-wash"
                 }`}
               >
-                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.favicon_url} size="sm" />
+                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.cover_image_url ?? company.og_image_url} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-bold text-ink">{company.name}</span>
                   <span className="block truncate text-xs text-muted">{getDomain(company.website)}</span>

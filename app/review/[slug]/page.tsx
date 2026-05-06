@@ -205,7 +205,7 @@ export default async function CompanyReviewPage({ params }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-5">
-                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.favicon_url ?? company.og_image_url} size="lg" />
+                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.cover_image_url ?? company.og_image_url} size="lg" />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-muted ring-1 ring-line">Unclaimed</span>
