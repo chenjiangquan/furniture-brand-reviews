@@ -19,29 +19,28 @@
     var style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent =
-      ".fbrw-root{box-sizing:border-box;width:100%;max-width:1200px;margin:0 auto;font-family:inherit;color:#171744}" +
+      ".fbrw-root{box-sizing:border-box;width:100%;max-width:1600px;margin:0 auto;font-family:inherit;color:#171744}" +
       ".fbrw-root *{box-sizing:border-box}" +
-      ".fbrw-shell{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;border:1px solid #e3dff0;border-radius:20px;background:#fff;padding:18px;box-shadow:0 10px 30px rgba(23,23,68,.08)}" +
-      ".fbrw-summary{border-radius:16px;background:#faf7ff;padding:26px;display:flex;flex-direction:column;justify-content:space-between;gap:22px}" +
-      ".fbrw-logo{display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-weight:850;font-size:18px;line-height:1.2;color:#171744}" +
-      ".fbrw-logo-img{display:block;height:34px;max-width:230px;object-fit:contain}" +
+      ".fbrw-shell{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;border:1px solid #e3dff0;border-radius:20px;background:#fff;padding:20px;box-shadow:0 10px 30px rgba(23,23,68,.08)}" +
+      ".fbrw-summary{border-radius:16px;background:#faf7ff;padding:30px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}" +
+      ".fbrw-logo{display:flex;flex-direction:column;align-items:flex-start;gap:12px;font-weight:850;font-size:18px;line-height:1.2;color:#171744;max-width:220px}" +
+      ".fbrw-logo-img{display:block;width:100%;height:auto;max-width:200px;object-fit:contain}" +
       ".fbrw-logo-fallback{display:none;font-weight:900;letter-spacing:-.01em;color:#171744}" +
       ".fbrw-brand{font-size:13px;color:#66657b;margin:0}" +
       ".fbrw-heading{margin:10px 0 0;font-size:24px;line-height:1.16;font-weight:900;color:#171744}" +
       ".fbrw-rating-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}" +
       ".fbrw-score{font-size:36px;line-height:1;font-weight:950;color:#171744;letter-spacing:-.03em}" +
       ".fbrw-count{font-size:14px;color:#66657b;margin:0}" +
+      ".fbrw-summary .fbrw-count{text-decoration:underline}" +
       ".fbrw-stars{display:inline-flex;align-items:center;gap:2px;flex-wrap:nowrap}" +
-      ".fbrw-star-box{display:grid;place-items:center;width:22px;height:22px;min-width:22px;border-radius:3px;background:#7C3AED;color:#fff;overflow:hidden}" +
-      ".fbrw-star-box svg{display:block;width:14px;height:14px;fill:#fff;stroke:#fff}" +
-      ".fbrw-star-box.fbrw-star-small{width:18px;height:18px;min-width:18px}" +
-      ".fbrw-star-box.fbrw-star-small svg{width:12px;height:12px}" +
-      ".fbrw-star-box.fbrw-empty{background:#e5e7eb}" +
+      ".fbrw-star{display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;min-width:22px;border-radius:3px;color:#fff;font-size:13px;line-height:1;font-family:Arial,Helvetica,sans-serif;font-weight:900;overflow:hidden}" +
+      ".fbrw-star-small{width:18px;height:18px;min-width:18px;font-size:11px;border-radius:3px}" +
+      ".fbrw-star-active{background:#7C3AED}" +
+      ".fbrw-star-inactive{background:#E5E7EB}" +
       ".fbrw-carousel{min-width:0;display:grid;gap:14px}" +
-      ".fbrw-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;transition:transform .3s ease,opacity .3s ease;will-change:transform,opacity}" +
-      ".fbrw-track.fbrw-slide-next{transform:translateX(-18px);opacity:.35}" +
-      ".fbrw-track.fbrw-slide-prev{transform:translateX(18px);opacity:.35}" +
-      ".fbrw-card{min-width:0;border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:230px}" +
+      ".fbrw-carousel-window{min-width:0;overflow:hidden}" +
+      ".fbrw-track{display:flex;gap:16px;transition:transform 300ms ease;will-change:transform}" +
+      ".fbrw-card{min-width:0;flex:0 0 calc((100% - 32px) / 3);border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:20px;display:flex;flex-direction:column;gap:12px;min-height:230px}" +
       ".fbrw-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}" +
       ".fbrw-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#f3f4f6;color:#4b5563;padding:5px 9px;font-size:12px;font-weight:700}" +
       ".fbrw-title{font-size:16px;line-height:1.35;font-weight:850;color:#171744;margin:0}" +
@@ -56,33 +55,42 @@
       ".fbrw-button:hover{border-color:#8b5b91;background:#faf7ff;color:#5d3469}" +
       ".fbrw-empty{border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:22px;color:#66657b}" +
       ".fbrw-error{border:1px solid #e3dff0;border-radius:16px;background:#faf7ff;padding:18px;color:#66657b;font-size:14px}" +
-      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px}.fbrw-track{grid-template-columns:1fr}.fbrw-summary{padding:18px}.fbrw-heading{font-size:20px}.fbrw-card{min-height:210px}}";
+      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:210px}}";
 
     document.head.appendChild(style);
   }
 
-  function createStarSvg() {
-    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("aria-hidden", "true");
-    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M12 2.7l2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L2.9 9.3l6.3-.9L12 2.7z");
-    svg.appendChild(path);
-    return svg;
+  function ratingColour(rating) {
+    var roundedRating = Math.max(1, Math.min(5, Math.round(Number(rating) || 0)));
+    var colours = {
+      5: "#7C3AED",
+      4: "#A855F7",
+      3: "#D946EF",
+      2: "#F97316",
+      1: "#DC2626"
+    };
+
+    return colours[roundedRating] || colours[5];
   }
 
   function stars(rating, size) {
     var numericRating = Number(rating);
     if (!Number.isFinite(numericRating)) numericRating = 0;
     var activeStars = Math.max(0, Math.min(5, Math.round(numericRating)));
+    var activeColour = ratingColour(activeStars);
     var wrapper = document.createElement("span");
     wrapper.className = "fbrw-stars";
     wrapper.setAttribute("aria-label", numericRating.toFixed(1) + " out of 5 stars");
 
     for (var index = 1; index <= 5; index += 1) {
       var box = document.createElement("span");
-      box.className = "fbrw-star-box" + (size === "small" ? " fbrw-star-small" : "") + (index <= activeStars ? "" : " fbrw-empty");
-      box.appendChild(createStarSvg());
+      var isActive = index <= activeStars;
+      box.className =
+        "fbrw-star " +
+        (size === "small" ? "fbrw-star-small " : "") +
+        (isActive ? "fbrw-star-active" : "fbrw-star-inactive");
+      box.style.backgroundColor = isActive ? activeColour : "#E5E7EB";
+      box.textContent = "★";
       wrapper.appendChild(box);
     }
 
@@ -214,6 +222,8 @@
 
     var carousel = document.createElement("section");
     carousel.className = "fbrw-carousel";
+    var carouselWindow = document.createElement("div");
+    carouselWindow.className = "fbrw-carousel-window";
     var track = document.createElement("div");
     track.className = "fbrw-track";
     var isAnimating = false;
@@ -230,61 +240,67 @@
     buttons.appendChild(next);
     controls.appendChild(status);
     controls.appendChild(buttons);
-    carousel.appendChild(track);
+    carouselWindow.appendChild(track);
+    carousel.appendChild(carouselWindow);
     carousel.appendChild(controls);
     shell.appendChild(carousel);
 
-    function draw() {
-      track.textContent = "";
-      var visible = getVisibleCount();
-      var shown = reviews.length ? [] : [];
+    reviews.forEach(function (review) {
+      track.appendChild(renderCard(review));
+    });
 
-      for (var offset = 0; offset < Math.min(visible, reviews.length); offset += 1) {
-        shown.push(reviews[(index + offset) % reviews.length]);
-      }
-
-      if (shown.length === 0) {
-        track.appendChild(textElement("div", "fbrw-empty", "No published reviews yet."));
-      } else {
-        shown.forEach(function (review) {
-          track.appendChild(renderCard(review));
-        });
-      }
-
-      status.textContent = reviews.length ? "Latest customer reviews" : "Reviews coming soon";
-      previous.disabled = reviews.length <= visible || isAnimating;
-      next.disabled = reviews.length <= visible || isAnimating;
+    function getTrackGap() {
+      var computedStyle = window.getComputedStyle(track);
+      var gap = parseFloat(computedStyle.columnGap || computedStyle.gap || "0");
+      return Number.isFinite(gap) ? gap : 0;
     }
 
-    function animate(direction) {
+    function getMaxIndex() {
+      return Math.max(0, reviews.length - getVisibleCount());
+    }
+
+    function updateTrack() {
+      var firstCard = track.children[0];
+      var maxIndex = getMaxIndex();
+      var slideSize = firstCard ? firstCard.getBoundingClientRect().width + getTrackGap() : 0;
+
+      if (index > maxIndex) index = maxIndex;
+      if (index < 0) index = 0;
+
+      track.style.transform = "translateX(-" + index * slideSize + "px)";
+      status.textContent = "Latest customer reviews";
+      previous.disabled = index === 0 || isAnimating;
+      next.disabled = index >= maxIndex || isAnimating;
+    }
+
+    function move(direction) {
       if (!reviews.length || isAnimating) return;
+      var maxIndex = getMaxIndex();
+      var nextIndex = direction === "next" ? Math.min(index + 1, maxIndex) : Math.max(index - 1, 0);
+
+      if (nextIndex === index) return;
+
       isAnimating = true;
+      index = nextIndex;
       previous.disabled = true;
       next.disabled = true;
-      track.classList.add(direction === "next" ? "fbrw-slide-next" : "fbrw-slide-prev");
+      updateTrack();
       window.setTimeout(function () {
-        index = direction === "next" ? (index + 1) % reviews.length : (index - 1 + reviews.length) % reviews.length;
-        draw();
-        window.requestAnimationFrame(function () {
-          track.classList.remove("fbrw-slide-next", "fbrw-slide-prev");
-        });
-        window.setTimeout(function () {
-          isAnimating = false;
-          draw();
-        }, 300);
-      }, 150);
+        isAnimating = false;
+        updateTrack();
+      }, 320);
     }
 
     previous.addEventListener("click", function () {
-      animate("prev");
+      move("prev");
     });
 
     next.addEventListener("click", function () {
-      animate("next");
+      move("next");
     });
 
-    window.addEventListener("resize", draw);
-    draw();
+    window.addEventListener("resize", updateTrack);
+    updateTrack();
 
     target.textContent = "";
     target.appendChild(root);
