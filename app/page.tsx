@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
+import { CompanyLogo } from "@/components/CompanyLogo";
+import { RatingStars } from "@/components/RatingStars";
 import { ReviewCard } from "@/components/ReviewCard";
 import { SearchBar } from "@/components/SearchBar";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
@@ -15,7 +17,9 @@ export default async function HomePage() {
   const companies = await getCompanies();
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
   const latestReviews = await getLatestApprovedReviews();
-  const topRated = [...homepageCompanies].sort((a, b) => b.average_rating - a.average_rating).slice(0, 3);
+  const topRated = [...homepageCompanies]
+    .sort((a, b) => b.average_rating - a.average_rating || b.review_count - a.review_count)
+    .slice(0, 10);
 
   return (
     <div>
@@ -29,9 +33,21 @@ export default async function HomePage() {
             <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-5xl md:text-6xl">
               Discover real customer reviews of furniture brands worldwide
             </h1>
-            <p className="mt-5 text-lg leading-8 text-muted">
-              Find honest customer experiences, delivery feedback and ratings for furniture brands around the world.
-            </p>
+            <ul className="mt-6 grid gap-3 text-left">
+              {[
+                "100% real customer reviews, manually checked and verified — no fake ratings.",
+                "Thousands of furniture and home brands listed worldwide.",
+                "AI-powered daily ranking of top-rated furniture brands."
+              ].map((feature) => (
+                <li
+                  key={feature}
+                  className="flex items-start gap-3 rounded-2xl border border-line bg-white/90 px-4 py-3 text-sm font-semibold leading-6 text-ink shadow-sm backdrop-blur"
+                >
+                  <ShieldCheck className="mt-1 shrink-0 text-trust" size={16} />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
             <div className="mt-9">
               <SearchBar companies={companies} />
             </div>
@@ -66,10 +82,40 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
-        <h2 className="text-2xl font-bold text-ink">Top rated brands</h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {topRated.map((company) => (
-            <BrandCard key={company.id} company={company} />
+        <h2 className="text-2xl font-bold text-ink">Top 10 rated brands</h2>
+        <div className="mt-6 grid gap-3">
+          {topRated.map((company, index) => (
+            <article key={company.id} className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 items-start gap-4 md:items-center">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wash text-sm font-bold text-trust-dark ring-1 ring-line">
+                    #{index + 1}
+                  </span>
+                  <CompanyLogo
+                    name={company.name}
+                    logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.favicon_url ?? company.og_image_url}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold text-ink">{company.name}</h3>
+                    <p className="mt-1 text-sm font-medium text-muted">{company.category}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <RatingStars rating={company.average_rating} size="small" />
+                    <span className="font-bold text-ink">{company.average_rating.toFixed(1)}</span>
+                    <span className="text-sm text-muted">· {company.review_count} reviews</span>
+                  </div>
+                  <Link
+                    href={`/review/${company.slug}`}
+                    className="inline-flex justify-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-trust-dark"
+                  >
+                    Read reviews
+                  </Link>
+                </div>
+              </div>
+            </article>
           ))}
         </div>
       </section>

@@ -1,15 +1,36 @@
 import type { Metadata } from "next";
+import { InfoPage } from "@/components/InfoPage";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Contact Furniture Brand Reviews."
+  description:
+    "Contact Furniture Brand Reviews for customer reviews, furniture brand reviews, business claims, review issues and legal requests."
 };
 
 export default function ContactPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-4xl font-bold tracking-tight text-ink">Contact</h1>
-      <p className="mt-5 text-lg leading-8 text-muted">For review questions, brand claims or corrections, email hello@furniturebrandreviews.co.uk.</p>
-    </div>
+    <InfoPage
+      title="Contact Furniture Brand Reviews"
+      subtitle="Get in touch about review questions, business claims, legal requests or platform feedback."
+      sections={[
+        {
+          title: "Contact email",
+          body: (
+            <p>
+              Email <a className="font-semibold text-trust-dark" href="mailto:support@furniturebrandreviews.com">support@furniturebrandreviews.com</a>{" "}
+              for general enquiries, review issues, business claims and legal requests.
+            </p>
+          )
+        },
+        {
+          title: "What to include",
+          bullets: [
+            "For review issues, include the brand name and review page link if available.",
+            "For business claims, use an email address connected to the furniture company where possible.",
+            "For legal requests, include enough detail for the request to be reviewed properly."
+          ]
+        }
+      ]}
+    />
   );
 }

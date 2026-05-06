@@ -6,7 +6,7 @@ import { BrandCard } from "@/components/BrandCard";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { Rating } from "@/components/Rating";
 import { RatingStars, getRatingColour } from "@/components/RatingStars";
-import { ReviewCard } from "@/components/ReviewCard";
+import { ReviewFilters } from "@/components/ReviewFilters";
 import { getApprovedReviewsForCompany, getCompanies, getCompanyBySlug, getRatingBreakdown } from "@/lib/data";
 import type { ReviewWithReply } from "@/lib/types";
 
@@ -212,7 +212,7 @@ export default async function CompanyReviewPage({ params }: Props) {
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-muted ring-1 ring-line">Unclaimed</span>
                     <span className="rounded-full bg-wash px-3 py-1 text-xs font-bold text-trust-dark">{company.category}</span>
                   </div>
-                  <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink md:text-5xl">{company.name} Reviews</h1>
+                  <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink md:text-5xl">{company.name}</h1>
                   <p className="mt-3 max-w-3xl text-base leading-7 text-muted">
                     Customer reviews, ratings, delivery feedback and buying experiences for {company.name}.
                   </p>
@@ -296,18 +296,8 @@ export default async function CompanyReviewPage({ params }: Props) {
                 Write a review
               </Link>
             </div>
-            <div className="mt-5 grid gap-5">
-              {reviews.length > 0 ? (
-                reviews.map((review) => <ReviewCard key={review.id} review={review} />)
-              ) : (
-                <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-                  <p className="text-lg font-bold text-ink">No reviews yet.</p>
-                  <p className="mt-2 text-muted">Be the first to review this furniture brand.</p>
-                  <Link href={`/review/${company.slug}/write`} className="mt-5 inline-flex rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
-                    Write a review
-                  </Link>
-                </div>
-              )}
+            <div className="mt-5">
+              <ReviewFilters reviews={reviews} brandSlug={company.slug} writeReviewHref={`/review/${company.slug}/write`} />
             </div>
           </section>
 

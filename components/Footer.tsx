@@ -8,7 +8,7 @@ const columns = [
     title: "Platform",
     links: [
       ["About us", "/about"],
-      ["How it works", "#"],
+      ["How it works", "/how-it-works"],
       ["Review guidelines", "/review-guidelines"],
       ["Report a review", "/report-review"],
       ["Contact", "/contact"]
@@ -17,31 +17,31 @@ const columns = [
   {
     title: "For reviewers",
     links: [
-      ["Write a review", "/brands"],
-      ["Reviewer rules", "/review-guidelines"],
-      ["Privacy choices", "/privacy-policy"],
-      ["Help centre", "#"],
-      ["Trust & safety", "#"]
+      ["Write a review", "/write-review"],
+      ["Reviewer rules", "/reviewer-rules"],
+      ["Privacy choices", "/privacy-choices"],
+      ["Help centre", "/help-centre"],
+      ["Trust & safety", "/trust-and-safety"]
     ]
   },
   {
     title: "For businesses",
     links: [
-      ["Claim your profile", "/contact"],
-      ["Business login", "#"],
-      ["Respond to reviews", "#"],
-      ["Brand tools", "#"],
-      ["Pricing coming soon", "#"]
+      ["Claim your profile", "/claim-your-profile"],
+      ["Business login", "/business-login"],
+      ["Respond to reviews", "/respond-to-reviews"],
+      ["Brand tools", "/brand-tools"],
+      ["Pricing coming soon", "/pricing"]
     ]
   },
   {
     title: "Categories",
     links: [
-      ["Sofa brands", "/brands"],
-      ["Dining table brands", "/brands"],
-      ["Bedroom furniture", "/brands"],
-      ["Outdoor furniture", "/brands"],
-      ["Home office furniture", "/brands"]
+      ["Sofa brands", "/sofa-brands"],
+      ["Dining table brands", "/dining-table-brands"],
+      ["Bedroom furniture", "/bedroom-furniture-brands"],
+      ["Outdoor furniture", "/outdoor-furniture"],
+      ["Home office furniture", "/home-office-furniture"]
     ]
   },
   {
@@ -49,18 +49,18 @@ const columns = [
     links: [
       ["Privacy policy", "/privacy-policy"],
       ["Terms & conditions", "/terms"],
-      ["Content policy", "/review-guidelines"],
-      ["Cookie policy", "#"],
-      ["System status", "#"]
+      ["Content policy", "/content-policy"],
+      ["Cookie policy", "/cookie-policy"],
+      ["System status", "/system-status"]
     ]
   }
 ];
 
-const socialLinks: Array<[string, LucideIcon]> = [
-  ["Facebook", Facebook],
-  ["Instagram", Instagram],
-  ["LinkedIn", Linkedin],
-  ["YouTube", Youtube]
+const socialLinks: Array<[string, LucideIcon, string]> = [
+  ["Facebook", Facebook, "/contact"],
+  ["Instagram", Instagram, "/contact"],
+  ["LinkedIn", Linkedin, "/contact"],
+  ["YouTube", Youtube, "/contact"]
 ];
 
 export function Footer() {
@@ -103,10 +103,10 @@ export function Footer() {
             <p className="mt-1">Independent reviews for furniture brands worldwide.</p>
           </div>
           <div className="flex items-center gap-3">
-            {socialLinks.map(([label, Icon]) => (
+            {socialLinks.map(([label, Icon, href]) => (
               <Link
                 key={label}
-                href="#"
+                href={href}
                 aria-label={label}
                 className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white/70 hover:border-[#A855F7] hover:text-[#A855F7]"
               >

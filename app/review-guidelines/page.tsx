@@ -1,18 +1,45 @@
 import type { Metadata } from "next";
+import { InfoPage } from "@/components/InfoPage";
 
 export const metadata: Metadata = {
-  title: "Review Guidelines",
-  description: "Guidelines for submitting fair and useful furniture brand reviews."
+  title: "Review guidelines",
+  description:
+    "Read the Furniture Brand Reviews guidelines for fair customer reviews, moderated furniture brand reviews and responsible feedback about furniture companies."
 };
 
 export default function ReviewGuidelinesPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-4xl font-bold tracking-tight text-ink">Review guidelines</h1>
-      <div className="mt-6 grid gap-4 text-muted">
-        <p>Reviews should describe a genuine customer experience and avoid personal details, abusive language or claims that cannot be checked.</p>
-        <p>New reviews are held as pending until moderation is complete. Approved reviews appear publicly; rejected reviews do not.</p>
-      </div>
-    </div>
+    <InfoPage
+      title="Review guidelines"
+      subtitle="Our guidelines help keep furniture brand reviews fair, useful and based on genuine customer experiences."
+      sections={[
+        {
+          title: "What reviews should include",
+          bullets: [
+            "Only submit reviews based on a real customer experience.",
+            "Describe delivery, product quality, customer service, returns or after-sales support clearly.",
+            "Keep your review honest, specific and useful for other furniture shoppers."
+          ]
+        },
+        {
+          title: "What is not allowed",
+          bullets: [
+            "False reviews, fake ratings or reviews written on behalf of someone else.",
+            "Advertising, promotional content or spam.",
+            "Abuse, harassment, hate speech or personal attacks.",
+            "Private information such as addresses, phone numbers, payment details or staff personal data."
+          ]
+        },
+        {
+          title: "Moderation",
+          body: (
+            <p>
+              Furniture Brand Reviews may review, reject or remove content that breaks these rules or creates safety,
+              privacy or trust concerns.
+            </p>
+          )
+        }
+      ]}
+    />
   );
 }

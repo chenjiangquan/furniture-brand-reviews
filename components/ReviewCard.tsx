@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { CheckCircle2, Flag } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { RatingStars } from "@/components/RatingStars";
+import { ReviewCardActions } from "@/components/ReviewCardActions";
 import type { ReviewWithReply } from "@/lib/types";
 
 function getInitials(name: string) {
@@ -12,9 +12,11 @@ function getInitials(name: string) {
     .join("");
 }
 
-export function ReviewCard({ review }: { review: ReviewWithReply }) {
+export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; brandSlug?: string }) {
+  const actionBrandSlug = brandSlug ?? review.companies?.slug ?? "";
+
   return (
-    <article className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+    <article id={`review-${review.id}`} className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
           {getInitials(review.reviewer_name) || "R"}
@@ -45,10 +47,7 @@ export function ReviewCard({ review }: { review: ReviewWithReply }) {
               <p className="mt-2 text-sm leading-6 text-muted">{reply.reply}</p>
             </div>
           ))}
-          <Link href="/report-review" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-trust-dark">
-            <Flag size={14} />
-            Report review
-          </Link>
+          {actionBrandSlug && <ReviewCardActions reviewId={review.id} brandSlug={actionBrandSlug} reviewTitle={review.title} />}
         </div>
       </div>
     </article>
