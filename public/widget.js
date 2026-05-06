@@ -22,20 +22,25 @@
       ".fbrw-root{box-sizing:border-box;width:100%;max-width:1200px;margin:0 auto;font-family:inherit;color:#171744}" +
       ".fbrw-root *{box-sizing:border-box}" +
       ".fbrw-shell{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;border:1px solid #e3dff0;border-radius:20px;background:#fff;padding:18px;box-shadow:0 10px 30px rgba(23,23,68,.08)}" +
-      ".fbrw-summary{border-radius:16px;background:#faf7ff;padding:22px;display:flex;flex-direction:column;justify-content:space-between;gap:18px}" +
-      ".fbrw-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;line-height:1.2}" +
-      ".fbrw-logo-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#171744;color:#fff;font-weight:900}" +
+      ".fbrw-summary{border-radius:16px;background:#faf7ff;padding:26px;display:flex;flex-direction:column;justify-content:space-between;gap:22px}" +
+      ".fbrw-logo{display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-weight:850;font-size:18px;line-height:1.2;color:#171744}" +
+      ".fbrw-logo-img{display:block;height:34px;max-width:230px;object-fit:contain}" +
+      ".fbrw-logo-fallback{display:none;font-weight:900;letter-spacing:-.01em;color:#171744}" +
       ".fbrw-brand{font-size:13px;color:#66657b;margin:0}" +
-      ".fbrw-heading{margin:4px 0 0;font-size:22px;line-height:1.2;font-weight:850;color:#171744}" +
-      ".fbrw-rating-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}" +
-      ".fbrw-score{font-size:28px;font-weight:900;color:#171744}" +
+      ".fbrw-heading{margin:10px 0 0;font-size:24px;line-height:1.16;font-weight:900;color:#171744}" +
+      ".fbrw-rating-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}" +
+      ".fbrw-score{font-size:36px;line-height:1;font-weight:950;color:#171744;letter-spacing:-.03em}" +
       ".fbrw-count{font-size:14px;color:#66657b;margin:0}" +
       ".fbrw-stars{display:inline-flex;align-items:center;gap:2px;flex-wrap:nowrap}" +
-      ".fbrw-star-box{display:grid;place-items:center;width:22px;height:22px;border-radius:3px;background:#7c3aed;color:#fff}" +
-      ".fbrw-star-box svg{width:14px;height:14px;fill:#fff;stroke:#fff}" +
+      ".fbrw-star-box{display:grid;place-items:center;width:22px;height:22px;min-width:22px;border-radius:3px;background:#7C3AED;color:#fff;overflow:hidden}" +
+      ".fbrw-star-box svg{display:block;width:14px;height:14px;fill:#fff;stroke:#fff}" +
+      ".fbrw-star-box.fbrw-star-small{width:18px;height:18px;min-width:18px}" +
+      ".fbrw-star-box.fbrw-star-small svg{width:12px;height:12px}" +
       ".fbrw-star-box.fbrw-empty{background:#e5e7eb}" +
       ".fbrw-carousel{min-width:0;display:grid;gap:14px}" +
-      ".fbrw-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}" +
+      ".fbrw-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;transition:transform .3s ease,opacity .3s ease;will-change:transform,opacity}" +
+      ".fbrw-track.fbrw-slide-next{transform:translateX(-18px);opacity:.35}" +
+      ".fbrw-track.fbrw-slide-prev{transform:translateX(18px);opacity:.35}" +
       ".fbrw-card{min-width:0;border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:230px}" +
       ".fbrw-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}" +
       ".fbrw-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#f3f4f6;color:#4b5563;padding:5px 9px;font-size:12px;font-weight:700}" +
@@ -47,6 +52,7 @@
       ".fbrw-link{font-size:13px;font-weight:800;color:#5d3469;text-decoration:none}" +
       ".fbrw-buttons{display:flex;align-items:center;gap:8px}" +
       ".fbrw-button{display:grid;place-items:center;width:38px;height:38px;border-radius:999px;border:1px solid #e3dff0;background:#fff;color:#171744;cursor:pointer;font:inherit;transition:.15s ease}" +
+      ".fbrw-button:disabled{cursor:not-allowed;opacity:.45}" +
       ".fbrw-button:hover{border-color:#8b5b91;background:#faf7ff;color:#5d3469}" +
       ".fbrw-empty{border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:22px;color:#66657b}" +
       ".fbrw-error{border:1px solid #e3dff0;border-radius:16px;background:#faf7ff;padding:18px;color:#66657b;font-size:14px}" +
@@ -66,17 +72,16 @@
   }
 
   function stars(rating, size) {
+    var numericRating = Number(rating);
+    if (!Number.isFinite(numericRating)) numericRating = 0;
+    var activeStars = Math.max(0, Math.min(5, Math.round(numericRating)));
     var wrapper = document.createElement("span");
     wrapper.className = "fbrw-stars";
-    wrapper.setAttribute("aria-label", Number(rating || 0).toFixed(1) + " out of 5 stars");
+    wrapper.setAttribute("aria-label", numericRating.toFixed(1) + " out of 5 stars");
 
     for (var index = 1; index <= 5; index += 1) {
       var box = document.createElement("span");
-      box.className = "fbrw-star-box" + (index <= Math.round(rating || 0) ? "" : " fbrw-empty");
-      if (size === "small") {
-        box.style.width = "18px";
-        box.style.height = "18px";
-      }
+      box.className = "fbrw-star-box" + (size === "small" ? " fbrw-star-small" : "") + (index <= activeStars ? "" : " fbrw-empty");
       box.appendChild(createStarSvg());
       wrapper.appendChild(box);
     }
@@ -173,8 +178,18 @@
     var summaryTop = document.createElement("div");
     var logo = document.createElement("div");
     logo.className = "fbrw-logo";
-    logo.appendChild(textElement("span", "fbrw-logo-mark", "F"));
-    logo.appendChild(textElement("span", "", "Furniture Brand Reviews"));
+    var logoImage = document.createElement("img");
+    logoImage.className = "fbrw-logo-img";
+    logoImage.src = baseUrl + "/logo.png";
+    logoImage.alt = "Furniture Brand Reviews";
+    logoImage.loading = "lazy";
+    var logoFallback = textElement("span", "fbrw-logo-fallback", "Furniture Brand Reviews");
+    logoImage.onerror = function () {
+      logoImage.style.display = "none";
+      logoFallback.style.display = "block";
+    };
+    logo.appendChild(logoImage);
+    logo.appendChild(logoFallback);
     summaryTop.appendChild(logo);
     summaryTop.appendChild(textElement("p", "fbrw-brand", data.brandName || "Furniture brand"));
     summaryTop.appendChild(textElement("h2", "fbrw-heading", "Highly rated by customers"));
@@ -201,6 +216,7 @@
     carousel.className = "fbrw-carousel";
     var track = document.createElement("div");
     track.className = "fbrw-track";
+    var isAnimating = false;
     var controls = document.createElement("div");
     controls.className = "fbrw-controls";
     var status = textElement("span", "fbrw-count", "");
@@ -236,20 +252,35 @@
       }
 
       status.textContent = reviews.length ? "Latest customer reviews" : "Reviews coming soon";
-      previous.disabled = reviews.length <= visible;
-      next.disabled = reviews.length <= visible;
+      previous.disabled = reviews.length <= visible || isAnimating;
+      next.disabled = reviews.length <= visible || isAnimating;
+    }
+
+    function animate(direction) {
+      if (!reviews.length || isAnimating) return;
+      isAnimating = true;
+      previous.disabled = true;
+      next.disabled = true;
+      track.classList.add(direction === "next" ? "fbrw-slide-next" : "fbrw-slide-prev");
+      window.setTimeout(function () {
+        index = direction === "next" ? (index + 1) % reviews.length : (index - 1 + reviews.length) % reviews.length;
+        draw();
+        window.requestAnimationFrame(function () {
+          track.classList.remove("fbrw-slide-next", "fbrw-slide-prev");
+        });
+        window.setTimeout(function () {
+          isAnimating = false;
+          draw();
+        }, 300);
+      }, 150);
     }
 
     previous.addEventListener("click", function () {
-      if (!reviews.length) return;
-      index = (index - 1 + reviews.length) % reviews.length;
-      draw();
+      animate("prev");
     });
 
     next.addEventListener("click", function () {
-      if (!reviews.length) return;
-      index = (index + 1) % reviews.length;
-      draw();
+      animate("next");
     });
 
     window.addEventListener("resize", draw);

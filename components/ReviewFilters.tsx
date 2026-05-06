@@ -7,7 +7,7 @@ import { ReviewCard } from "@/components/ReviewCard";
 import type { ReviewWithReply } from "@/lib/types";
 
 type SortOption = "recent" | "highest" | "lowest";
-type RatingFilter = "all" | 5 | 4 | 3 | 2 | 1;
+export type RatingFilter = "all" | 5 | 4 | 3 | 2 | 1;
 
 const mentionKeywords = [
   "delivery",
@@ -57,19 +57,33 @@ function sortReviews(reviews: ReviewWithReply[], sort: SortOption) {
 export function ReviewFilters({
   reviews,
   brandSlug,
-  writeReviewHref
+  writeReviewHref,
+  ratingFilter,
+  onRatingFilterChange
 }: {
   reviews: ReviewWithReply[];
   brandSlug: string;
   writeReviewHref: string;
+  ratingFilter?: RatingFilter;
+  onRatingFilterChange?: (rating: RatingFilter) => void;
 }) {
   const [keyword, setKeyword] = useState("");
   const [sort, setSort] = useState<SortOption>("recent");
   const [showFilters, setShowFilters] = useState(false);
-  const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
+  const [localRatingFilter, setLocalRatingFilter] = useState<RatingFilter>("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [activeMention, setActiveMention] = useState("");
   const supportsVerified = reviews.some((review) => Object.prototype.hasOwnProperty.call(review, "is_verified"));
+  const activeRatingFilter = ratingFilter ?? localRatingFilter;
+
+  function updateRatingFilter(nextRatingFilter: RatingFilter) {
+    if (onRatingFilterChange) {
+      onRatingFilterChange(nextRatingFilter);
+      return;
+    }
+
+    setLocalRatingFilter(nextRatingFilter);
+  }
 
   const topMentions = useMemo(() => {
     const allText = reviews.map(getReviewText).join(" ");
@@ -89,21 +103,21 @@ export function ReviewFilters({
     const filtered = reviews.filter((review) => {
       const text = getReviewText(review);
       const matchesKeyword = !trimmedKeyword || text.includes(trimmedKeyword);
-      const matchesRating = ratingFilter === "all" || review.rating === ratingFilter;
+      const matchesRating = activeRatingFilter === "all" || review.rating === activeRatingFilter;
       const matchesVerified = !verifiedOnly || review.is_verified === true;
 
       return matchesKeyword && matchesRating && matchesVerified;
     });
 
     return sortReviews(filtered, sort);
-  }, [keyword, ratingFilter, reviews, sort, verifiedOnly]);
+  }, [activeRatingFilter, keyword, reviews, sort, verifiedOnly]);
 
-  const hasActiveFilters = keyword.trim() || ratingFilter !== "all" || verifiedOnly || sort !== "recent";
+  const hasActiveFilters = keyword.trim() || activeRatingFilter !== "all" || verifiedOnly || sort !== "recent";
 
   function clearFilters() {
     setKeyword("");
     setSort("recent");
-    setRatingFilter("all");
+    updateRatingFilter("all");
     setVerifiedOnly(false);
     setActiveMention("");
   }
@@ -184,9 +198,9 @@ export function ReviewFilters({
                 <button
                   key={rating}
                   type="button"
-                  onClick={() => setRatingFilter(rating)}
+                  onClick={() => updateRatingFilter(rating)}
                   className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-bold transition ${
-                    ratingFilter === rating
+                    activeRatingFilter === rating
                       ? "bg-trust text-white"
                       : "border border-gray-200 bg-white text-muted hover:border-trust hover:text-trust-dark"
                   }`}
@@ -236,7 +250,7 @@ export function ReviewFilters({
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 text-sm text-muted">
           <p>
             Showing <span className="font-bold text-ink">{filteredReviews.length}</span> of{" "}
-            <span className="font-bold text-ink">{reviews.length}</span> approved reviews
+            <span className="font-bold text-ink">{reviews.length}</span> reviews
           </p>
           {hasActiveFilters && (
             <button type="button" onClick={clearFilters} className="inline-flex items-center font-bold text-trust-dark hover:text-ink">
@@ -251,7 +265,9 @@ export function ReviewFilters({
           filteredReviews.map((review) => <ReviewCard key={review.id} review={review} brandSlug={brandSlug} />)
         ) : reviews.length > 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-lg font-bold text-ink">No reviews match your filters.</p>
+            <p className="text-lg font-bold text-ink">
+              {activeRatingFilter === "all" ? "No reviews match your filters." : "No reviews found for this rating."}
+            </p>
             <button
               type="button"
               onClick={clearFilters}
