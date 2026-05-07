@@ -47,7 +47,8 @@ export function EmbedWidgetTool({ companies }: { companies: Company[] }) {
             onChange={(event) => setLayout(event.target.value)}
             className="h-12 rounded-xl border border-line bg-white px-4 text-ink outline-none focus:border-trust"
           >
-            <option value="carousel">Carousel</option>
+            <option value="carousel">Carousel Widget</option>
+            <option value="micro">Micro Widget</option>
           </select>
         </label>
       </div>

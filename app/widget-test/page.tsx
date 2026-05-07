@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   description: "Local test page for the Furniture Brand Reviews embeddable carousel widget."
 };
 
-const embedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="carousel"></div>
+const carouselEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="carousel"></div>
+<script async src="/widget.js"></script>`;
+
+const microEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="micro"></div>
 <script async src="/widget.js"></script>`;
 
 export default function WidgetTestPage() {
@@ -22,13 +25,25 @@ export default function WidgetTestPage() {
         <section className="mt-8">
           <h2 className="text-lg font-bold">Embed code</h2>
           <pre className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-800">
-            <code>{embedCode}</code>
+            <code>{carouselEmbedCode}</code>
           </pre>
         </section>
 
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-4 text-lg font-bold">Rendered widget</h2>
+          <h2 className="mb-4 text-lg font-bold">Rendered carousel widget</h2>
           <div className="fbr-widget" data-brand="weilai-concept" data-layout="carousel" />
+        </section>
+
+        <section className="mt-8">
+          <h2 className="text-lg font-bold">Micro embed code</h2>
+          <pre className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-800">
+            <code>{microEmbedCode}</code>
+          </pre>
+        </section>
+
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
+          <h2 className="mb-4 text-lg font-bold">Rendered micro widget</h2>
+          <div className="fbr-widget" data-brand="weilai-concept" data-layout="micro" />
         </section>
       </div>
 
