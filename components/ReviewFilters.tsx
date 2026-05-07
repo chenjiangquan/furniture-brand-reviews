@@ -78,6 +78,7 @@ export function ReviewFilters({
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [activeMention, setActiveMention] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState("");
   const supportsVerified = reviews.some((review) => Object.prototype.hasOwnProperty.call(review, "is_verified"));
   const activeRatingFilter = ratingFilter ?? localRatingFilter;
 
@@ -130,6 +131,7 @@ export function ReviewFilters({
 
   useEffect(() => {
     setCurrentPage(1);
+    setPageInput("");
   }, [activeMention, activeRatingFilter, keyword, reviews, sort, verifiedOnly]);
 
   function clearFilters() {
@@ -139,6 +141,16 @@ export function ReviewFilters({
     setVerifiedOnly(false);
     setActiveMention("");
     setCurrentPage(1);
+    setPageInput("");
+  }
+
+  function handlePageJump() {
+    const pageNumber = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(pageNumber)) return;
+
+    const nextPage = Math.min(totalPages, Math.max(1, pageNumber));
+    setCurrentPage(nextPage);
+    setPageInput("");
   }
 
   function toggleMention(mention: string) {
@@ -295,7 +307,7 @@ export function ReviewFilters({
           <>
             {paginatedReviews.map((review) => <ReviewCard key={review.id} review={review} brandSlug={brandSlug} />)}
             {totalPages > 1 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
                 <p className="font-semibold text-muted">
                   Page {safeCurrentPage} of {totalPages}
                 </p>
@@ -308,6 +320,28 @@ export function ReviewFilters({
                   >
                     Previous
                   </button>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={pageInput}
+                      onChange={(event) => setPageInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") handlePageJump();
+                      }}
+                      placeholder={String(safeCurrentPage)}
+                      aria-label="Jump to page"
+                      className="w-16 rounded-full border border-purple-200 px-3 py-1 text-center text-sm text-ink outline-none focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePageJump}
+                      className="rounded-full bg-purple-600 px-3 py-1 text-sm font-bold text-white transition hover:bg-purple-700"
+                    >
+                      Go
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}

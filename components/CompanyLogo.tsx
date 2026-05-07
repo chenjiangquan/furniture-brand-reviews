@@ -7,7 +7,7 @@ export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logo
   const sizes = {
     sm: "h-11 w-11 text-base md:h-14 md:w-14 md:text-lg",
     md: "h-14 w-14 text-lg",
-    lg: "h-20 w-20 text-2xl md:h-[88px] md:w-[88px] md:text-3xl"
+    lg: "h-20 w-20 text-xl md:h-24 md:w-24 md:text-2xl"
   };
 
   if (logoUrl && !hasImageError) {
