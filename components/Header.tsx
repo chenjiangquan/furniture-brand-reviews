@@ -17,7 +17,7 @@ export async function Header() {
             width={320}
             height={102}
             priority
-            className="h-[34px] w-auto sm:h-[42px]"
+            className="h-[34px] w-auto sm:h-[62px]"
           />
         </Link>
 

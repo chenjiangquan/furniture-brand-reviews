@@ -2,10 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
-import { CompanyLogo } from "@/components/CompanyLogo";
-import { RatingStars } from "@/components/RatingStars";
 import { ReviewCard } from "@/components/ReviewCard";
 import { SearchBar } from "@/components/SearchBar";
+import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -17,9 +16,6 @@ export default async function HomePage() {
   const companies = await getCompanies();
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
   const latestReviews = await getLatestApprovedReviews();
-  const topRated = [...homepageCompanies]
-    .sort((a, b) => b.average_rating - a.average_rating || b.review_count - a.review_count)
-    .slice(0, 10);
 
   return (
     <div>
@@ -81,44 +77,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
-        <h2 className="text-2xl font-bold text-ink">Top 10 rated brands</h2>
-        <div className="mt-6 grid gap-3">
-          {topRated.map((company, index) => (
-            <article key={company.id} className="rounded-2xl border border-line bg-white p-4 shadow-sm">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex min-w-0 items-start gap-4 md:items-center">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wash text-sm font-bold text-trust-dark ring-1 ring-line">
-                    #{index + 1}
-                  </span>
-                  <CompanyLogo
-                    name={company.name}
-                    logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
-                    size="sm"
-                  />
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-bold text-ink">{company.name}</h3>
-                    <p className="mt-1 text-sm font-medium text-muted">{company.category}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <RatingStars rating={company.average_rating} size="small" />
-                    <span className="font-bold text-ink">{company.average_rating.toFixed(1)}</span>
-                    <span className="text-sm text-muted">· {company.review_count} reviews</span>
-                  </div>
-                  <Link
-                    href={`/review/${company.slug}`}
-                    className="inline-flex justify-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-trust-dark"
-                  >
-                    Read reviews
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      <TopBrandsToggle companies={homepageCompanies} />
 
       <section className="border-y border-line bg-ink">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
