@@ -158,7 +158,7 @@ export default async function CompanyReviewPage({ params }: Props) {
           aggregateRating: {
             "@type": "AggregateRating",
             ratingValue: company.average_rating.toFixed(1),
-            reviewCount: reviews.length
+            reviewCount: company.review_count
           }
         }
       : {})
@@ -230,7 +230,7 @@ export default async function CompanyReviewPage({ params }: Props) {
               </div>
 
               <div className="grid gap-4 rounded-xl border border-gray-200 bg-wash p-4 sm:min-w-72">
-                <Rating value={company.average_rating} count={reviews.length} size="medium" />
+                <Rating value={company.average_rating} count={company.review_count} size="medium" />
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <Link href={`/review/${company.slug}/write`} className="rounded-full bg-trust px-5 py-3 text-center font-bold text-white hover:bg-trust-dark">
                     Write a review
@@ -258,6 +258,7 @@ export default async function CompanyReviewPage({ params }: Props) {
             companyName={company.name}
             averageRating={company.average_rating}
             reviews={reviews}
+            totalReviewCount={company.review_count}
             breakdown={breakdown}
             brandSlug={company.slug}
             writeReviewHref={`/review/${company.slug}/write`}

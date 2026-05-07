@@ -35,18 +35,24 @@ function applyApprovedReviewStats(companies: Company[], approvedReviews: Approve
 
   return companies.map((company) => {
     const companyStats = stats.get(company.id);
+    const storedReviewCount = Number(company.review_count ?? 0);
+    const storedAverageRating = Number(company.average_rating ?? 0);
+
     if (!companyStats) {
       return {
         ...company,
-        average_rating: 0,
-        review_count: 0
+        average_rating: storedAverageRating,
+        review_count: storedReviewCount
       };
     }
 
+    const calculatedAverage = Math.round((companyStats.total / companyStats.count) * 10) / 10;
+    const shouldUseStoredStats = storedReviewCount > companyStats.count;
+
     return {
       ...company,
-      average_rating: Math.round((companyStats.total / companyStats.count) * 10) / 10,
-      review_count: companyStats.count
+      average_rating: shouldUseStoredStats ? storedAverageRating : calculatedAverage,
+      review_count: Math.max(storedReviewCount, companyStats.count)
     };
   });
 }

@@ -1,6 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCardActions } from "@/components/ReviewCardActions";
+import { formatReviewDate } from "@/lib/format";
 import type { ReviewWithReply } from "@/lib/types";
 
 function getInitials(name: string) {
@@ -36,7 +37,7 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
               </div>
             </div>
             <time className="text-sm text-muted" dateTime={review.created_at}>
-              {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(review.created_at))}
+              {formatReviewDate(review.created_at)}
             </time>
           </div>
           <h3 className="mt-4 text-lg font-bold text-ink">{review.title}</h3>

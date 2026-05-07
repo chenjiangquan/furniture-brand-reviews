@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/"
     },
-    sitemap: "https://furniturebrandreviews.com/sitemap.xml"
+    sitemap: "https://www.furniturebrandreviews.com/sitemap.xml"
   };
 }

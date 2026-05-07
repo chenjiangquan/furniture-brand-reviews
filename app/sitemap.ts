@@ -3,7 +3,8 @@ import { getSupabase } from "@/lib/supabase";
 
 export const revalidate = 3600;
 
-const baseUrl = "https://furniturebrandreviews.com";
+const baseUrl = "https://www.furniturebrandreviews.com";
+const sitemapPageSize = 1000;
 
 type SitemapCompany = {
   slug: string | null;
@@ -22,13 +23,10 @@ const staticRoutes = [
   { path: "/review-guidelines", changeFrequency: "monthly", priority: 0.6 },
   { path: "/report-review", changeFrequency: "monthly", priority: 0.5 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
-  { path: "/write-review", changeFrequency: "weekly", priority: 0.6 },
   { path: "/reviewer-rules", changeFrequency: "monthly", priority: 0.5 },
   { path: "/privacy-choices", changeFrequency: "monthly", priority: 0.4 },
   { path: "/help-centre", changeFrequency: "monthly", priority: 0.5 },
   { path: "/trust-and-safety", changeFrequency: "monthly", priority: 0.5 },
-  { path: "/claim-your-profile", changeFrequency: "monthly", priority: 0.5 },
-  { path: "/business-login", changeFrequency: "monthly", priority: 0.4 },
   { path: "/respond-to-reviews", changeFrequency: "monthly", priority: 0.5 },
   { path: "/brand-tools", changeFrequency: "monthly", priority: 0.5 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.4 },
@@ -71,21 +69,40 @@ async function getCompanies(): Promise<SitemapCompany[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("companies")
-    .select("slug, updated_at, created_at, status");
+  const companies: SitemapCompany[] = [];
+  let from = 0;
 
-  if (!error && data) return data;
+  while (true) {
+    const { data, error } = await supabase
+      .from("companies")
+      .select("slug, updated_at, created_at, status")
+      .range(from, from + sitemapPageSize - 1);
 
-  if (error && !isMissingColumnError(error.message)) {
-    return [];
+    if (!error && data) {
+      companies.push(...data);
+      if (data.length < sitemapPageSize) return companies;
+      from += sitemapPageSize;
+      continue;
+    }
+
+    if (error && !isMissingColumnError(error.message)) return companies;
+
+    const fallbackCompanies: SitemapCompany[] = [];
+    let fallbackFrom = 0;
+
+    while (true) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("companies")
+        .select("slug, created_at")
+        .range(fallbackFrom, fallbackFrom + sitemapPageSize - 1);
+
+      if (fallbackError || !fallbackData) return fallbackCompanies;
+
+      fallbackCompanies.push(...fallbackData);
+      if (fallbackData.length < sitemapPageSize) return fallbackCompanies;
+      fallbackFrom += sitemapPageSize;
+    }
   }
-
-  const { data: fallbackData, error: fallbackError } = await supabase.from("companies").select("slug, created_at");
-
-  if (fallbackError || !fallbackData) return [];
-
-  return fallbackData;
 }
 
 function getUniquePublishedCompanies(companies: SitemapCompany[]) {
@@ -123,7 +140,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const brandRoutes: MetadataRoute.Sitemap = companies.map((company) => ({
     url: `${baseUrl}/review/${company.slug?.trim()}`,
     lastModified: getLastModified(company, now),
-    changeFrequency: "weekly",
+    changeFrequency: "daily",
     priority: 0.8
   }));
 

@@ -93,10 +93,35 @@ async function getApprovedReviews(companyId: string): Promise<WidgetReview[]> {
 
 async function getApprovedRatingStats(companyId: string, company: WidgetCompany) {
   const supabase = getSupabase();
+  const storedRating = Number(company.average_rating ?? 0);
+  const storedReviewCount = Number(company.review_count ?? 0);
+
   if (!supabase) {
     return {
-      rating: Number(company.average_rating ?? 0),
-      reviewCount: Number(company.review_count ?? 0)
+      rating: storedRating,
+      reviewCount: storedReviewCount
+    };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("reviews")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId)
+    .eq("status", "approved");
+
+  if (countError) {
+    return {
+      rating: storedRating,
+      reviewCount: storedReviewCount
+    };
+  }
+
+  const reviewCount = count ?? storedReviewCount;
+
+  if (storedRating > 0 || reviewCount > 1000) {
+    return {
+      rating: storedRating,
+      reviewCount
     };
   }
 
@@ -108,16 +133,15 @@ async function getApprovedRatingStats(companyId: string, company: WidgetCompany)
 
   if (error || !data) {
     return {
-      rating: Number(company.average_rating ?? 0),
-      reviewCount: Number(company.review_count ?? 0)
+      rating: storedRating,
+      reviewCount
     };
   }
 
-  const reviewCount = data.length;
   const totalRating = data.reduce((sum, review) => sum + Number(review.rating ?? 0), 0);
 
   return {
-    rating: reviewCount ? Math.round((totalRating / reviewCount) * 10) / 10 : 0,
+    rating: data.length ? Math.round((totalRating / data.length) * 10) / 10 : storedRating,
     reviewCount
   };
 }

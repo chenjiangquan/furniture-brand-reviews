@@ -17,6 +17,7 @@ export function ReviewSummaryWithFilters({
   companyName,
   averageRating,
   reviews,
+  totalReviewCount,
   breakdown,
   brandSlug,
   writeReviewHref
@@ -24,6 +25,7 @@ export function ReviewSummaryWithFilters({
   companyName: string;
   averageRating: number;
   reviews: ReviewWithReply[];
+  totalReviewCount: number;
   breakdown: RatingBreakdownItem[];
   brandSlug: string;
   writeReviewHref: string;
@@ -53,7 +55,7 @@ export function ReviewSummaryWithFilters({
             <div className="mt-3">
               <RatingStars rating={averageRating || 0} size="large" />
             </div>
-            <p className="mt-2 text-base text-ink underline underline-offset-4">{reviews.length} total reviews</p>
+            <p className="mt-2 text-base text-ink underline underline-offset-4">{totalReviewCount} total reviews</p>
           </div>
           <div className="grid gap-2.5">
             {breakdown.map((item) => {
