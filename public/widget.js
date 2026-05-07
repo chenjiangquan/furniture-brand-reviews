@@ -59,7 +59,7 @@
       ".fbrw-micro *{box-sizing:border-box}" +
       ".fbrw-micro:hover{border-color:#8b5b91;background:#faf7ff}" +
       ".fbrw-micro-logo{display:flex;width:216px;max-width:100%;align-items:center;justify-content:center;min-width:0;font-size:14px;font-weight:900;color:#171744;text-align:center}" +
-      ".fbrw-micro-logo-img{display:block;width:100%;height:36px;max-width:216px;object-fit:contain}" +
+      ".fbrw-micro-logo-img{display:block;width:100%;height:60px;max-width:216px;object-fit:contain}" +
       ".fbrw-micro-logo-text{display:none}" +
       ".fbrw-micro-stars{display:flex;align-items:center;justify-content:center;gap:4px;line-height:1}" +
       ".fbrw-micro .fbrw-star-box-small{width:40px;height:40px;min-width:40px;border-radius:3px;font-size:22px}" +
@@ -68,7 +68,7 @@
       ".fbrw-micro-score strong{font-weight:950}" +
       ".fbrw-empty{border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:22px;color:#66657b}" +
       ".fbrw-error{border:1px solid #e3dff0;border-radius:16px;background:#faf7ff;padding:18px;color:#66657b;font-size:14px}" +
-      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:210px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:32px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:38px;height:38px;min-width:38px;font-size:21px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:38px;height:38px}.fbrw-micro-score{white-space:normal}}";
+      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:210px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:60px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:38px;height:38px;min-width:38px;font-size:21px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:38px;height:38px}.fbrw-micro-score{white-space:normal}}";
 
     document.head.appendChild(style);
   }
