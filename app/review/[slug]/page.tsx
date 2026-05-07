@@ -11,7 +11,7 @@ import type { ReviewWithReply } from "@/lib/types";
 
 type Props = { params: { slug: string } };
 
-const baseUrl = "https://furniturebrandreviews.com";
+const baseUrl = "https://www.furniturebrandreviews.com";
 
 const deliveryKeywords = ["delivery", "delivered", "shipping", "courier", "dispatch", "arrived", "late", "delay"];
 const complaintKeywords = ["complaint", "problem", "issue", "damaged", "refund", "return", "late", "delay", "poor", "broken", "fault"];
@@ -102,16 +102,20 @@ function buildFaq(companyName: string, reviews: ReviewWithReply[]) {
 }
 
 function JsonLd({ data }: { data: Record<string, unknown> }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const company = await getCompanyBySlug(params.slug);
   if (!company) return { title: "Brand not found" };
 
-  const title = `${company.name} Reviews | Furniture Brand Reviews`;
-  const description = `Read ${company.name} reviews from furniture customers. See ratings, delivery feedback, product quality comments, complaints, and customer experiences before you buy.`;
+  const title = `${company.name} Reviews | Customer Ratings & Furniture Reviews`;
+  const hasReviews = company.review_count > 0 && company.average_rating > 0;
+  const description = hasReviews
+    ? `Read ${company.review_count} customer reviews of ${company.name}, rated ${company.average_rating.toFixed(1)} out of 5. See delivery feedback, product quality comments and furniture shopping experiences.`
+    : `Read real customer reviews of ${company.name}. See ratings, delivery experiences, product quality feedback and independent furniture brand reviews.`;
   const canonical = `${baseUrl}/review/${company.slug}`;
+  const image = company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? "/logo.png";
 
   return {
     title: { absolute: title },
@@ -122,14 +126,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       siteName: "Furniture Brand Reviews",
-      images: [{ url: company.cover_image_url ?? company.logo_url ?? company.og_image_url ?? "/logo.png", alt: title }],
+      images: [{ url: image, alt: title }],
       type: "website"
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [company.cover_image_url ?? company.logo_url ?? company.og_image_url ?? "/logo.png"]
+      images: [image]
     }
   };
 }
@@ -153,12 +157,14 @@ export default async function CompanyReviewPage({ params }: Props) {
     "@type": "Organization",
     name: company.name,
     url: company.website,
-    ...(reviews.length > 0
+    ...(company.review_count > 0 && company.average_rating > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
             ratingValue: company.average_rating.toFixed(1),
-            reviewCount: company.review_count
+            reviewCount: company.review_count,
+            bestRating: "5",
+            worstRating: "1"
           }
         }
       : {})
@@ -194,11 +200,37 @@ export default async function CompanyReviewPage({ params }: Props) {
     }))
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: baseUrl
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Brands",
+        item: `${baseUrl}/brands`
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: company.name,
+        item: canonical
+      }
+    ]
+  };
+
   return (
     <div className="bg-white">
       <JsonLd data={organizationSchema} />
       {reviewSchema && <JsonLd data={reviewSchema} />}
       <JsonLd data={faqSchema} />
+      <JsonLd data={breadcrumbSchema} />
 
       <div className="border-b border-gray-200 bg-wash">
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:py-10 lg:px-10">
