@@ -7,16 +7,16 @@ export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logo
   const sizes = {
     sm: "h-11 w-11 text-base md:h-14 md:w-14 md:text-lg",
     md: "h-14 w-14 text-lg",
-    lg: "h-20 w-20 text-xl md:h-24 md:w-24 md:text-2xl"
+    lg: "h-[10rem] w-[10rem] min-h-[10rem] min-w-[10rem] text-2xl md:text-3xl"
   };
 
   if (logoUrl && !hasImageError) {
     return (
-      <span className={`${sizes[size]} relative block shrink-0 overflow-hidden rounded-2xl border border-line bg-white`}>
+      <span className={`${sizes[size]} flex-shrink-0 overflow-hidden rounded-xl border border-line bg-white`}>
         <img
           src={logoUrl}
           alt={`${name} logo`}
-          className="h-full w-full object-contain p-2"
+          className="h-full w-full object-contain"
           loading="lazy"
           onError={() => setHasImageError(true)}
         />
@@ -25,7 +25,7 @@ export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logo
   }
 
   return (
-    <span className={`${sizes[size]} grid shrink-0 place-items-center rounded-2xl bg-wash font-bold text-trust-dark ring-1 ring-line`}>
+    <span className={`${sizes[size]} flex flex-shrink-0 items-center justify-center rounded-xl bg-wash font-bold text-trust-dark ring-1 ring-line`}>
       {name.charAt(0).toUpperCase()}
     </span>
   );
