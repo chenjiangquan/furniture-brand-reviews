@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_noStore as noStore } from "next/cache";
 import { sampleCompanies, sampleReviews } from "@/lib/sample-data";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
 import type { Company, Review, ReviewWithReply } from "@/lib/types";
@@ -51,6 +52,7 @@ function applyApprovedReviewStats(companies: Company[], approvedReviews: Approve
 }
 
 export const getCompanies = cache(async (): Promise<Company[]> => {
+  noStore();
   const supabase = getSupabase();
   if (!supabase) return sampleCompanies.map(normalizeCompany);
 
@@ -80,6 +82,7 @@ export const getCompanies = cache(async (): Promise<Company[]> => {
 });
 
 export const getCompanyBySlug = cache(async (slug: string): Promise<Company | null> => {
+  noStore();
   const sampleCompany = sampleCompanies.find((company) => company.slug === slug) ?? null;
   const supabase = getSupabase();
   if (!supabase) return sampleCompany ? normalizeCompany(sampleCompany) : null;
@@ -113,6 +116,7 @@ export const getCompanyBySlug = cache(async (slug: string): Promise<Company | nu
 });
 
 export const getApprovedReviewsForCompany = cache(async (companyId: string): Promise<ReviewWithReply[]> => {
+  noStore();
   const supabase = getSupabase();
   if (!supabase) return sampleReviews.filter((review) => review.company_id === companyId);
 
@@ -150,6 +154,7 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
 });
 
 export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[]> => {
+  noStore();
   const supabase = getSupabase();
   if (!supabase) return sampleReviews;
 

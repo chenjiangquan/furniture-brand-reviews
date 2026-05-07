@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { ReviewCard } from "@/components/ReviewCard";
@@ -11,6 +11,7 @@ export type RatingValue = 5 | 4 | 3 | 2 | 1;
 export type RatingFilter = RatingValue[];
 
 const ratingOptions: RatingValue[] = [5, 4, 3, 2, 1];
+const reviewsPerPage = 10;
 
 const mentionKeywords = [
   "delivery",
@@ -76,6 +77,7 @@ export function ReviewFilters({
   const [localRatingFilter, setLocalRatingFilter] = useState<RatingFilter>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [activeMention, setActiveMention] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const supportsVerified = reviews.some((review) => Object.prototype.hasOwnProperty.call(review, "is_verified"));
   const activeRatingFilter = ratingFilter ?? localRatingFilter;
 
@@ -121,7 +123,14 @@ export function ReviewFilters({
     return sortReviews(filtered, sort);
   }, [activeRatingFilter, keyword, reviews, sort, verifiedOnly]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredReviews.length / reviewsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedReviews = filteredReviews.slice((safeCurrentPage - 1) * reviewsPerPage, safeCurrentPage * reviewsPerPage);
   const hasActiveFilters = keyword.trim() || activeRatingFilter.length > 0 || verifiedOnly || sort !== "recent";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeMention, activeRatingFilter, keyword, reviews, sort, verifiedOnly]);
 
   function clearFilters() {
     setKeyword("");
@@ -129,6 +138,7 @@ export function ReviewFilters({
     updateRatingFilter([]);
     setVerifiedOnly(false);
     setActiveMention("");
+    setCurrentPage(1);
   }
 
   function toggleMention(mention: string) {
@@ -282,7 +292,34 @@ export function ReviewFilters({
 
       <div className="grid gap-5">
         {filteredReviews.length > 0 ? (
-          filteredReviews.map((review) => <ReviewCard key={review.id} review={review} brandSlug={brandSlug} />)
+          <>
+            {paginatedReviews.map((review) => <ReviewCard key={review.id} review={review} brandSlug={brandSlug} />)}
+            {totalPages > 1 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
+                <p className="font-semibold text-muted">
+                  Page {safeCurrentPage} of {totalPages}
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={safeCurrentPage === 1}
+                    className="rounded-full border border-purple-200 bg-white px-4 py-2 font-bold text-ink transition hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={safeCurrentPage === totalPages}
+                    className="rounded-full border border-purple-200 bg-white px-4 py-2 font-bold text-ink transition hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : reviews.length > 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
             <p className="text-lg font-bold text-ink">

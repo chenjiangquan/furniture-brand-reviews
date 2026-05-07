@@ -112,7 +112,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
                   activeIndex === index ? "bg-wash" : "bg-white hover:bg-wash"
                 }`}
               >
-                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.website_screenshot_url ?? company.cover_image_url ?? company.og_image_url} size="sm" />
+                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-bold text-ink">{company.name}</span>
                   <span className="block truncate text-xs text-muted">{getDomain(company.website)}</span>

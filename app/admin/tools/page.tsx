@@ -20,9 +20,15 @@ export default async function AdminToolsPage({ searchParams }: { searchParams: {
         <form className="mt-6 grid gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm">
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Admin password</span>
-            <input name="password" type="password" className="rounded-xl border border-line px-4 py-3" />
+            <input
+              name="password"
+              type="password"
+              className="rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none transition focus:border-trust focus:ring-4 focus:ring-[#A855F7]/15"
+            />
           </label>
-          <button className="rounded-full bg-ink px-5 py-3 font-bold text-white">Open admin tools</button>
+          <button className="rounded-full bg-trust px-5 py-3 font-bold text-white transition hover:bg-trust-dark">
+            Open admin tools
+          </button>
         </form>
       </div>
     );
@@ -31,7 +37,7 @@ export default async function AdminToolsPage({ searchParams }: { searchParams: {
   const companies = await getCompanies();
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1400px] space-y-8 px-6 py-10">
       <div className="max-w-3xl">
         <h1 className="text-4xl font-bold tracking-tight text-ink">Admin tools</h1>
         <p className="mt-3 leading-7 text-muted">
@@ -44,7 +50,7 @@ export default async function AdminToolsPage({ searchParams }: { searchParams: {
           Embed Widget
         </Link>
       </div>
-      <div className="mt-8">
+      <div>
         <AdminTools password={password} companies={companies} />
       </div>
     </div>
