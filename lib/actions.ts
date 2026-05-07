@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getBrandImageCandidates } from "@/lib/brand-images";
 import { parseCsv } from "@/lib/csv";
+import { sendReviewApprovedEmail, sendReviewSubmittedEmail } from "@/lib/email";
 import { slugifyBrandName } from "@/lib/slug";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
 import type { Company } from "@/lib/types";
@@ -72,6 +73,16 @@ function isValidReviewStatus(status: string): status is "pending" | "approved" |
 
 function parseBooleanValue(value: string | undefined) {
   return ["true", "1", "yes", "y"].includes((value || "").toLowerCase());
+}
+
+async function markReviewEmailSent(reviewId: string, field: "submitted_email_sent_at" | "approved_email_sent_at") {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  const { error } = await supabase.from("reviews").update({ [field]: new Date().toISOString() }).eq("id", reviewId);
+  if (error) {
+    console.warn(`Could not update ${field}.`, formatSupabaseError(error));
+  }
 }
 
 export async function submitReview(slug: string, _state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
@@ -165,6 +176,12 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     return { ok: false, message: `Review insert failed: ${formatSupabaseError(error)}` };
   }
 
+  await sendReviewSubmittedEmail({
+    to: reviewerEmail,
+    reviewerName,
+    brandName: company.name
+  });
+
   revalidatePath("/admin/reviews");
 
   return {
@@ -197,7 +214,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, slug")
+    .select("id, name, slug")
     .eq("slug", pendingBrandSlug)
     .maybeSingle();
 
@@ -246,6 +263,12 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     return { ok: false, message: `Review insert failed: ${formatSupabaseError(error)}` };
   }
 
+  await sendReviewSubmittedEmail({
+    to: reviewerEmail,
+    reviewerName,
+    brandName: company?.name ?? brandName
+  });
+
   revalidatePath("/admin/reviews");
 
   return {
@@ -268,7 +291,7 @@ export async function moderateReview(formData: FormData) {
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
-    .select("id, company_id, pending_brand_name, pending_brand_slug, status, is_verified, companies(slug)")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, status, is_verified, reviewer_name, reviewer_email, companies(name, slug)")
     .eq("id", reviewId)
     .single();
 
@@ -281,6 +304,7 @@ export async function moderateReview(formData: FormData) {
   let updatePayload: { status?: "approved" | "rejected"; is_verified?: boolean; company_id?: string } | null = null;
 
   let approvedCompanySlug: string | null = null;
+  let approvedCompanyName: string | null = null;
 
   if (action === "approve") {
     updatePayload = { status: "approved" };
@@ -291,7 +315,7 @@ export async function moderateReview(formData: FormData) {
 
       const { data: existingCompany, error: existingCompanyError } = await supabase
         .from("companies")
-        .select("id, slug")
+        .select("id, name, slug")
         .eq("slug", pendingBrandSlug)
         .maybeSingle();
 
@@ -301,6 +325,7 @@ export async function moderateReview(formData: FormData) {
 
       let companyId = existingCompany?.id ?? null;
       approvedCompanySlug = existingCompany?.slug ?? pendingBrandSlug;
+      approvedCompanyName = existingCompany?.name ?? pendingBrandName;
 
       if (!companyId) {
         const { data: createdCompany, error: createCompanyError } = await supabase
@@ -312,7 +337,7 @@ export async function moderateReview(formData: FormData) {
             category: "Furniture brand",
             description: null
           })
-          .select("id, slug")
+          .select("id, name, slug")
           .single();
 
         if (createCompanyError || !createdCompany) {
@@ -321,6 +346,7 @@ export async function moderateReview(formData: FormData) {
 
         companyId = createdCompany.id;
         approvedCompanySlug = createdCompany.slug;
+        approvedCompanyName = createdCompany.name;
       }
 
       updatePayload = {
@@ -361,6 +387,22 @@ export async function moderateReview(formData: FormData) {
   revalidatePath("/brands");
 
   const companyRelation = Array.isArray(review.companies) ? review.companies[0] : review.companies;
+  if (action === "approve") {
+    const brandSlug = companyRelation?.slug ?? approvedCompanySlug;
+    const brandName = companyRelation?.name ?? approvedCompanyName ?? review.pending_brand_name ?? brandSlug;
+    if (brandSlug && brandName) {
+      const emailSent = await sendReviewApprovedEmail({
+        to: review.reviewer_email,
+        reviewerName: review.reviewer_name,
+        brandName,
+        brandSlug
+      });
+      if (emailSent) {
+        await markReviewEmailSent(reviewId, "approved_email_sent_at");
+      }
+    }
+  }
+
   if (companyRelation?.slug || approvedCompanySlug) {
     revalidatePath(`/review/${companyRelation?.slug ?? approvedCompanySlug}`);
   }
