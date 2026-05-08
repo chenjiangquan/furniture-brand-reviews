@@ -11,11 +11,13 @@ type Mode = "best" | "worst";
 
 function sortCompanies(companies: Company[], mode: Mode) {
   return [...companies]
-    .filter((company) => company.review_count > 0)
+    .filter((company) => Number(company.review_count || 0) >= 10 && Number(company.average_rating || 0) > 0)
     .sort((first, second) => {
       const ratingSort =
-        mode === "best" ? second.average_rating - first.average_rating : first.average_rating - second.average_rating;
-      return ratingSort || second.review_count - first.review_count;
+        mode === "best"
+          ? Number(second.average_rating || 0) - Number(first.average_rating || 0)
+          : Number(first.average_rating || 0) - Number(second.average_rating || 0);
+      return ratingSort || Number(second.review_count || 0) - Number(first.review_count || 0);
     })
     .slice(0, 10);
 }

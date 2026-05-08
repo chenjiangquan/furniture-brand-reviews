@@ -77,7 +77,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <TopBrandsToggle companies={homepageCompanies} />
+      <TopBrandsToggle companies={companies} />
 
       <section className="border-y border-line bg-ink">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
