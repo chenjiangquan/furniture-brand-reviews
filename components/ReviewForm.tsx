@@ -83,7 +83,7 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
   }
 
   return (
-    <form action={action} className="grid gap-5 rounded-2xl border border-line bg-white p-5 shadow-sm">
+    <form action={action} encType="multipart/form-data" className="grid gap-5 rounded-2xl border border-line bg-white p-5 shadow-sm">
       {state.message && (
         <div className={`rounded-xl p-4 text-sm font-semibold ${state.ok ? "bg-purple-50 text-trust-dark" : "bg-red-50 text-red-700"}`}>
           {state.message}

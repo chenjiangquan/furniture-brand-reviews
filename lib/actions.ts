@@ -85,6 +85,15 @@ function getReviewImages(formData: FormData) {
     .filter((value): value is File => value instanceof File && value.size > 0);
 }
 
+function getSafeFileName(name: string) {
+  const cleaned = name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return cleaned || `${crypto.randomUUID()}.jpg`;
+}
+
 async function uploadReviewImages(
   supabase: NonNullable<ReturnType<typeof getSupabase>>,
   files: File[],
@@ -109,7 +118,8 @@ async function uploadReviewImages(
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const safeExtension = ["jpg", "jpeg", "png", "webp"].includes(extension) ? extension : "jpg";
-    const path = `${folder}/${crypto.randomUUID()}.${safeExtension}`;
+    const safeFileName = getSafeFileName(file.name.replace(/\.[^.]+$/, ""));
+    const path = `${folder}/${safeFileName}-${crypto.randomUUID()}.${safeExtension}`;
     const { error: uploadError } = await supabase.storage.from("review-images").upload(path, file, {
       contentType: file.type,
       upsert: false
@@ -146,6 +156,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
   const proofImage = formData.get("proofImage");
   const reviewImages = getReviewImages(formData);
+  console.log("Selected review images:", reviewImages.length);
 
   if (!rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
     return { ok: false, message: "Please complete all required fields before submitting." };
@@ -188,6 +199,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   if (!reviewImageUpload.ok) {
     return { ok: false, message: reviewImageUpload.message };
   }
+  console.log("Uploaded review image urls:", reviewImageUpload.urls);
 
   let proofImageUrl: string | null = reviewImageUpload.urls[0] ?? null;
   if (proofImage instanceof File && proofImage.size > 0) {
@@ -215,6 +227,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     status: "pending",
     is_verified: false
   };
+  console.log("Inserted review payload review_image_urls:", reviewPayload.review_image_urls);
 
   const { error } = await supabase.from("reviews").insert(reviewPayload);
 
@@ -259,6 +272,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   const reviewerEmail = String(formData.get("email") ?? "").trim();
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
   const reviewImages = getReviewImages(formData);
+  console.log("Selected review images:", reviewImages.length);
 
   if (!brandName || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
     return { ok: false, message: "Please complete all required fields before submitting." };
@@ -292,6 +306,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   if (!reviewImageUpload.ok) {
     return { ok: false, message: reviewImageUpload.message };
   }
+  console.log("Uploaded review image urls:", reviewImageUpload.urls);
 
   const reviewPayload = {
     company_id: company?.id ?? null,
@@ -308,6 +323,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     status: "pending",
     is_verified: false
   };
+  console.log("Inserted review payload review_image_urls:", reviewPayload.review_image_urls);
 
   const { error } = await supabase.from("reviews").insert(reviewPayload);
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { RatingStars, getRatingColour } from "@/components/RatingStars";
 import { ReviewFilters, type RatingFilter, type RatingValue } from "@/components/ReviewFilters";
+import { ReviewImageGallery } from "@/components/ReviewImageGallery";
 import type { ReviewWithReply } from "@/lib/types";
 
 type RatingBreakdownItem = {
@@ -103,24 +104,7 @@ export function ReviewSummaryWithFilters({
               <p className="mt-1 text-sm text-muted">Photos shared by customers in approved reviews.</p>
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {customerPhotos.map((imageUrl, index) => (
-              <a
-                key={`${imageUrl}-${index}`}
-                href={imageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="block overflow-hidden rounded-xl border border-line bg-wash"
-              >
-                <img
-                  src={imageUrl}
-                  alt={`Customer photo ${index + 1}`}
-                  className="h-24 w-full object-cover transition hover:scale-105 sm:h-28"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
+          <ReviewImageGallery images={customerPhotos} maxImages={12} variant="summary" />
         </section>
       )}
 
