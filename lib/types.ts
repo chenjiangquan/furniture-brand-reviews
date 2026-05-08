@@ -31,6 +31,7 @@ export type Review = {
   reviewer_email: string;
   order_number: string | null;
   proof_image_url: string | null;
+  review_image_urls: string[] | null;
   status: ReviewStatus;
   is_verified: boolean;
   created_at: string;

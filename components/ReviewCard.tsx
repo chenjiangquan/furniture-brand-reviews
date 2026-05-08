@@ -42,6 +42,26 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
           </div>
           <h3 className="mt-4 text-lg font-bold text-ink">{review.title}</h3>
           <p className="mt-2 leading-7 text-muted">{review.content}</p>
+          {review.review_image_urls && review.review_image_urls.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {review.review_image_urls.slice(0, 4).map((imageUrl, index) => (
+                <a
+                  key={`${imageUrl}-${index}`}
+                  href={imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block overflow-hidden rounded-xl border border-line bg-wash"
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`Review photo ${index + 1}`}
+                    className="h-24 w-full object-cover transition hover:scale-105"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          )}
           {review.company_replies?.map((reply) => (
             <div key={reply.id} className="mt-5 rounded-xl border border-line bg-wash p-4">
               <p className="text-sm font-bold text-ink">Company reply</p>

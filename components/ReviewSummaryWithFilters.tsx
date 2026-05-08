@@ -31,6 +31,7 @@ export function ReviewSummaryWithFilters({
   writeReviewHref: string;
 }) {
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>([]);
+  const customerPhotos = reviews.flatMap((review) => review.review_image_urls ?? []).slice(0, 12);
 
   function toggleRatingFilter(rating: RatingValue) {
     setRatingFilter((current) => (current.includes(rating) ? current.filter((item) => item !== rating) : [...current, rating]));
@@ -93,6 +94,35 @@ export function ReviewSummaryWithFilters({
           <p>Reviews are moderated before publishing. Companies cannot pay to remove reviews.</p>
         </div>
       </section>
+
+      {customerPhotos.length > 0 && (
+        <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-ink">Customer photos</h2>
+              <p className="mt-1 text-sm text-muted">Photos shared by customers in approved reviews.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {customerPhotos.map((imageUrl, index) => (
+              <a
+                key={`${imageUrl}-${index}`}
+                href={imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-xl border border-line bg-wash"
+              >
+                <img
+                  src={imageUrl}
+                  alt={`Customer photo ${index + 1}`}
+                  className="h-24 w-full object-cover transition hover:scale-105 sm:h-28"
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

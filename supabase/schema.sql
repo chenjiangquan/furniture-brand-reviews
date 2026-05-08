@@ -35,6 +35,10 @@ insert into storage.buckets (id, name, public)
 values ('brand-logos', 'brand-logos', true)
 on conflict (id) do update set public = true;
 
+insert into storage.buckets (id, name, public)
+values ('review-images', 'review-images', true)
+on conflict (id) do update set public = true;
+
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
   company_id uuid references companies(id) on delete cascade,
@@ -47,6 +51,7 @@ create table if not exists reviews (
   reviewer_email text not null,
   order_number text,
   proof_image_url text,
+  review_image_urls text[] default '{}',
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   is_verified boolean not null default false,
   submitted_email_sent_at timestamptz,
@@ -56,6 +61,7 @@ create table if not exists reviews (
 
 alter table reviews add column if not exists order_number text;
 alter table reviews add column if not exists proof_image_url text;
+alter table reviews add column if not exists review_image_urls text[] default '{}';
 alter table reviews add column if not exists is_verified boolean not null default false;
 alter table reviews add column if not exists status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'));
 alter table reviews add column if not exists pending_brand_name text;
@@ -140,6 +146,14 @@ create policy "Public can read company replies" on company_replies
       and reviews.status = 'approved'
     )
   );
+
+drop policy if exists "Public can upload review images" on storage.objects;
+create policy "Public can upload review images" on storage.objects
+  for insert with check (bucket_id = 'review-images');
+
+drop policy if exists "Public can read review images" on storage.objects;
+create policy "Public can read review images" on storage.objects
+  for select using (bucket_id = 'review-images');
 
 create or replace function refresh_company_rating()
 returns trigger as $$

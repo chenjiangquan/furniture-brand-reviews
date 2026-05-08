@@ -75,6 +75,58 @@ function parseBooleanValue(value: string | undefined) {
   return ["true", "1", "yes", "y"].includes((value || "").toLowerCase());
 }
 
+const allowedReviewImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const maxReviewImageCount = 5;
+const maxReviewImageSize = 5 * 1024 * 1024;
+
+function getReviewImages(formData: FormData) {
+  return formData
+    .getAll("reviewImages")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+}
+
+async function uploadReviewImages(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  files: File[],
+  folder: string
+): Promise<{ ok: true; urls: string[] } | { ok: false; message: string }> {
+  if (files.length === 0) return { ok: true, urls: [] };
+
+  if (files.length > maxReviewImageCount) {
+    return { ok: false, message: "Please upload no more than 5 photos." };
+  }
+
+  const urls: string[] = [];
+
+  for (const file of files) {
+    if (!allowedReviewImageTypes.has(file.type)) {
+      return { ok: false, message: "Review photos must be JPEG, PNG or WebP images." };
+    }
+
+    if (file.size > maxReviewImageSize) {
+      return { ok: false, message: "Each review photo must be 5MB or smaller." };
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExtension = ["jpg", "jpeg", "png", "webp"].includes(extension) ? extension : "jpg";
+    const path = `${folder}/${crypto.randomUUID()}.${safeExtension}`;
+    const { error: uploadError } = await supabase.storage.from("review-images").upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+
+    if (uploadError) {
+      console.error("Supabase review image upload failed", uploadError);
+      return { ok: false, message: "Review image upload failed. Please try again." };
+    }
+
+    const { data } = supabase.storage.from("review-images").getPublicUrl(path);
+    urls.push(data.publicUrl);
+  }
+
+  return { ok: true, urls };
+}
+
 async function markReviewEmailSent(reviewId: string, field: "submitted_email_sent_at" | "approved_email_sent_at") {
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
@@ -93,6 +145,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   const reviewerEmail = String(formData.get("email") ?? "").trim();
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
   const proofImage = formData.get("proofImage");
+  const reviewImages = getReviewImages(formData);
 
   if (!rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
     return { ok: false, message: "Please complete all required fields before submitting." };
@@ -131,7 +184,12 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     };
   }
 
-  let proofImageUrl: string | null = null;
+  const reviewImageUpload = await uploadReviewImages(supabase, reviewImages, `${company.slug}/${Date.now()}`);
+  if (!reviewImageUpload.ok) {
+    return { ok: false, message: reviewImageUpload.message };
+  }
+
+  let proofImageUrl: string | null = reviewImageUpload.urls[0] ?? null;
   if (proofImage instanceof File && proofImage.size > 0) {
     const extension = proofImage.name.split(".").pop() || "jpg";
     const path = `${company.slug}/${crypto.randomUUID()}.${extension}`;
@@ -153,6 +211,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     reviewer_email: reviewerEmail,
     order_number: orderNumber,
     proof_image_url: proofImageUrl,
+    review_image_urls: reviewImageUpload.urls,
     status: "pending",
     is_verified: false
   };
@@ -199,6 +258,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   const reviewerName = String(formData.get("name") ?? "").trim();
   const reviewerEmail = String(formData.get("email") ?? "").trim();
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
+  const reviewImages = getReviewImages(formData);
 
   if (!brandName || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
     return { ok: false, message: "Please complete all required fields before submitting." };
@@ -228,6 +288,11 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     return { ok: false, message: `Brand lookup failed: ${formatSupabaseError(companyError)}` };
   }
 
+  const reviewImageUpload = await uploadReviewImages(supabase, reviewImages, `${pendingBrandSlug}/${Date.now()}`);
+  if (!reviewImageUpload.ok) {
+    return { ok: false, message: reviewImageUpload.message };
+  }
+
   const reviewPayload = {
     company_id: company?.id ?? null,
     pending_brand_name: company ? null : brandName,
@@ -238,7 +303,8 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     reviewer_name: reviewerName,
     reviewer_email: reviewerEmail,
     order_number: orderNumber,
-    proof_image_url: null,
+    proof_image_url: reviewImageUpload.urls[0] ?? null,
+    review_image_urls: reviewImageUpload.urls,
     status: "pending",
     is_verified: false
   };

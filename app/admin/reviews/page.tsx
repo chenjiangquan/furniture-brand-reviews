@@ -43,6 +43,7 @@ export default async function AdminReviewsPage({
               <th className="px-4 py-3">Brand</th>
               <th className="px-4 py-3">Rating</th>
               <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Photos</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">Actions</th>
@@ -54,6 +55,24 @@ export default async function AdminReviewsPage({
                 <td className="px-4 py-3">{review.companies?.name ?? review.pending_brand_name ?? review.company_id}</td>
                 <td className="px-4 py-3">{review.rating}</td>
                 <td className="px-4 py-3 font-semibold">{review.title}</td>
+                <td className="px-4 py-3">
+                  {review.review_image_urls && review.review_image_urls.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {review.review_image_urls.slice(0, 4).map((imageUrl, index) => (
+                        <a key={`${imageUrl}-${index}`} href={imageUrl} target="_blank" rel="noreferrer">
+                          <img
+                            src={imageUrl}
+                            alt={`Review photo ${index + 1}`}
+                            className="h-12 w-12 rounded-lg border border-line object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted">No photos</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{review.reviewer_email}</td>
                 <td className="px-4 py-3">{new Intl.DateTimeFormat("en-GB").format(new Date(review.created_at))}</td>
                 <td className="px-4 py-3">
@@ -74,7 +93,7 @@ export default async function AdminReviewsPage({
             ))}
             {password && reviews.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted">
                   No pending reviews found.
                 </td>
               </tr>
