@@ -385,56 +385,108 @@ function BrandImageManager({ password, companies }: { password: string; companie
   );
 }
 
-function ManualBrandForm({ password }: { password: string }) {
+function ManualBrandForm({ password, companies }: { password: string; companies: Company[] }) {
   const [state, action] = useFormState(upsertCompanyFromAdmin, initialState);
+  const [selectedSlug, setSelectedSlug] = useState("");
+  const [brandSearch, setBrandSearch] = useState("");
+  const selectedCompany = useMemo(
+    () => companies.find((company) => company.slug === selectedSlug) ?? null,
+    [companies, selectedSlug]
+  );
+  const filteredBrandOptions = useMemo(() => {
+    const needle = brandSearch.trim().toLowerCase();
+    if (!needle) return companies;
+
+    return companies.filter((company) =>
+      `${company.name} ${company.slug} ${company.website}`.toLowerCase().includes(needle)
+    );
+  }, [brandSearch, companies]);
 
   return (
     <section className={cardClass}>
       <h2 className="text-2xl font-bold text-ink">Add or update brand</h2>
-      <form action={action} className="mt-5 grid gap-4">
+      <label className="mt-5 grid gap-2">
+        <span className="font-semibold text-ink">Edit existing brand</span>
+        <input
+          value={brandSearch}
+          onChange={(event) => setBrandSearch(event.target.value)}
+          placeholder="Search brand by name, slug or website..."
+          className={inputClass}
+        />
+        <select
+          value={selectedSlug}
+          onChange={(event) => setSelectedSlug(event.target.value)}
+          className={inputClass}
+        >
+          <option value="">Create a new brand</option>
+          {selectedCompany && !filteredBrandOptions.some((company) => company.slug === selectedCompany.slug) && (
+            <option value={selectedCompany.slug}>
+              {selectedCompany.name} ({selectedCompany.slug})
+            </option>
+          )}
+          {filteredBrandOptions.map((company) => (
+            <option key={company.id} value={company.slug}>
+              {company.name} ({company.slug})
+            </option>
+          ))}
+        </select>
+        {brandSearch.trim() && filteredBrandOptions.length === 0 && (
+          <p className="text-sm font-semibold text-muted">No matching brands found.</p>
+        )}
+      </label>
+      <form key={selectedCompany?.id ?? "new-brand"} action={action} className="mt-5 grid gap-4">
         <input type="hidden" name="password" value={password} />
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Brand name</span>
-            <input name="name" required className={inputClass} />
+            <input name="name" required defaultValue={selectedCompany?.name ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Slug</span>
-            <input name="slug" required className={inputClass} />
+            <input name="slug" required defaultValue={selectedCompany?.slug ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Website</span>
-            <input name="website" required type="url" className={inputClass} />
+            <input name="website" required type="url" defaultValue={selectedCompany?.website ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Category</span>
-            <input name="category" required className={inputClass} />
+            <input name="category" required defaultValue={selectedCompany?.category ?? ""} className={inputClass} />
           </label>
         </div>
         <label className="grid gap-2">
           <span className="font-semibold text-ink">Description</span>
-          <textarea name="description" rows={4} className={textareaClass} />
+          <textarea name="description" rows={4} defaultValue={selectedCompany?.description ?? ""} className={textareaClass} />
+        </label>
+        <label className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-sm font-semibold text-ink">
+          <input
+            type="checkbox"
+            name="is_claimed"
+            defaultChecked={Boolean(selectedCompany?.is_claimed)}
+            className="h-4 w-4 rounded border-purple-200 text-purple-700 focus:ring-2 focus:ring-purple-200"
+          />
+          Claimed business
         </label>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Logo URL optional</span>
-            <input name="logo_url" type="url" className={inputClass} />
+            <input name="logo_url" type="url" defaultValue={selectedCompany?.logo_url ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Favicon URL optional</span>
-            <input name="favicon_url" type="url" className={inputClass} />
+            <input name="favicon_url" type="url" defaultValue={selectedCompany?.favicon_url ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">OG Image URL optional</span>
-            <input name="og_image_url" type="url" className={inputClass} />
+            <input name="og_image_url" type="url" defaultValue={selectedCompany?.og_image_url ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Cover Image URL optional</span>
-            <input name="cover_image_url" type="url" className={inputClass} />
+            <input name="cover_image_url" type="url" defaultValue={selectedCompany?.cover_image_url ?? ""} className={inputClass} />
           </label>
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Website Screenshot URL optional</span>
-            <input name="website_screenshot_url" type="url" className={inputClass} />
+            <input name="website_screenshot_url" type="url" defaultValue={selectedCompany?.website_screenshot_url ?? ""} className={inputClass} />
           </label>
         </div>
         <div>
@@ -548,7 +600,7 @@ export function AdminTools({ password, companies }: { password: string; companie
         </button>
       </div>
 
-      <ManualBrandForm password={password} />
+      <ManualBrandForm password={password} companies={companies} />
 
       <BrandImageManager password={password} companies={companies} />
 

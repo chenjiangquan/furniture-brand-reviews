@@ -5,6 +5,7 @@ create table if not exists companies (
   name text not null,
   slug text not null unique,
   status text not null default 'published' check (status in ('published', 'draft')),
+  is_claimed boolean not null default false,
   website text not null,
   category text not null,
   description text,
@@ -20,6 +21,7 @@ create table if not exists companies (
 
 alter table companies add column if not exists logo_url text;
 alter table companies add column if not exists status text not null default 'published' check (status in ('published', 'draft'));
+alter table companies add column if not exists is_claimed boolean not null default false;
 alter table companies add column if not exists favicon_url text;
 alter table companies add column if not exists og_image_url text;
 alter table companies add column if not exists cover_image_url text;

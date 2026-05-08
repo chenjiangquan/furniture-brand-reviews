@@ -5,6 +5,7 @@ export type Company = {
   name: string;
   slug: string;
   status?: "published" | "draft" | null;
+  is_claimed?: boolean | null;
   website: string;
   category: string;
   description: string | null;

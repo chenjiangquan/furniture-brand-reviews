@@ -240,7 +240,9 @@ export default async function CompanyReviewPage({ params }: Props) {
                 <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="lg" />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-muted ring-1 ring-line">Unclaimed</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${company.is_claimed ? "bg-purple-50 text-trust-dark ring-purple-200" : "bg-white text-muted ring-line"}`}>
+                      {company.is_claimed ? "✓ Claimed Business" : "Unclaimed"}
+                    </span>
                     <span className="rounded-full bg-wash px-3 py-1 text-xs font-bold text-trust-dark">{company.category}</span>
                   </div>
                   <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink md:text-5xl">{company.name}</h1>
@@ -369,7 +371,7 @@ export default async function CompanyReviewPage({ params }: Props) {
                 </p>
                 <p className="flex items-center gap-2 text-muted">
                   <CheckCircle2 size={16} />
-                  Unclaimed profile
+                  {company.is_claimed ? "Claimed Business" : "Unclaimed profile"}
                 </p>
               </div>
               <div className="rounded-xl bg-wash p-4">

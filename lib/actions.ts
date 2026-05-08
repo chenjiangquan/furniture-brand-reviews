@@ -574,7 +574,8 @@ export async function upsertCompanyFromAdmin(_state: ImportState, formData: Form
     favicon_url: String(formData.get("favicon_url") ?? "").trim() || null,
     og_image_url: String(formData.get("og_image_url") ?? "").trim() || null,
     cover_image_url: String(formData.get("cover_image_url") ?? "").trim() || null,
-    website_screenshot_url: String(formData.get("website_screenshot_url") ?? "").trim() || null
+    website_screenshot_url: String(formData.get("website_screenshot_url") ?? "").trim() || null,
+    is_claimed: formData.get("is_claimed") === "on"
   };
 
   if (!payload.name || !payload.slug || !payload.website || !payload.category) {
