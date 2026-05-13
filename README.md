@@ -37,6 +37,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ADMIN_PASSWORD=your-admin-password
+FBR_IMPORT_API_KEY=your-secure-import-api-key
 ```
 
 说明：
@@ -150,6 +151,46 @@ ADMIN_PASSWORD=your-admin-password
 /admin/reviews?password=你的 ADMIN_PASSWORD
 /sitemap.xml
 ```
+
+## Google Sheets Review Import API
+
+接口：
+
+```text
+POST /api/admin/reviews/import
+```
+
+鉴权请求头：
+
+```text
+Authorization: Bearer YOUR_API_KEY_HERE
+```
+
+API key 来自环境变量：
+
+```bash
+FBR_IMPORT_API_KEY=your_secure_import_api_key_here
+```
+
+测试 curl：
+
+```bash
+curl -X POST https://www.furniturebrandreviews.com/api/admin/reviews/import \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY_HERE" \
+  -d '{
+    "brandId": "weilai-concept",
+    "brandName": "Weilai Concept",
+    "rating": 5,
+    "title": "Test review",
+    "body": "This is a test review from Google Sheets sync. The API import is working correctly.",
+    "reviewerName": "Test User",
+    "sourceType": "manual/test",
+    "reviewDate": "2026-05-11"
+  }'
+```
+
+说明：项目当前 `reviews.status` 使用 `approved` 表示前台已发布评论，因此导入成功的评论会写入 `status = 'approved'`。
 
 ## 常用命令
 
