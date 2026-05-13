@@ -3,7 +3,7 @@ import { getSupabase } from "@/lib/supabase";
 
 export const revalidate = 3600;
 
-const baseUrl = "https://www.furniturebrandreviews.com";
+const baseUrl = "https://furniturebrandreviews.com";
 const sitemapPageSize = 1000;
 
 type SitemapCompany = {
@@ -13,11 +13,20 @@ type SitemapCompany = {
   status?: string | null;
 };
 
+type SitemapBlog = {
+  slug: string | null;
+  updated_at?: string | null;
+  published_at?: string | null;
+  created_at?: string | null;
+  status?: string | null;
+};
+
 const blockedSlugs = new Set(["test", "demo", "undefined", "null"]);
 
 const staticRoutes = [
   { path: "", changeFrequency: "daily", priority: 1 },
   { path: "/brands", changeFrequency: "daily", priority: 0.9 },
+  { path: "/blog", changeFrequency: "weekly", priority: 0.7 },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
   { path: "/how-it-works", changeFrequency: "monthly", priority: 0.5 },
   { path: "/review-guidelines", changeFrequency: "monthly", priority: 0.6 },
@@ -65,6 +74,14 @@ function getLastModified(company: SitemapCompany, fallbackDate: Date) {
   return Number.isNaN(parsedDate.getTime()) ? fallbackDate : parsedDate;
 }
 
+function getBlogLastModified(blog: SitemapBlog, fallbackDate: Date) {
+  const dateValue = blog.updated_at ?? blog.published_at ?? blog.created_at;
+  if (!dateValue) return fallbackDate;
+
+  const parsedDate = new Date(dateValue);
+  return Number.isNaN(parsedDate.getTime()) ? fallbackDate : parsedDate;
+}
+
 async function getCompanies(): Promise<SitemapCompany[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
@@ -105,6 +122,20 @@ async function getCompanies(): Promise<SitemapCompany[]> {
   }
 }
 
+async function getBlogs(): Promise<SitemapBlog[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("blogs")
+    .select("slug, updated_at, published_at, status")
+    .eq("status", "published");
+
+  if (error || !data) return [];
+
+  return data;
+}
+
 function getUniquePublishedCompanies(companies: SitemapCompany[]) {
   const seenSlugs = new Set<string>();
 
@@ -130,6 +161,7 @@ function getUniquePublishedCompanies(companies: SitemapCompany[]) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const companies = getUniquePublishedCompanies(await getCompanies());
+  const blogs = (await getBlogs()).filter((blog) => isValidSlug(blog.slug) && blog.status === "published");
   const staticSitemapRoutes: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
     url: `${baseUrl}${route.path}`,
     lastModified: now,
@@ -144,5 +176,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8
   }));
 
-  return [...staticSitemapRoutes, ...brandRoutes];
+  const blogRoutes: MetadataRoute.Sitemap = blogs.map((blog) => ({
+    url: `${baseUrl}/blog/${blog.slug?.trim()}`,
+    lastModified: getBlogLastModified(blog, now),
+    changeFrequency: "weekly",
+    priority: 0.6
+  }));
+
+  return [...staticSitemapRoutes, ...brandRoutes, ...blogRoutes];
 }

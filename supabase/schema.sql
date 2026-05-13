@@ -89,13 +89,42 @@ create table if not exists business_claims (
   created_at timestamptz not null default now()
 );
 
+create table if not exists blogs (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  slug text not null unique,
+  excerpt text,
+  content text,
+  seo_title text,
+  seo_description text,
+  cover_image_url text,
+  category text,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table blogs add column if not exists excerpt text;
+alter table blogs add column if not exists content text;
+alter table blogs add column if not exists seo_title text;
+alter table blogs add column if not exists seo_description text;
+alter table blogs add column if not exists cover_image_url text;
+alter table blogs add column if not exists category text;
+alter table blogs add column if not exists status text not null default 'draft' check (status in ('draft', 'published'));
+alter table blogs add column if not exists published_at timestamptz;
+alter table blogs add column if not exists created_at timestamptz not null default now();
+alter table blogs add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists reviews_company_status_idx on reviews(company_id, status);
 create index if not exists reviews_status_created_idx on reviews(status, created_at);
+create index if not exists blogs_status_published_idx on blogs(status, published_at);
 
 alter table companies enable row level security;
 alter table reviews enable row level security;
 alter table company_replies enable row level security;
 alter table business_claims enable row level security;
+alter table blogs enable row level security;
 
 drop policy if exists "Public can read companies" on companies;
 create policy "Public can read companies" on companies
@@ -109,6 +138,10 @@ drop policy if exists "MVP admin can update companies" on companies;
 create policy "MVP admin can update companies" on companies
   for update using (true)
   with check (true);
+
+drop policy if exists "Public can read published blogs" on blogs;
+create policy "Public can read published blogs" on blogs
+  for select using (status = 'published');
 
 drop policy if exists "Public can read approved reviews" on reviews;
 create policy "Public can read approved reviews" on reviews

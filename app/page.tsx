@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
-import { ReviewCard } from "@/components/ReviewCard";
+import { LatestReviewCard } from "@/components/LatestReviewCard";
+import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
+import { formatBlogDate, getLatestBlogs } from "@/lib/blogs";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -16,6 +18,7 @@ export default async function HomePage() {
   const companies = await getCompanies();
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
   const latestReviews = await getLatestApprovedReviews();
+  const latestBlogs = await getLatestBlogs(4);
 
   return (
     <div>
@@ -69,15 +72,69 @@ export default async function HomePage() {
       <section className="bg-wash">
         <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
           <h2 className="text-2xl font-bold text-ink">Latest reviews</h2>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {latestReviews.slice(0, 4).map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
+          {latestReviews.length > 0 ? (
+            <LatestReviewsCarousel count={latestReviews.length}>
+              {latestReviews.map((review) => (
+                <LatestReviewCard key={review.id} review={review} />
+              ))}
+            </LatestReviewsCarousel>
+          ) : null}
         </div>
       </section>
 
       <TopBrandsToggle companies={companies} />
+
+      {latestBlogs.length > 0 ? (
+        <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold text-ink">Latest furniture blog</h2>
+            <Link href="/blog" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
+              View all <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {latestBlogs.map((blog) => (
+              <article
+                key={blog.id}
+                className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm"
+              >
+                <Link
+                  href={`/blog/${blog.slug}`}
+                  className="block aspect-[16/9] bg-gradient-to-br from-purple-100 via-wash to-trust/25"
+                  style={
+                    blog.cover_image_url
+                      ? {
+                          backgroundImage: `url(${blog.cover_image_url})`,
+                          backgroundPosition: "center",
+                          backgroundSize: "cover"
+                        }
+                      : undefined
+                  }
+                  aria-label={`Read ${blog.title}`}
+                />
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted">
+                    {blog.category ? <span className="text-trust-dark">{blog.category}</span> : null}
+                    <span>{formatBlogDate(blog.published_at ?? blog.created_at)}</span>
+                  </div>
+                  <h3 className="text-lg font-bold leading-tight text-ink">
+                    <Link href={`/blog/${blog.slug}`} className="hover:text-trust-dark">
+                      {blog.title}
+                    </Link>
+                  </h3>
+                  {blog.excerpt ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{blog.excerpt}</p> : null}
+                  <Link
+                    href={`/blog/${blog.slug}`}
+                    className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-bold text-trust-dark"
+                  >
+                    Read article <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="border-y border-line bg-ink">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
