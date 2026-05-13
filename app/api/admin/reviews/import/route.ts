@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type ImportReviewPayload = {
   brandId?: unknown;
   brandName?: unknown;
@@ -33,6 +35,10 @@ function parseReviewDate(value: unknown) {
   if (Number.isNaN(date.getTime())) return null;
 
   return date.toISOString();
+}
+
+export async function GET() {
+  return jsonResponse({ success: true, message: "Review import API is live" }, 200);
 }
 
 export async function POST(request: Request) {
