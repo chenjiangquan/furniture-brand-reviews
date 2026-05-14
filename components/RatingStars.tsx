@@ -17,17 +17,17 @@ export function getRatingColour(rating: number) {
 
 const sizeStyles = {
   small: {
-    box: "h-[18px] w-[18px]",
+    box: "h-[19px] w-[19px]",
     icon: 12,
     text: "text-sm"
   },
   medium: {
-    box: "h-[22px] w-[22px]",
+    box: "h-[23px] w-[23px]",
     icon: 15,
     text: "text-base"
   },
   large: {
-    box: "h-[28px] w-[28px]",
+    box: "h-[29px] w-[29px]",
     icon: 19,
     text: "text-lg"
   }
@@ -55,7 +55,7 @@ export function RatingStars({
           return (
             <span
               key={star}
-              className={`${styles.box} relative grid place-items-center overflow-hidden rounded-[3px] border-0 bg-[#E5E7EB]`}
+              className={`${styles.box} relative grid place-items-center overflow-hidden rounded-none border-0 bg-[#E5E7EB]`}
             >
               <Star size={styles.icon} fill="#FFFFFF" color="#FFFFFF" strokeWidth={1.8} />
               <span

@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCardActions } from "@/components/ReviewCardActions";
 import { formatReviewDate } from "@/lib/format";
@@ -15,6 +16,7 @@ function getInitials(name: string) {
 
 export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
   const brandSlug = review.companies?.slug ?? "";
+  const brandName = review.companies?.name;
   const firstImage = review.review_image_urls?.[0];
 
   return (
@@ -30,6 +32,14 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold text-ink">{review.reviewer_name}</p>
+              {brandSlug && brandName ? (
+                <Link
+                  href={`/review/${brandSlug}`}
+                  className="mt-1 block truncate text-xs font-bold text-trust-dark hover:underline"
+                >
+                  Review for {brandName}
+                </Link>
+              ) : null}
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <RatingStars rating={review.rating} size="small" />
                 {review.is_verified && (
