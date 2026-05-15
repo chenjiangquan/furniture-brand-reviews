@@ -26,7 +26,7 @@
       ".fbrw-logo{display:flex;flex-direction:column;align-items:flex-start;gap:12px;font-weight:850;font-size:18px;line-height:1.2;color:#171744;max-width:220px}" +
       ".fbrw-logo-img{display:block;width:100%;height:auto;max-width:200px;object-fit:contain}" +
       ".fbrw-logo-fallback{display:none;font-weight:900;letter-spacing:-.01em;color:#171744}" +
-      ".fbrw-brand{font-size:13px;color:#66657b;margin:0}" +
+      ".fbrw-brand{font-size:16px;font-weight:850;color:#171744;margin:0}" +
       ".fbrw-heading{margin:10px 0 0;font-size:24px;line-height:1.16;font-weight:900;color:#171744}" +
       ".fbrw-rating-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}" +
       ".fbrw-score{font-size:36px;line-height:1;font-weight:950;color:#171744;letter-spacing:-.03em}" +
@@ -40,9 +40,9 @@
       ".fbrw-star-fill-inner{display:grid;place-items:center;width:23px;height:23px}" +
       ".fbrw-star-box-small .fbrw-star-fill-inner{width:19px;height:19px}" +
       ".fbrw-carousel{min-width:0;display:grid;gap:14px}" +
-      ".fbrw-carousel-window{min-width:0;overflow:hidden}" +
-      ".fbrw-track{display:flex;gap:16px;transition:transform 300ms ease;will-change:transform}" +
-      ".fbrw-card{min-width:0;flex:0 0 calc((100% - 32px) / 3);border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:20px;display:flex;flex-direction:column;gap:12px;min-height:230px}" +
+      ".fbrw-carousel-window{min-width:0;overflow:hidden;padding-bottom:2px}" +
+      ".fbrw-track{display:flex;align-items:stretch;gap:16px;transition:transform 300ms ease;will-change:transform}" +
+      ".fbrw-card{min-width:0;flex:0 0 calc((100% - 32px) / 3);border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:20px 20px 22px;display:flex;flex-direction:column;gap:12px;min-height:250px;margin-bottom:1px}" +
       ".fbrw-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}" +
       ".fbrw-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#f3f4f6;color:#4b5563;padding:5px 9px;font-size:12px;font-weight:700}" +
       ".fbrw-title{font-size:16px;line-height:1.35;font-weight:850;color:#171744;margin:0}" +
@@ -61,14 +61,15 @@
       ".fbrw-micro-logo{display:flex;width:216px;max-width:100%;align-items:center;justify-content:center;min-width:0;font-size:14px;font-weight:900;color:#171744;text-align:center}" +
       ".fbrw-micro-logo-img{display:block;width:100%;height:60px;max-width:216px;object-fit:contain}" +
       ".fbrw-micro-logo-text{display:none}" +
+      ".fbrw-micro-brand{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px;font-weight:900;color:#171744}" +
       ".fbrw-micro-stars{display:flex;align-items:center;justify-content:center;gap:4px;line-height:1}" +
-      ".fbrw-micro .fbrw-star-box-small{width:41px;height:41px;min-width:41px;border-radius:0;font-size:22px}" +
-      ".fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:41px;height:41px}" +
+      ".fbrw-micro .fbrw-star-box-small{width:39px;height:39px;min-width:39px;border-radius:0;font-size:21px}" +
+      ".fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:39px;height:39px}" +
       ".fbrw-micro-score{font-size:14px;font-weight:800;color:#171744;text-align:center;white-space:nowrap}" +
       ".fbrw-micro-score strong{font-weight:950}" +
       ".fbrw-empty{border:1px solid #e3dff0;border-radius:16px;background:#fff;padding:22px;color:#66657b}" +
       ".fbrw-error{border:1px solid #e3dff0;border-radius:16px;background:#faf7ff;padding:18px;color:#66657b;font-size:14px}" +
-      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:210px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:60px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:39px;height:39px;min-width:39px;font-size:21px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:39px;height:39px}.fbrw-micro-score{white-space:normal}}";
+      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:230px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:60px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:37px;height:37px;min-width:37px;font-size:20px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:37px;height:37px}.fbrw-micro-score{white-space:normal}}";
 
     document.head.appendChild(style);
   }
@@ -157,8 +158,9 @@
     top.className = "fbrw-card-top";
     top.appendChild(renderStars(review.rating, "small"));
 
-    var badge = textElement("span", "fbrw-badge", review.verified ? "Verified" : "Customer review");
-    top.appendChild(badge);
+    if (review.verified) {
+      top.appendChild(textElement("span", "fbrw-badge", "Verified"));
+    }
 
     card.appendChild(top);
     card.appendChild(textElement("h3", "fbrw-title", review.title || "Customer review"));
@@ -224,7 +226,6 @@
     logo.appendChild(logoImage);
     logo.appendChild(logoFallback);
     summaryTop.appendChild(logo);
-    summaryTop.appendChild(textElement("p", "fbrw-brand", data.brandName || "Furniture brand"));
     summaryTop.appendChild(textElement("h2", "fbrw-heading", "Highly rated by customers"));
 
     var ratingLine = document.createElement("div");
@@ -233,6 +234,7 @@
     ratingLine.appendChild(renderStars(data.rating || 0, "medium"));
     summaryTop.appendChild(ratingLine);
     summaryTop.appendChild(textElement("p", "fbrw-count", "Based on " + Number(data.reviewCount || 0).toLocaleString() + " reviews"));
+    summaryTop.appendChild(textElement("p", "fbrw-brand", data.brandName || "Furniture brand"));
 
     var summaryLink = document.createElement("a");
     summaryLink.className = "fbrw-link";
@@ -359,6 +361,7 @@
     var stars = document.createElement("span");
     stars.className = "fbrw-micro-stars";
     stars.appendChild(renderStars(data.rating || 0, "small"));
+    var brandName = textElement("span", "fbrw-micro-brand", data.brandName || "Furniture brand");
     var score = document.createElement("span");
     score.className = "fbrw-micro-score";
     score.innerHTML =
@@ -369,6 +372,7 @@
       " reviews";
 
     link.appendChild(logo);
+    link.appendChild(brandName);
     link.appendChild(stars);
     link.appendChild(score);
 
