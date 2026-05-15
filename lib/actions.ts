@@ -439,7 +439,29 @@ export async function moderateReview(formData: FormData) {
   }
 
   if (action === "reject") {
-    updatePayload = { status: "rejected" };
+    const { error: deleteError } = await supabase.from("reviews").delete().eq("id", reviewId);
+
+    if (deleteError) {
+      const message = formatSupabaseError(deleteError);
+      console.error("Supabase admin review delete failed", {
+        reviewId,
+        action,
+        message,
+        error: deleteError
+      });
+      adminRedirect(password, { error: message });
+    }
+
+    revalidatePath("/admin/reviews");
+    revalidatePath("/");
+    revalidatePath("/brands");
+
+    const companyRelation = Array.isArray(review.companies) ? review.companies[0] : review.companies;
+    if (companyRelation?.slug) {
+      revalidatePath(`/review/${companyRelation.slug}`);
+    }
+
+    adminRedirect(password);
   }
 
   if (action === "verify") {
