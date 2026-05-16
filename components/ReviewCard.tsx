@@ -52,7 +52,14 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
               <p className="mt-2 text-sm leading-6 text-muted">{reply.reply}</p>
             </div>
           ))}
-          {actionBrandSlug && <ReviewCardActions reviewId={review.id} brandSlug={actionBrandSlug} reviewTitle={review.title} />}
+          {actionBrandSlug && (
+            <ReviewCardActions
+              reviewId={review.id}
+              brandSlug={actionBrandSlug}
+              reviewTitle={review.title}
+              initialUsefulCount={review.useful_count}
+            />
+          )}
         </div>
       </div>
     </article>

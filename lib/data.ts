@@ -128,7 +128,7 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, company_id, pending_brand_name, pending_brand_slug, rating, title, content, reviewer_name, reviewer_email, order_number, proof_image_url, review_image_urls, status, is_verified, created_at")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, rating, title, content, reviewer_name, reviewer_email, order_number, proof_image_url, review_image_urls, status, is_verified, useful_count, created_at")
     .eq("company_id", companyId)
     .eq("status", "approved")
     .order("created_at", { ascending: false });

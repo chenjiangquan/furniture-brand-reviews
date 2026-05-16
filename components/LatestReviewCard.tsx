@@ -22,13 +22,13 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
   return (
     <article
       id={`review-${review.id}`}
-      className="flex h-[360px] scroll-mt-24 flex-col rounded-2xl border border-line bg-white p-5 shadow-sm"
+      className="flex h-[360px] scroll-mt-24 flex-col rounded-2xl border border-line bg-white p-5 pb-6 shadow-sm"
     >
-      <div className="flex min-h-0 flex-1 items-start gap-4">
+      <div className="flex min-h-0 flex-1 items-start gap-4 overflow-hidden">
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
           {getInitials(review.reviewer_name) || "R"}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold text-ink">{review.reviewer_name}</p>
@@ -56,7 +56,7 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
           </div>
 
           <h3 className="mt-4 line-clamp-2 text-lg font-bold leading-snug text-ink">{review.title}</h3>
-          <p className="mt-2 line-clamp-5 text-sm leading-6 text-muted">{review.content}</p>
+          <p className="mt-2 line-clamp-4 overflow-hidden text-sm leading-6 text-muted">{review.content}</p>
 
           {firstImage ? (
             <a
@@ -79,7 +79,13 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
 
       {brandSlug ? (
         <div className="mt-auto">
-          <ReviewCardActions reviewId={review.id} brandSlug={brandSlug} reviewTitle={review.title} />
+          <ReviewCardActions
+            reviewId={review.id}
+            brandSlug={brandSlug}
+            reviewTitle={review.title}
+            initialUsefulCount={review.useful_count}
+            variant="latest"
+          />
         </div>
       ) : null}
     </article>

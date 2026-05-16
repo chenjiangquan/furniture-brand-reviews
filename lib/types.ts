@@ -34,6 +34,7 @@ export type Review = {
   review_image_urls: string[] | null;
   status: ReviewStatus;
   is_verified: boolean;
+  useful_count?: number | null;
   created_at: string;
   companies?: Pick<Company, "name" | "slug"> | null;
 };

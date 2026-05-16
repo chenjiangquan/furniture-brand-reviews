@@ -54,6 +54,7 @@ create table if not exists reviews (
   review_image_urls text[] default '{}',
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   is_verified boolean not null default false,
+  useful_count integer not null default 0,
   submitted_email_sent_at timestamptz,
   approved_email_sent_at timestamptz,
   created_at timestamptz not null default now()
@@ -63,6 +64,7 @@ alter table reviews add column if not exists order_number text;
 alter table reviews add column if not exists proof_image_url text;
 alter table reviews add column if not exists review_image_urls text[] default '{}';
 alter table reviews add column if not exists is_verified boolean not null default false;
+alter table reviews add column if not exists useful_count integer not null default 0;
 alter table reviews add column if not exists status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'));
 alter table reviews add column if not exists pending_brand_name text;
 alter table reviews add column if not exists pending_brand_slug text;
