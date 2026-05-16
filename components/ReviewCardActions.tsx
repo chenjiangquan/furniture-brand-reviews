@@ -39,11 +39,11 @@ export function ReviewCardActions({ reviewId, brandSlug, reviewTitle }: ReviewCa
   }
 
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+    <div className="mt-5 flex flex-nowrap items-center gap-2 border-t border-gray-100 pt-4">
       <button
         type="button"
         onClick={() => setIsUseful((current) => !current)}
-        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${
+        className={`inline-flex min-w-fit items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold transition sm:px-4 ${
           isUseful ? "bg-[#A855F7] text-white" : "text-muted hover:bg-wash hover:text-trust-dark"
         }`}
       >
@@ -54,7 +54,7 @@ export function ReviewCardActions({ reviewId, brandSlug, reviewTitle }: ReviewCa
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-muted transition hover:bg-wash hover:text-trust-dark"
+        className="inline-flex min-w-fit items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold text-muted transition hover:bg-wash hover:text-trust-dark sm:px-4"
       >
         <Share2 size={15} />
         {copied ? "Link copied" : "Share"}
@@ -62,7 +62,7 @@ export function ReviewCardActions({ reviewId, brandSlug, reviewTitle }: ReviewCa
 
       <Link
         href={`/report-review?review_id=${encodeURIComponent(reviewId)}`}
-        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-muted transition hover:bg-wash hover:text-trust-dark"
+        className="inline-flex min-w-fit items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold text-muted transition hover:bg-wash hover:text-trust-dark sm:px-4"
       >
         <Flag size={15} />
         Report
