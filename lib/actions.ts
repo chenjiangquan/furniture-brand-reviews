@@ -288,7 +288,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
 
-  if (!brandName || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
+  if (!brandName || !brandWebsite || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
     return { ok: false, message: "Please complete all required fields before submitting." };
   }
 

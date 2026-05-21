@@ -97,11 +97,12 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
             <input name="brandName" required defaultValue={brandName} className="rounded-xl border border-line px-4 py-3" />
           </label>
           <label className="grid gap-2">
-            <span className="font-semibold">Brand website optional</span>
+            <span className="font-semibold">Brand website</span>
             <input
               name="brandWebsite"
               type="text"
               inputMode="url"
+              required
               placeholder="https://example.com"
               className="rounded-xl border border-line px-4 py-3"
             />
