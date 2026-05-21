@@ -44,6 +44,7 @@ create table if not exists reviews (
   company_id uuid references companies(id) on delete cascade,
   pending_brand_name text,
   pending_brand_slug text,
+  pending_brand_website text,
   rating integer not null check (rating between 1 and 5),
   title text not null,
   content text not null,
@@ -68,6 +69,7 @@ alter table reviews add column if not exists useful_count integer not null defau
 alter table reviews add column if not exists status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'));
 alter table reviews add column if not exists pending_brand_name text;
 alter table reviews add column if not exists pending_brand_slug text;
+alter table reviews add column if not exists pending_brand_website text;
 alter table reviews add column if not exists submitted_email_sent_at timestamptz;
 alter table reviews add column if not exists approved_email_sent_at timestamptz;
 alter table reviews alter column company_id drop not null;

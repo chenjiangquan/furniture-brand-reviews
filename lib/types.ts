@@ -24,6 +24,7 @@ export type Review = {
   company_id: string | null;
   pending_brand_name: string | null;
   pending_brand_slug: string | null;
+  pending_brand_website?: string | null;
   rating: number;
   title: string;
   content: string;

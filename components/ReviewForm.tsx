@@ -91,10 +91,22 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
       )}
       {imageError && <div className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">{imageError}</div>}
       {!slug && (
-        <label className="grid gap-2">
-          <span className="font-semibold">Brand name</span>
-          <input name="brandName" required defaultValue={brandName} className="rounded-xl border border-line px-4 py-3" />
-        </label>
+        <div className="grid gap-5">
+          <label className="grid gap-2">
+            <span className="font-semibold">Brand name</span>
+            <input name="brandName" required defaultValue={brandName} className="rounded-xl border border-line px-4 py-3" />
+          </label>
+          <label className="grid gap-2">
+            <span className="font-semibold">Brand website optional</span>
+            <input
+              name="brandWebsite"
+              type="text"
+              inputMode="url"
+              placeholder="https://example.com"
+              className="rounded-xl border border-line px-4 py-3"
+            />
+          </label>
+        </div>
       )}
       <label className="grid gap-2">
         <span className="font-semibold">Rating</span>

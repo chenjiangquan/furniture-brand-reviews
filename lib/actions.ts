@@ -75,6 +75,19 @@ function parseBooleanValue(value: string | undefined) {
   return ["true", "1", "yes", "y"].includes((value || "").toLowerCase());
 }
 
+function normalizeWebsiteInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    return new URL(withProtocol).toString().replace(/\/$/, "");
+  } catch {
+    return trimmed;
+  }
+}
+
 const allowedReviewImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxReviewImageCount = 5;
 const maxReviewImageSize = 5 * 1024 * 1024;
@@ -264,6 +277,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
 
 export async function submitFirstReview(_state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
   const brandName = String(formData.get("brandName") ?? "").trim();
+  const brandWebsite = normalizeWebsiteInput(String(formData.get("brandWebsite") ?? ""));
   const pendingBrandSlug = slugifyBrandName(brandName);
   const rating = Number(formData.get("rating"));
   const title = String(formData.get("title") ?? "").trim();
@@ -312,6 +326,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     company_id: company?.id ?? null,
     pending_brand_name: company ? null : brandName,
     pending_brand_slug: company ? null : pendingBrandSlug,
+    pending_brand_website: company ? null : brandWebsite,
     rating,
     title,
     content,
@@ -373,7 +388,7 @@ export async function moderateReview(formData: FormData) {
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
-    .select("id, company_id, pending_brand_name, pending_brand_slug, status, is_verified, reviewer_name, reviewer_email, companies(name, slug)")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, pending_brand_website, status, is_verified, reviewer_name, reviewer_email, companies(name, slug)")
     .eq("id", reviewId)
     .single();
 
@@ -394,6 +409,7 @@ export async function moderateReview(formData: FormData) {
     if (!review.company_id && review.pending_brand_slug) {
       const pendingBrandName = review.pending_brand_name || review.pending_brand_slug;
       const pendingBrandSlug = review.pending_brand_slug;
+      const pendingBrandWebsite = normalizeWebsiteInput(review.pending_brand_website ?? "");
 
       const { data: existingCompany, error: existingCompanyError } = await supabase
         .from("companies")
@@ -415,7 +431,7 @@ export async function moderateReview(formData: FormData) {
           .insert({
             name: pendingBrandName,
             slug: pendingBrandSlug,
-            website: "",
+            website: pendingBrandWebsite,
             category: "Furniture brand",
             description: null
           })
