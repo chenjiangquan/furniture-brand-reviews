@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Respond to reviews",
-  description:
-    "Learn why furniture companies should respond to customer reviews and improve transparency on Furniture Brand Reviews."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Respond to reviews",
+  "Learn why furniture companies should respond to customer reviews and improve transparency on Furniture Brand Reviews."
+);
 
 export default function RespondToReviewsPage() {
   return (

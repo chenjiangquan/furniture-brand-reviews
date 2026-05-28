@@ -209,8 +209,31 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
           </label>
 
           <label className="grid gap-2">
+            <span className="font-semibold text-ink">Cover Image Alt Text</span>
+            <input
+              name="cover_image_alt"
+              defaultValue={selectedBlog?.cover_image_alt ?? ""}
+              placeholder="Defaults to the article title"
+              className={inputClass}
+            />
+          </label>
+
+          <label className="grid gap-2">
             <span className="font-semibold text-ink">Content</span>
             <textarea name="content" rows={14} defaultValue={selectedBlog?.content ?? ""} className={`${textareaClass} font-mono`} />
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/40 p-4 text-sm text-slate-700">
+            <input
+              name="allow_index"
+              type="checkbox"
+              defaultChecked={Boolean(selectedBlog?.allow_index)}
+              className="mt-1 h-4 w-4 rounded border-purple-200 text-purple-700 focus:ring-purple-300"
+            />
+            <span>
+              <span className="block font-semibold text-ink">Allow indexing for short article</span>
+              Articles under 500 words are noindexed by default unless this is checked.
+            </span>
           </label>
 
           <div className="flex flex-wrap gap-3">
@@ -232,7 +255,9 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
             <input type="hidden" name="seo_description" value={selectedBlog.seo_description ?? ""} />
             <input type="hidden" name="category" value={selectedBlog.category ?? ""} />
             <input type="hidden" name="cover_image_url" value={selectedBlog.cover_image_url ?? ""} />
+            <input type="hidden" name="cover_image_alt" value={selectedBlog.cover_image_alt ?? ""} />
             <input type="hidden" name="content" value={selectedBlog.content ?? ""} />
+            {selectedBlog.allow_index ? <input type="hidden" name="allow_index" value="on" /> : null}
             <button type="submit" name="intent" value="unpublish" className={secondaryButtonClass}>
               Unpublish
             </button>

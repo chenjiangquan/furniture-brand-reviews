@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Help centre",
   description:
-    "Find help for writing customer reviews, pending review moderation, reporting reviews and browsing furniture brand reviews."
-};
+    "Find help for writing customer reviews, pending review moderation, reporting reviews and browsing furniture brand reviews.",
+  path: "/help-centre"
+});
 
 export default function HelpCentrePage() {
   return (

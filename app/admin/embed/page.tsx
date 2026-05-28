@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { EmbedWidgetTool } from "@/components/EmbedWidgetTool";
 import { getCompanies } from "@/lib/data";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Embed Widget",
-  description: "Generate Furniture Brand Reviews widget embed code for brand profiles."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Embed Widget",
+  "Generate Furniture Brand Reviews widget embed code for brand profiles."
+);
 
 export default async function AdminEmbedPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";

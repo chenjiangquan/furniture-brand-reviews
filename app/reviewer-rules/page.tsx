@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Reviewer rules",
   description:
-    "Read reviewer rules for submitting fair customer reviews and useful furniture brand reviews on Furniture Brand Reviews."
-};
+    "Read reviewer rules for submitting fair customer reviews and useful furniture brand reviews on Furniture Brand Reviews.",
+  path: "/reviewer-rules"
+});
 
 export default function ReviewerRulesPage() {
   return (

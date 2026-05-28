@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Report a review",
   description:
-    "Report suspicious customer reviews, privacy issues or abusive content on Furniture Brand Reviews for moderation."
-};
+    "Report suspicious customer reviews, privacy issues or abusive content on Furniture Brand Reviews for moderation.",
+  path: "/report-review"
+});
 
 export default function ReportReviewPage() {
   return (

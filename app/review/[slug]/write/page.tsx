@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ReviewForm } from "@/components/ReviewForm";
 import { getCompanyBySlug } from "@/lib/data";
+import { createNoIndexMetadata } from "@/lib/seo";
 
 type Props = { params: { slug: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const company = await getCompanyBySlug(params.slug);
-  return {
-    title: company ? `Write a Review for ${company.name}` : "Write a Review",
-    description: "Submit a furniture brand review for moderation."
-  };
+  return createNoIndexMetadata(
+    company ? `Write a Review for ${company.name}` : "Write a Review",
+    "Submit a furniture brand review for moderation."
+  );
 }
 
 export default async function WriteReviewPage({ params }: Props) {

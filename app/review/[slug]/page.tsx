@@ -4,14 +4,24 @@ import type { Metadata } from "next";
 import { CheckCircle2, Clock3, ExternalLink, Globe2, Mail, MessageSquareReply } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { JsonLd } from "@/components/JsonLd";
 import { Rating } from "@/components/Rating";
 import { ReviewSummaryWithFilters } from "@/components/ReviewSummaryWithFilters";
 import { getApprovedReviewsForCompany, getCompanies, getCompanyBySlug, getRatingBreakdown } from "@/lib/data";
+import {
+  buildBrandOrganizationSchema,
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildGraph,
+  buildReviewItemListSchema
+} from "@/lib/jsonLd";
+import { categoryConfigs, companyMatchesKeywords } from "@/lib/seo-page-config";
+import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import type { ReviewWithReply } from "@/lib/types";
 
 type Props = { params: { slug: string } };
 
-const baseUrl = "https://www.furniturebrandreviews.com";
+const baseUrl = siteUrl;
 
 const deliveryKeywords = ["delivery", "delivered", "shipping", "courier", "dispatch", "arrived", "late", "delay"];
 const complaintKeywords = ["complaint", "problem", "issue", "damaged", "refund", "return", "late", "delay", "poor", "broken", "fault"];
@@ -101,19 +111,15 @@ function buildFaq(companyName: string, reviews: ReviewWithReply[]) {
   ];
 }
 
-function JsonLd({ data }: { data: Record<string, unknown> }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const company = await getCompanyBySlug(params.slug);
-  if (!company) return { title: "Brand not found" };
+  if (!company) return createNoIndexMetadata("Brand not found", "This furniture brand review page could not be found.");
 
-  const title = `${company.name} Reviews | Customer Ratings & Furniture Reviews`;
+  const title = `${company.name} Reviews | Customer Ratings, Delivery & Complaints`;
   const hasReviews = company.review_count > 0 && company.average_rating > 0;
   const description = hasReviews
-    ? `Read ${company.review_count} customer reviews of ${company.name}, rated ${company.average_rating.toFixed(1)} out of 5. See delivery feedback, product quality comments and furniture shopping experiences.`
-    : `Read real customer reviews of ${company.name}. See ratings, delivery experiences, product quality feedback and independent furniture brand reviews.`;
+    ? `Read ${company.review_count} independent ${company.name} reviews with an average rating of ${company.average_rating.toFixed(1)}/5. Compare delivery, product quality, service and customer feedback.`
+    : `Read and write independent ${company.name} reviews. Compare furniture delivery, product quality, customer service and complaints.`;
   const canonical = `${baseUrl}/review/${company.slug}`;
   const image = company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? "/logo.png";
 
@@ -146,91 +152,25 @@ export default async function CompanyReviewPage({ params }: Props) {
   const breakdown = getRatingBreakdown(reviews);
   const companies = await getCompanies();
   const similarBrands = companies.filter((item) => item.slug !== company.slug).slice(0, 4);
+  const relatedCategories = categoryConfigs.filter((category) => companyMatchesKeywords(company, category.keywords)).slice(0, 4);
   const customerThemes = getCustomerThemes(reviews);
   const faqs = buildFaq(company.name, reviews);
   const canonical = `${baseUrl}/review/${company.slug}`;
   const aboutText =
     company.description || `${company.name} is listed on Furniture Brand Reviews as part of our UK furniture brand review directory.`;
 
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: company.name,
-    url: company.website,
-    ...(company.review_count > 0 && company.average_rating > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: company.average_rating.toFixed(1),
-            reviewCount: company.review_count,
-            bestRating: "5",
-            worstRating: "1"
-          }
-        }
-      : {})
-  };
-
-  const reviewSchema = reviews.length
-    ? {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        itemListElement: reviews.slice(0, 10).map((review, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          item: {
-            "@type": "Review",
-            name: review.title,
-            reviewBody: review.content,
-            datePublished: review.created_at,
-            author: { "@type": "Person", name: review.reviewer_name },
-            reviewRating: { "@type": "Rating", ratingValue: review.rating, bestRating: 5, worstRating: 1 },
-            itemReviewed: { "@type": "Organization", name: company.name, url: company.website }
-          }
-        }))
-      }
-    : null;
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: { "@type": "Answer", text: faq.answer }
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: baseUrl
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Brands",
-        item: `${baseUrl}/brands`
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: company.name,
-        item: canonical
-      }
-    ]
-  };
+  const brandOrganizationSchema = buildBrandOrganizationSchema(company);
+  const reviewSchema = buildReviewItemListSchema(company, reviews, canonical);
+  const faqSchema = buildFaqSchema(faqs);
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: `${baseUrl}/` },
+    { name: "Furniture Brands", url: `${baseUrl}/brands` },
+    { name: `${company.name} Reviews`, url: canonical }
+  ]);
 
   return (
     <div className="bg-white">
-      <JsonLd data={organizationSchema} />
-      {reviewSchema && <JsonLd data={reviewSchema} />}
-      <JsonLd data={faqSchema} />
-      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={buildGraph([brandOrganizationSchema, reviewSchema, faqSchema, breadcrumbSchema])} />
 
       <div className="border-b border-gray-200 bg-wash">
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:py-10 lg:px-10">
@@ -411,6 +351,22 @@ export default async function CompanyReviewPage({ params }: Props) {
       </section>
 
       <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
+        {relatedCategories.length > 0 ? (
+          <div className="mb-10 rounded-xl border border-gray-200 bg-wash p-6">
+            <h2 className="text-2xl font-bold text-ink">Related furniture categories</h2>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {relatedCategories.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/category/${category.slug}`}
+                  className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+                >
+                  {category.h1.replace(" Reviewed by Customers", "")}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <h2 className="text-2xl font-bold text-ink">People also viewed</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {similarBrands.map((brand) => (

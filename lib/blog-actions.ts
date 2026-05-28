@@ -66,7 +66,9 @@ export async function saveBlogPost(_state: BlogActionState, formData: FormData):
     seo_title: readString(formData, "seo_title") || `${title} | Furniture Brand Reviews`,
     seo_description: getSeoDescription(formData),
     cover_image_url: readString(formData, "cover_image_url") || null,
+    cover_image_alt: readString(formData, "cover_image_alt") || title,
     category: readString(formData, "category") || null,
+    allow_index: readString(formData, "allow_index") === "on",
     status,
     published_at: status === "published" ? readString(formData, "published_at") || new Date().toISOString() : null,
     updated_at: new Date().toISOString()

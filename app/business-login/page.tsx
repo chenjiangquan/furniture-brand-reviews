@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Business login",
-  description:
-    "Business login information for furniture companies using Furniture Brand Reviews customer reviews and brand tools."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Business login",
+  "Business login information for furniture companies using Furniture Brand Reviews customer reviews and brand tools."
+);
 
 export default function BusinessLoginPage() {
   return (

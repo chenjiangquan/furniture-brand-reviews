@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Brand tools",
-  description:
-    "Explore planned Furniture Brand Reviews tools for furniture companies, review analytics, profile management and customer review responses."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Brand tools",
+  "Explore planned Furniture Brand Reviews tools for furniture companies, review analytics, profile management and customer review responses."
+);
 
 export default function BrandToolsPage() {
   return (

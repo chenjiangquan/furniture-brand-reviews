@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Terms and conditions",
   description:
-    "Read the terms and conditions for using Furniture Brand Reviews, submitting customer reviews and browsing furniture company ratings."
-};
+    "Read the terms and conditions for using Furniture Brand Reviews, submitting customer reviews and browsing furniture company ratings.",
+  path: "/terms"
+});
 
 export default function TermsPage() {
   return (

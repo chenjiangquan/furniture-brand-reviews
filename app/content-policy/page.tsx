@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Content policy",
   description:
-    "Read the Furniture Brand Reviews content policy for moderated customer reviews, furniture brand reviews and acceptable platform content."
-};
+    "Read the Furniture Brand Reviews content policy for moderated customer reviews, furniture brand reviews and acceptable platform content.",
+  path: "/content-policy"
+});
 
 export default function ContentPolicyPage() {
   return (

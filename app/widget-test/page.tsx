@@ -1,10 +1,11 @@
 import Script from "next/script";
 import type { Metadata } from "next";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "External Website Widget Test",
-  description: "Local test page for the Furniture Brand Reviews embeddable carousel widget."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "External Website Widget Test",
+  "Local test page for the Furniture Brand Reviews embeddable carousel widget."
+);
 
 const carouselEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="carousel"></div>
 <script async src="/widget.js"></script>`;

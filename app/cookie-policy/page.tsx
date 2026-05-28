@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Cookie policy",
   description:
-    "Read the Furniture Brand Reviews cookie policy for website functionality, customer reviews and furniture brand review browsing."
-};
+    "Read the Furniture Brand Reviews cookie policy for website functionality, customer reviews and furniture brand review browsing.",
+  path: "/cookie-policy"
+});
 
 export default function CookiePolicyPage() {
   return (

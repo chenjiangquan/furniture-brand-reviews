@@ -102,8 +102,10 @@ create table if not exists blogs (
   seo_title text,
   seo_description text,
   cover_image_url text,
+  cover_image_alt text,
   category text,
   status text not null default 'draft' check (status in ('draft', 'published')),
+  allow_index boolean not null default false,
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -114,8 +116,10 @@ alter table blogs add column if not exists content text;
 alter table blogs add column if not exists seo_title text;
 alter table blogs add column if not exists seo_description text;
 alter table blogs add column if not exists cover_image_url text;
+alter table blogs add column if not exists cover_image_alt text;
 alter table blogs add column if not exists category text;
 alter table blogs add column if not exists status text not null default 'draft' check (status in ('draft', 'published'));
+alter table blogs add column if not exists allow_index boolean not null default false;
 alter table blogs add column if not exists published_at timestamptz;
 alter table blogs add column if not exists created_at timestamptz not null default now();
 alter table blogs add column if not exists updated_at timestamptz not null default now();

@@ -2,26 +2,37 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
+import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { formatBlogDate, getLatestBlogs } from "@/lib/blogs";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
+import { buildGraph, buildPlatformOrganizationSchema, buildWebsiteSchema } from "@/lib/jsonLd";
+import { categoryConfigs } from "@/lib/seo-page-config";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Read Real Reviews of Furniture Brands",
-  description: "Find honest customer experiences, delivery feedback and ratings for furniture brands around the world."
-};
+export const metadata: Metadata = createSeoMetadata({
+  title: "Furniture Brand Reviews | Real Reviews of Furniture Brands Worldwide",
+  description: "Find honest customer experiences, delivery feedback and ratings for furniture brands around the world.",
+  path: "/",
+  absoluteTitle: true
+});
 
 export default async function HomePage() {
   const companies = await getCompanies();
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
   const latestReviews = await getLatestApprovedReviews();
   const latestBlogs = await getLatestBlogs(4);
+  const featuredCategories = categoryConfigs.filter((category) =>
+    ["sofa-brands", "bedroom-furniture-brands", "dining-table-brands", "outdoor-furniture-brands"].includes(category.slug)
+  );
 
   return (
     <div>
+      <JsonLd data={buildGraph([buildWebsiteSchema(), buildPlatformOrganizationSchema()])} />
+
       <section className="home-hero bg-wash md:flex md:items-center">
         <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 lg:px-10 md:py-20">
           <div className="max-w-[600px]">
@@ -66,6 +77,31 @@ export default async function HomePage() {
           {homepageCompanies.slice(0, 3).map((company) => (
             <BrandCard key={company.id} company={company} />
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+        <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-ink">Explore furniture review categories</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">Browse category pages and rankings built from approved customer reviews.</p>
+            </div>
+            <Link href="/best-furniture-brands" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
+              Best furniture brands <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {featuredCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/category/${category.slug}`}
+                className="rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+              >
+                {category.h1.replace(" Reviewed by Customers", "")}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

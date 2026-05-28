@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminTools } from "@/components/AdminTools";
 import { getCompanies } from "@/lib/data";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Admin Tools",
-  description: "Manage furniture brand profiles and review imports."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Admin Tools",
+  "Manage furniture brand profiles and review imports."
+);
 
 export default async function AdminToolsPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";

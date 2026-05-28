@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { BrandCard } from "@/components/BrandCard";
+import { JsonLd } from "@/components/JsonLd";
 import { getCompanies } from "@/lib/data";
+import { buildBreadcrumbSchema, buildCollectionPageSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
+import { absoluteUrl } from "@/lib/seo";
 
 type CategoryPageProps = {
   title: string;
   subtitle: string;
+  path: string;
   keywords: string[];
   comparePoints: string[];
 };
 
-export async function CategoryPage({ title, subtitle, keywords, comparePoints }: CategoryPageProps) {
+export async function CategoryPage({ title, subtitle, path, keywords, comparePoints }: CategoryPageProps) {
   const companies = await getCompanies();
   const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
   const matchingCompanies = companies
@@ -19,9 +23,31 @@ export async function CategoryPage({ title, subtitle, keywords, comparePoints }:
       )
     )
     .slice(0, 12);
+  const pageUrl = absoluteUrl(path);
+  const itemListSchema = buildItemListSchema(
+    matchingCompanies.map((company, index) => ({
+      position: index + 1,
+      name: company.name,
+      url: absoluteUrl(`/review/${company.slug}`),
+      ratingValue: company.average_rating,
+      reviewCount: company.review_count
+    }))
+  );
 
   return (
     <div className="bg-white">
+      <JsonLd
+        data={buildGraph([
+          buildCollectionPageSchema(title, subtitle, path),
+          buildBreadcrumbSchema([
+            { name: "Home", url: absoluteUrl("/") },
+            { name: "Furniture Brands", url: absoluteUrl("/brands") },
+            { name: title, url: pageUrl }
+          ]),
+          itemListSchema
+        ])}
+      />
+
       <section className="border-b border-line bg-wash">
         <div className="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-trust-dark">Furniture categories</p>

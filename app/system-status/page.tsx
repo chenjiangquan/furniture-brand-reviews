@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "System status",
   description:
-    "Check Furniture Brand Reviews system status for the website, review submission, brand pages and admin tools."
-};
+    "Check Furniture Brand Reviews system status for the website, review submission, brand pages and admin tools.",
+  path: "/system-status"
+});
 
 export default function SystemStatusPage() {
   return (

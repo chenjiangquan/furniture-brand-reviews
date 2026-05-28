@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Claim your profile",
-  description:
-    "Learn how furniture companies can claim a profile on Furniture Brand Reviews to manage brand information and customer reviews."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Claim your profile",
+  "Learn how furniture companies can claim a profile on Furniture Brand Reviews to manage brand information and customer reviews."
+);
 
 export default function ClaimYourProfilePage() {
   return (

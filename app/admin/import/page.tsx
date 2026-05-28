@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { AdminImportForm } from "@/components/AdminImportForm";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Admin CSV Import",
-  description: "Import furniture brand profiles and reviews."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Admin CSV Import",
+  "Import furniture brand profiles and reviews."
+);
 
 export default function AdminImportPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";

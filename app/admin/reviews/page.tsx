@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { moderateReview } from "@/lib/actions";
 import { getPendingReviews } from "@/lib/data";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Admin Review Approval",
-  description: "Approve, reject and verify pending reviews."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Admin Review Approval",
+  "Approve, reject and verify pending reviews."
+);
 
 export default async function AdminReviewsPage({
   searchParams

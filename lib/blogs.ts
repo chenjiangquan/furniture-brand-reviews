@@ -13,12 +13,16 @@ export type BlogPost = {
   seo_title: string | null;
   seo_description: string | null;
   cover_image_url: string | null;
+  cover_image_alt?: string | null;
   category: string | null;
   status: BlogStatus;
+  allow_index?: boolean | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export const blogIndexWordThreshold = 500;
 
 export function slugifyBlogTitle(title: string) {
   return title
@@ -48,6 +52,71 @@ export function generateExcerpt(content: string, title?: string) {
   return title ? `Read our latest furniture review guide: ${title}.` : "";
 }
 
+export function getPlainTextFromMarkdown(content: string | null | undefined) {
+  return (content ?? "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/[#*_>`~\-[\]()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function getWordCount(content: string | null | undefined) {
+  const plainText = getPlainTextFromMarkdown(content);
+  if (!plainText) return 0;
+  return plainText.split(/\s+/).filter(Boolean).length;
+}
+
+export function getReadingTime(content: string | null | undefined) {
+  const minutes = Math.max(1, Math.ceil(getWordCount(content) / 220));
+  return `${minutes} min read`;
+}
+
+export function shouldIndexBlog(blog: Pick<BlogPost, "content" | "allow_index">) {
+  return Boolean(blog.allow_index) || getWordCount(blog.content) >= blogIndexWordThreshold;
+}
+
+export function extractFaqFromMarkdown(content: string | null | undefined) {
+  const lines = (content ?? "").split(/\r?\n/);
+  const faqStartIndex = lines.findIndex((line) => /^#{2,3}\s+faqs?\s*$/i.test(line.trim()));
+  if (faqStartIndex === -1) return [];
+
+  const faqs: Array<{ question: string; answer: string }> = [];
+  let currentQuestion = "";
+  let currentAnswer: string[] = [];
+
+  function flushFaq() {
+    const answer = getPlainTextFromMarkdown(currentAnswer.join(" "));
+    if (currentQuestion && answer) {
+      faqs.push({
+        question: currentQuestion,
+        answer
+      });
+    }
+    currentQuestion = "";
+    currentAnswer = [];
+  }
+
+  for (const line of lines.slice(faqStartIndex + 1)) {
+    const trimmed = line.trim();
+    if (/^#{1,2}\s+/.test(trimmed) && !/^#{3,6}\s+/.test(trimmed)) break;
+
+    const questionMatch = trimmed.match(/^#{3,6}\s+(.+)/);
+    if (questionMatch) {
+      flushFaq();
+      currentQuestion = getPlainTextFromMarkdown(questionMatch[1]);
+      continue;
+    }
+
+    if (currentQuestion && trimmed) currentAnswer.push(trimmed);
+  }
+
+  flushFaq();
+  return faqs;
+}
+
 export const getPublishedBlogs = cache(async (): Promise<BlogPost[]> => {
   noStore();
   const supabase = getSupabase();
@@ -65,6 +134,11 @@ export const getPublishedBlogs = cache(async (): Promise<BlogPost[]> => {
   }
 
   return (data ?? []) as BlogPost[];
+});
+
+export const getIndexablePublishedBlogs = cache(async (): Promise<BlogPost[]> => {
+  const blogs = await getPublishedBlogs();
+  return blogs.filter((blog) => blog.slug && blog.content && shouldIndexBlog(blog));
 });
 
 export const getLatestBlogs = cache(async (limit = 4): Promise<BlogPost[]> => {

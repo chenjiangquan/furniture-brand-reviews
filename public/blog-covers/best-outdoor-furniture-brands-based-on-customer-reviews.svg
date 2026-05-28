@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Best Outdoor Furniture Brands">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBF7FF"/>
+      <stop offset="52%" stop-color="#F4EAFF"/>
+      <stop offset="100%" stop-color="#EEE2FF"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="35%" cy="25%" r="70%">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#orb)"/>
+  <path d="M0 560C180 500 285 615 470 560C650 505 765 535 930 575C1045 602 1130 590 1200 548V675H0Z" fill="#FFFFFF" opacity="0.72"/>
+  <g transform="translate(0 0)">
+    
+      <path d="M650 470h340" stroke="#7C3AED" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M710 470V335h220v135" stroke="#7C3AED" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M650 335h340M705 335l-44-75M930 335l44-75" stroke="#7C3AED" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M610 260c80-70 350-70 440 0" stroke="#7C3AED" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="790" cy="230" r="36" fill="#FFFFFF" stroke="#7C3AED" stroke-width="9"/>
+      <path d="M865 415h135" stroke="#7C3AED" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <text x="92" y="140" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="#7C3AED" letter-spacing="2">FURNITURE BRAND REVIEWS</text>
+  <text x="92" y="255" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="900" fill="#17143F">
+    Best Outdoor Furniture Brands
+  </text>
+  <text x="92" y="322" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="600" fill="#5F5A78">
+    Garden furniture review insights
+  </text>
+  <g transform="translate(92 430)">
+    <rect width="310" height="68" rx="34" fill="#FFFFFF" stroke="#DED0F7" stroke-width="3"/>
+    <text x="30" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#17143F">Independent reviews</text>
+  </g>
+</svg>

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { AdminBlogManager } from "@/components/AdminBlogManager";
 import { getAdminBlogs } from "@/lib/blogs";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Blog Admin",
-  description: "Create, edit and publish Furniture Brand Reviews blog posts."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Blog Admin",
+  "Create, edit and publish Furniture Brand Reviews blog posts."
+);
 
 export default async function AdminBlogPage({ searchParams }: { searchParams: { password?: string } }) {
   const password = searchParams.password ?? "";

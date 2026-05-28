@@ -1,29 +1,49 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { formatBlogDate, getPublishedBlogBySlug } from "@/lib/blogs";
+import { ArrowRight } from "lucide-react";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  extractFaqFromMarkdown,
+  formatBlogDate,
+  getPublishedBlogBySlug,
+  getPublishedBlogs,
+  getReadingTime,
+  shouldIndexBlog
+} from "@/lib/blogs";
+import { buildFaqSchema, buildGraph } from "@/lib/jsonLd";
+import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 
-const baseUrl = "https://furniturebrandreviews.com";
+const baseUrl = siteUrl;
 
-function safeJsonLd(data: Record<string, unknown>) {
-  return JSON.stringify(data).replace(/</g, "\\u003c");
-}
+const categoryLinks: Record<string, string> = {
+  sofa: "/sofa-brands",
+  sofas: "/sofa-brands",
+  dining: "/dining-table-brands",
+  bedroom: "/bedroom-furniture-brands",
+  outdoor: "/outdoor-furniture",
+  garden: "/outdoor-furniture",
+  office: "/home-office-furniture"
+};
 
-function JsonLd({ data }: { data: Record<string, unknown> }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />;
+function getCategoryLink(category: string | null) {
+  if (!category) return null;
+  const lowerCategory = category.toLowerCase();
+  const matchedKey = Object.keys(categoryLinks).find((key) => lowerCategory.includes(key));
+  return matchedKey ? categoryLinks[matchedKey] : null;
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const blog = await getPublishedBlogBySlug(params.slug);
   if (!blog) {
-    return {
-      title: "Blog article not found"
-    };
+    return createNoIndexMetadata("Blog article not found", "This blog article could not be found.");
   }
 
   const title = blog.seo_title || blog.title;
   const description = blog.seo_description || blog.excerpt || `Read ${blog.title} on Furniture Brand Reviews.`;
   const canonical = `${baseUrl}/blog/${blog.slug}`;
+  const isIndexable = shouldIndexBlog(blog);
 
   return {
     title,
@@ -38,14 +58,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       siteName: "Furniture Brand Reviews",
       images: blog.cover_image_url ? [{ url: blog.cover_image_url, alt: blog.title }] : [{ url: "/logo.png", alt: "Furniture Brand Reviews" }],
       type: "article",
-      publishedTime: blog.published_at ?? undefined
+      publishedTime: blog.published_at ?? undefined,
+      modifiedTime: blog.updated_at
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
       images: blog.cover_image_url ? [blog.cover_image_url] : ["/logo.png"]
-    }
+    },
+    robots: isIndexable ? undefined : { index: false, follow: true }
   };
 }
 
@@ -54,12 +76,31 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   if (!blog) notFound();
   const canonical = `${baseUrl}/blog/${blog.slug}`;
   const description = blog.seo_description || blog.excerpt || `Read ${blog.title} on Furniture Brand Reviews.`;
+  const allBlogs = await getPublishedBlogs();
+  const relatedBlogs = allBlogs
+    .filter((item) => item.slug !== blog.slug)
+    .sort((a, b) => {
+      if (blog.category && a.category === blog.category && b.category !== blog.category) return -1;
+      if (blog.category && a.category !== blog.category && b.category === blog.category) return 1;
+      return new Date(b.published_at ?? b.created_at).getTime() - new Date(a.published_at ?? a.created_at).getTime();
+    })
+    .slice(0, 3);
+  const faqSchema = buildFaqSchema(extractFaqFromMarkdown(blog.content));
+  const categoryLink = getCategoryLink(blog.category);
   const blogJsonLd = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "Article",
     headline: blog.seo_title || blog.title,
     description,
-    image: blog.cover_image_url ? [blog.cover_image_url] : [`${baseUrl}/logo.png`],
+    ...(blog.cover_image_url
+      ? {
+          image: {
+            "@type": "ImageObject",
+            url: blog.cover_image_url,
+            caption: blog.cover_image_alt || blog.title
+          }
+        }
+      : {}),
     datePublished: blog.published_at ?? blog.created_at,
     dateModified: blog.updated_at,
     author: {
@@ -83,15 +124,30 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
 
   return (
     <article className="bg-white">
-      <JsonLd data={blogJsonLd} />
+      <JsonLd data={buildGraph([blogJsonLd, faqSchema])} />
       <header className="border-b border-line bg-wash">
         <div className="mx-auto max-w-[1000px] px-4 py-12 sm:px-6 lg:px-10">
           <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wide text-muted">
             {blog.category && <span className="rounded-full bg-purple-50 px-3 py-1 text-trust-dark">{blog.category}</span>}
             <time dateTime={blog.published_at ?? blog.created_at}>{formatBlogDate(blog.published_at ?? blog.created_at)}</time>
+            <span>{getReadingTime(blog.content)}</span>
           </div>
           <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink md:text-5xl">{blog.title}</h1>
           {blog.excerpt && <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">{blog.excerpt}</p>}
+          <dl className="mt-6 grid gap-3 rounded-2xl border border-line bg-white p-4 text-sm text-muted sm:grid-cols-3">
+            <div>
+              <dt className="font-bold text-ink">Author</dt>
+              <dd>Furniture Brand Reviews</dd>
+            </div>
+            <div>
+              <dt className="font-bold text-ink">Published</dt>
+              <dd>{formatBlogDate(blog.published_at ?? blog.created_at)}</dd>
+            </div>
+            <div>
+              <dt className="font-bold text-ink">Updated</dt>
+              <dd>{formatBlogDate(blog.updated_at)}</dd>
+            </div>
+          </dl>
         </div>
       </header>
 
@@ -99,7 +155,7 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
         {blog.cover_image_url && (
           <img
             src={blog.cover_image_url}
-            alt={blog.title}
+            alt={blog.cover_image_alt || blog.title}
             className="mb-10 aspect-[16/9] w-full rounded-2xl border border-line object-cover shadow-sm"
           />
         )}
@@ -119,12 +175,60 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
                   {children}
                 </a>
               ),
+              img: ({ alt, src }) => (
+                <img
+                  src={src ?? ""}
+                  alt={alt || blog.title}
+                  className="mb-6 w-full rounded-2xl border border-line object-cover shadow-sm"
+                />
+              ),
               blockquote: ({ children }) => <blockquote className="mb-5 rounded-xl border-l-4 border-trust bg-wash p-4 text-muted">{children}</blockquote>
             }}
           >
             {blog.content || ""}
           </ReactMarkdown>
         </div>
+
+        <section className="mt-8 rounded-2xl border border-line bg-wash p-6">
+          <h2 className="text-2xl font-bold text-ink">Explore related furniture reviews</h2>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/brands" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+              Browse all furniture brands
+            </Link>
+            {categoryLink ? (
+              <Link href={categoryLink} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+                Explore {blog.category} brands
+              </Link>
+            ) : null}
+            <Link href="/blog" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+              More furniture guides
+            </Link>
+          </div>
+        </section>
+
+        {relatedBlogs.length > 0 ? (
+          <section className="mt-8">
+            <h2 className="text-2xl font-bold text-ink">Related articles</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {relatedBlogs.map((relatedBlog) => (
+                <Link
+                  key={relatedBlog.id}
+                  href={`/blog/${relatedBlog.slug}`}
+                  className="rounded-2xl border border-line bg-white p-5 shadow-sm hover:border-trust"
+                >
+                  <p className="text-xs font-bold uppercase tracking-wide text-trust-dark">
+                    {relatedBlog.category || "Furniture guide"}
+                  </p>
+                  <h3 className="mt-3 text-lg font-bold leading-tight text-ink">{relatedBlog.title}</h3>
+                  {relatedBlog.excerpt ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{relatedBlog.excerpt}</p> : null}
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
+                    Read article <ArrowRight size={15} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </article>
   );

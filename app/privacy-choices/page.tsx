@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createSeoMetadata({
   title: "Privacy choices",
   description:
-    "Manage privacy choices for Furniture Brand Reviews, including personal data requests linked to customer reviews and furniture company feedback."
-};
+    "Manage privacy choices for Furniture Brand Reviews, including personal data requests linked to customer reviews and furniture company feedback.",
+  path: "/privacy-choices"
+});
 
 export default function PrivacyChoicesPage() {
   return (

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Wayfair vs Dunelm">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBF7FF"/>
+      <stop offset="52%" stop-color="#F4EAFF"/>
+      <stop offset="100%" stop-color="#EEE2FF"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="35%" cy="25%" r="70%">
+      <stop offset="0%" stop-color="#9D4EDD" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#9D4EDD" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#orb)"/>
+  <path d="M0 560C180 500 285 615 470 560C650 505 765 535 930 575C1045 602 1130 590 1200 548V675H0Z" fill="#FFFFFF" opacity="0.72"/>
+  <g transform="translate(0 0)">
+    
+      <rect x="600" y="245" width="185" height="250" rx="34" fill="#FFFFFF" opacity="0.95" stroke="#9D4EDD" stroke-width="10"/>
+      <rect x="845" y="245" width="185" height="250" rx="34" fill="#FFFFFF" opacity="0.95" stroke="#9D4EDD" stroke-width="10"/>
+      <path d="M660 330h65M660 385h80M900 330h65M900 385h80M785 370h60" stroke="#9D4EDD" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M812 335l33 35-33 35" stroke="#9D4EDD" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="692" cy="445" r="26" fill="#F5F3FF" stroke="#9D4EDD" stroke-width="8"/>
+      <circle cx="938" cy="445" r="26" fill="#F5F3FF" stroke="#9D4EDD" stroke-width="8"/>
+  </g>
+  <text x="92" y="140" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="#9D4EDD" letter-spacing="2">FURNITURE BRAND REVIEWS</text>
+  <text x="92" y="255" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="900" fill="#17143F">
+    Wayfair vs Dunelm
+  </text>
+  <text x="92" y="322" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="600" fill="#5F5A78">
+    Furniture reviews compared
+  </text>
+  <g transform="translate(92 430)">
+    <rect width="310" height="68" rx="34" fill="#FFFFFF" stroke="#DED0F7" stroke-width="3"/>
+    <text x="30" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#17143F">Independent reviews</text>
+  </g>
+</svg>

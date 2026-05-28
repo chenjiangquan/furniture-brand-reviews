@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { ReviewForm } from "@/components/ReviewForm";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Write a Furniture Brand Review",
-  description: "Submit a furniture brand review for moderation before publishing."
-};
+export const metadata: Metadata = createNoIndexMetadata(
+  "Write a Furniture Brand Review",
+  "Submit a furniture brand review for moderation before publishing."
+);
 
 export default function WriteFirstReviewPage({ searchParams }: { searchParams: { brand?: string } }) {
   const brandName = (searchParams.brand ?? "").trim();

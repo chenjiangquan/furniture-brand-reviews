@@ -179,6 +179,34 @@ export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[
   return (data ?? []).filter((review) => !review.review_image_urls?.length).slice(0, 8);
 });
 
+export const getLatestApprovedReviewsForCompanies = cache(async (companyIds: string[], limit = 6): Promise<ReviewWithReply[]> => {
+  noStore();
+  const filteredCompanyIds = companyIds.filter(Boolean);
+  if (!filteredCompanyIds.length) return [];
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return sampleReviews
+      .filter((review) => review.company_id && filteredCompanyIds.includes(review.company_id))
+      .slice(0, limit);
+  }
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*, companies(name, slug)")
+    .eq("status", "approved")
+    .in("company_id", filteredCompanyIds)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return (data ?? []) as ReviewWithReply[];
+});
+
 export async function getPendingReviews(password: string): Promise<Review[]> {
   if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) return [];
 
