@@ -12,7 +12,15 @@ import {
   getReadingTime,
   shouldIndexBlog
 } from "@/lib/blogs";
-import { buildFaqSchema, buildGraph } from "@/lib/jsonLd";
+import { getCompanies } from "@/lib/data";
+import {
+  getBlogRelatedBrands,
+  getBlogRelatedComparisons,
+  getIndexableFeaturedComparisonLinks,
+  getRelatedCategories,
+  getRelatedRankingPages
+} from "@/lib/internal-links";
+import { buildBreadcrumbSchema, buildFaqSchema, buildGraph } from "@/lib/jsonLd";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 
 const baseUrl = siteUrl;
@@ -77,6 +85,13 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   const canonical = `${baseUrl}/blog/${blog.slug}`;
   const description = blog.seo_description || blog.excerpt || `Read ${blog.title} on Furniture Brand Reviews.`;
   const allBlogs = await getPublishedBlogs();
+  const companies = await getCompanies();
+  const relatedBrands = getBlogRelatedBrands(blog, companies, 5);
+  const relatedCategories = getRelatedCategories(`${blog.title} ${blog.category ?? ""} ${blog.excerpt ?? ""} ${blog.content ?? ""}`, 4);
+  const relatedComparisons = getBlogRelatedComparisons(blog, companies, 3);
+  const fallbackComparisons = relatedComparisons.length > 0 ? [] : await getIndexableFeaturedComparisonLinks(3);
+  const visibleComparisonLinks = relatedComparisons.length > 0 ? relatedComparisons : fallbackComparisons;
+  const relatedRankings = getRelatedRankingPages(`${blog.title} ${blog.category ?? ""} ${blog.excerpt ?? ""} ${blog.content ?? ""}`, 4);
   const relatedBlogs = allBlogs
     .filter((item) => item.slug !== blog.slug)
     .sort((a, b) => {
@@ -86,6 +101,11 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
     })
     .slice(0, 3);
   const faqSchema = buildFaqSchema(extractFaqFromMarkdown(blog.content));
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: `${baseUrl}/` },
+    { name: "Furniture Blog", url: `${baseUrl}/blog` },
+    { name: blog.title, url: canonical }
+  ]);
   const categoryLink = getCategoryLink(blog.category);
   const blogJsonLd = {
     "@context": "https://schema.org",
@@ -124,7 +144,7 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
 
   return (
     <article className="bg-white">
-      <JsonLd data={buildGraph([blogJsonLd, faqSchema])} />
+      <JsonLd data={buildGraph([blogJsonLd, faqSchema, breadcrumbSchema])} />
       <header className="border-b border-line bg-wash">
         <div className="mx-auto max-w-[1000px] px-4 py-12 sm:px-6 lg:px-10">
           <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wide text-muted">
@@ -195,6 +215,9 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
             <Link href="/brands" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
               Browse all furniture brands
             </Link>
+            <Link href="/write-review" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+              Write a furniture review
+            </Link>
             {categoryLink ? (
               <Link href={categoryLink} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
                 Explore {blog.category} brands
@@ -205,6 +228,65 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
             </Link>
           </div>
         </section>
+
+        {(relatedBrands.length > 0 || relatedCategories.length > 0 || relatedRankings.length > 0 || visibleComparisonLinks.length > 0) ? (
+          <section className="mt-8 rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Related review pages</h2>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              {relatedBrands.length > 0 ? (
+                <div>
+                  <h3 className="font-bold text-ink">Related brands</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {relatedBrands.map((brand) => (
+                      <Link key={brand.slug} href={`/review/${brand.slug}`} className="rounded-full bg-wash px-3 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+                        {brand.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {relatedCategories.length > 0 ? (
+                <div>
+                  <h3 className="font-bold text-ink">Related categories</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {relatedCategories.map((category) => (
+                      <Link key={category.href} href={category.href} className="rounded-full bg-wash px-3 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+                        {category.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {visibleComparisonLinks.length > 0 ? (
+                <div>
+                  <h3 className="font-bold text-ink">Related comparisons</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {visibleComparisonLinks.map((comparison) => (
+                      <Link key={comparison.href} href={comparison.href} className="rounded-full bg-wash px-3 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+                        {comparison.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {relatedRankings.length > 0 ? (
+                <div>
+                  <h3 className="font-bold text-ink">Related rankings</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {relatedRankings.map((ranking) => (
+                      <Link key={ranking.href} href={ranking.href} className="rounded-full bg-wash px-3 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+                        {ranking.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
         {relatedBlogs.length > 0 ? (
           <section className="mt-8">

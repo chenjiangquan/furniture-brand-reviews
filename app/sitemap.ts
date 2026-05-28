@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { featuredComparisons } from "@/lib/comparison-config";
+import { getComparisonPageData, type ComparisonPageData } from "@/lib/comparison-data";
 import { getSupabase } from "@/lib/supabase";
 import { siteUrl } from "@/lib/seo";
 import {
@@ -42,6 +44,8 @@ const blockedSlugs = new Set(["test", "demo", "undefined", "null"]);
 const staticRoutes = [
   { path: "/", changeFrequency: "daily", priority: 1 },
   { path: "/brands", changeFrequency: "daily", priority: 0.8 },
+  { path: "/category", changeFrequency: "weekly", priority: 0.7 },
+  { path: "/compare", changeFrequency: "weekly", priority: 0.7 },
   { path: "/blog", changeFrequency: "weekly", priority: 0.7 },
   { path: "/about", changeFrequency: "monthly", priority: 0.5 },
   { path: "/how-it-works", changeFrequency: "monthly", priority: 0.5 },
@@ -238,5 +242,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  return [...staticSitemapRoutes, ...categoryRoutes, ...rankingRoutes, ...brandRoutes, ...blogRoutes];
+  const comparisonData = await Promise.all(featuredComparisons.map((comparison) => getComparisonPageData(comparison)));
+  const comparisonRoutes: MetadataRoute.Sitemap = comparisonData
+    .filter((comparison): comparison is ComparisonPageData => Boolean(comparison?.shouldIndex))
+    .map((comparison) => ({
+      url: `${baseUrl}/compare/${comparison.comparison.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7
+    }));
+
+  return [...staticSitemapRoutes, ...categoryRoutes, ...rankingRoutes, ...comparisonRoutes, ...brandRoutes, ...blogRoutes];
 }

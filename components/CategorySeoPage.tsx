@@ -4,6 +4,8 @@ import { BrandCard } from "@/components/BrandCard";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
+import { getPublishedBlogs } from "@/lib/blogs";
+import { getCategoryComparisons, getRelatedBlogs, getRelatedRankingPages } from "@/lib/internal-links";
 import { buildBreadcrumbSchema, buildCollectionPageSchema, buildFaqSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
 import { getCategorySeoData } from "@/lib/seo-page-data";
 import { getCategoryConfig, type SeoCategoryConfig } from "@/lib/seo-page-config";
@@ -11,6 +13,10 @@ import { absoluteUrl } from "@/lib/seo";
 
 export async function CategorySeoPage({ config }: { config: SeoCategoryConfig }) {
   const { categoryCompanies, topRatedCompanies, mostReviewedCompanies, latestReviews } = await getCategorySeoData(config);
+  const blogs = await getPublishedBlogs();
+  const relatedComparisons = getCategoryComparisons(config, categoryCompanies, 5);
+  const relatedRankings = getRelatedRankingPages(config, 4);
+  const relatedBlogs = getRelatedBlogs(config, blogs, 3);
   const pagePath = `/category/${config.slug}`;
   const pageUrl = absoluteUrl(pagePath);
   const itemListSchema = buildItemListSchema(
@@ -128,6 +134,56 @@ export async function CategorySeoPage({ config }: { config: SeoCategoryConfig })
               ))}
           </div>
         </section>
+
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Related brand comparisons</h2>
+          {relatedComparisons.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-3">
+              {relatedComparisons.map((comparison) => (
+                <Link
+                  key={comparison.href}
+                  href={comparison.href}
+                  className="inline-flex items-center gap-2 rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+                >
+                  {comparison.label}
+                  <ArrowRight size={15} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">More comparison pages will appear as reviewed brands in this category grow.</p>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Related ranking pages</h2>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {relatedRankings.map((ranking) => (
+              <Link
+                key={ranking.href}
+                href={ranking.href}
+                className="inline-flex items-center gap-2 rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+              >
+                {ranking.label}
+                <ArrowRight size={15} />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {relatedBlogs.length > 0 ? (
+          <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Related blog guides</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {relatedBlogs.map((blog) => (
+                <Link key={blog.href} href={blog.href} className="rounded-xl border border-line bg-wash p-4 hover:border-trust">
+                  <h3 className="font-bold leading-snug text-ink">{blog.label}</h3>
+                  {blog.description ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{blog.description}</p> : null}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-ink">FAQ</h2>

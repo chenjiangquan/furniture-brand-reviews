@@ -44,6 +44,7 @@ export default async function AdminReviewsPage({
               <th className="px-4 py-3">Brand</th>
               <th className="px-4 py-3">Rating</th>
               <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Experience details</th>
               <th className="px-4 py-3">Photos</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Created</th>
@@ -56,6 +57,15 @@ export default async function AdminReviewsPage({
                 <td className="px-4 py-3">{review.companies?.name ?? review.pending_brand_name ?? review.company_id}</td>
                 <td className="px-4 py-3">{review.rating}</td>
                 <td className="px-4 py-3 font-semibold">{review.title}</td>
+                <td className="px-4 py-3">
+                  <dl className="grid gap-1 text-xs text-muted">
+                    <div><dt className="inline font-bold text-ink">Product:</dt> <dd className="inline">{review.product_type || "Not provided"}</dd></div>
+                    <div><dt className="inline font-bold text-ink">Order month:</dt> <dd className="inline">{review.order_month || "Not provided"}</dd></div>
+                    <div><dt className="inline font-bold text-ink">Delivery:</dt> <dd className="inline">{review.delivery_experience || "Not provided"}</dd></div>
+                    <div><dt className="inline font-bold text-ink">Service:</dt> <dd className="inline">{review.customer_service_experience || "Not provided"}</dd></div>
+                    <div><dt className="inline font-bold text-ink">Buy again:</dt> <dd className="inline">{review.would_buy_again || "Not provided"}</dd></div>
+                  </dl>
+                </td>
                 <td className="px-4 py-3">
                   {review.review_image_urls && review.review_image_urls.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -78,13 +88,13 @@ export default async function AdminReviewsPage({
                 <td className="px-4 py-3">{new Intl.DateTimeFormat("en-GB").format(new Date(review.created_at))}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
-                    {["approve", "reject", "verify"].map((actionName) => (
+                    {["approve", "reject", "delete", "spam", "verify"].map((actionName) => (
                       <form key={actionName} action={moderateReview}>
                         <input type="hidden" name="password" value={password} />
                         <input type="hidden" name="reviewId" value={review.id} />
                         <input type="hidden" name="action" value={actionName} />
                         <button className="rounded-full border border-line px-3 py-2 font-semibold capitalize hover:border-trust hover:text-trust-dark">
-                          {actionName === "verify" ? "Mark as verified" : actionName}
+                          {actionName === "verify" ? "Mark as verified" : actionName === "spam" ? "Mark as spam" : actionName}
                         </button>
                       </form>
                     ))}
@@ -94,7 +104,7 @@ export default async function AdminReviewsPage({
             ))}
             {password && reviews.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted">
                   No pending reviews found.
                 </td>
               </tr>

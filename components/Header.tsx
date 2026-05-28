@@ -25,6 +25,8 @@ export async function Header() {
 
         <nav className="hidden shrink-0 items-center gap-6 text-sm font-medium text-muted sm:flex">
           <Link href="/brands">Brands</Link>
+          <Link href="/category">Categories</Link>
+          <Link href="/compare">Compare</Link>
           <Link href="/review-guidelines">Guidelines</Link>
           <Link href="/contact">Contact</Link>
         </nav>

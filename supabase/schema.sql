@@ -51,6 +51,11 @@ create table if not exists reviews (
   reviewer_name text not null,
   reviewer_email text not null,
   order_number text,
+  product_type text,
+  order_month text,
+  delivery_experience text,
+  customer_service_experience text,
+  would_buy_again text,
   proof_image_url text,
   review_image_urls text[] default '{}',
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
@@ -62,6 +67,11 @@ create table if not exists reviews (
 );
 
 alter table reviews add column if not exists order_number text;
+alter table reviews add column if not exists product_type text;
+alter table reviews add column if not exists order_month text;
+alter table reviews add column if not exists delivery_experience text;
+alter table reviews add column if not exists customer_service_experience text;
+alter table reviews add column if not exists would_buy_again text;
 alter table reviews add column if not exists proof_image_url text;
 alter table reviews add column if not exists review_image_urls text[] default '{}';
 alter table reviews add column if not exists is_verified boolean not null default false;

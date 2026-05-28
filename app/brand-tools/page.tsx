@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
+import { BusinessReviewInviteTool } from "@/components/BusinessReviewInviteTool";
 import { createNoIndexMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createNoIndexMetadata(
@@ -9,25 +10,25 @@ export const metadata: Metadata = createNoIndexMetadata(
 
 export default function BrandToolsPage() {
   return (
-    <InfoPage
-      title="Brand tools"
-      subtitle="Furniture Brand Reviews is developing simple tools to help furniture companies understand and respond to customer feedback."
-      sections={[
-        {
-          title: "Planned tools",
-          bullets: [
-            "Review analytics for customer feedback themes.",
-            "Profile management for brand information and imagery.",
-            "Response tools for customer reviews.",
-            "Category insights for furniture and home brands."
-          ]
-        },
-        {
-          title: "Availability",
-          body: <p>Brand tools are not publicly available yet. Businesses can contact us to register interest.</p>,
-          cta: { label: "Contact us", href: "/contact" }
-        }
-      ]}
-    />
+    <>
+      <InfoPage
+        title="Brand tools"
+        subtitle="Furniture Brand Reviews is developing simple tools to help furniture companies understand and respond to customer feedback."
+        sections={[
+          {
+            title: "Planned tools",
+            bullets: [
+              "Review analytics for customer feedback themes.",
+              "Profile management for brand information and imagery.",
+              "Response tools for customer reviews.",
+              "Category insights for furniture and home brands."
+            ]
+          }
+        ]}
+      />
+      <section className="mx-auto max-w-[1200px] px-4 pb-16 sm:px-6 lg:px-10">
+        <BusinessReviewInviteTool />
+      </section>
+    </>
   );
 }

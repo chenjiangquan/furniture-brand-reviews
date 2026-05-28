@@ -9,6 +9,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { formatBlogDate, getLatestBlogs } from "@/lib/blogs";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
+import { getIndexableFeaturedComparisonLinks } from "@/lib/internal-links";
 import { buildGraph, buildPlatformOrganizationSchema, buildWebsiteSchema } from "@/lib/jsonLd";
 import { categoryConfigs } from "@/lib/seo-page-config";
 import { createSeoMetadata } from "@/lib/seo";
@@ -25,6 +26,7 @@ export default async function HomePage() {
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
   const latestReviews = await getLatestApprovedReviews();
   const latestBlogs = await getLatestBlogs(4);
+  const featuredComparisons = await getIndexableFeaturedComparisonLinks(3);
   const featuredCategories = categoryConfigs.filter((category) =>
     ["sofa-brands", "bedroom-furniture-brands", "dining-table-brands", "outdoor-furniture-brands"].includes(category.slug)
   );
@@ -60,6 +62,17 @@ export default async function HomePage() {
             </ul>
             <div className="mt-9">
               <SearchBar companies={companies} />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/brands" className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+                Browse furniture brands
+              </Link>
+              <Link href="/compare" className="rounded-full border border-line bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:border-trust">
+                Compare furniture brands
+              </Link>
+              <Link href="/best-furniture-brands" className="rounded-full border border-line bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:border-trust">
+                Best furniture brands
+              </Link>
             </div>
           </div>
         </div>
@@ -101,6 +114,18 @@ export default async function HomePage() {
                 {category.h1.replace(" Reviewed by Customers", "")}
               </Link>
             ))}
+            <Link href="/compare" className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark">
+              Compare furniture brands
+            </Link>
+            {featuredComparisons.map((comparison) => (
+              <Link
+                key={comparison.href}
+                href={comparison.href}
+                className="rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+              >
+                {comparison.label}
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -122,6 +147,28 @@ export default async function HomePage() {
 
       {latestBlogs.length > 0 ? (
         <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+          <div className="mb-8 rounded-2xl border border-line bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-ink">Browse by furniture category</h3>
+                <p className="mt-1 text-sm leading-6 text-muted">Jump into review categories linked to buying guides and brand rankings.</p>
+              </div>
+              <Link href="/category" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
+                All categories <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {categoryConfigs.slice(0, 10).map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/category/${category.slug}`}
+                  className="rounded-full border border-purple-100 bg-wash px-4 py-2 text-sm font-bold text-trust-dark transition hover:border-trust/40 hover:bg-purple-50"
+                >
+                  {category.h1.replace("Best ", "").replace(" Reviewed by Customers", "")}
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="mb-6 flex items-center justify-between gap-4">
             <h2 className="text-2xl font-bold text-ink">Latest furniture blog</h2>
             <Link href="/blog" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">

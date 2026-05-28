@@ -31,6 +31,11 @@ export type Review = {
   reviewer_name: string;
   reviewer_email: string;
   order_number: string | null;
+  product_type?: string | null;
+  order_month?: string | null;
+  delivery_experience?: string | null;
+  customer_service_experience?: string | null;
+  would_buy_again?: string | null;
   proof_image_url: string | null;
   review_image_urls: string[] | null;
   status: ReviewStatus;

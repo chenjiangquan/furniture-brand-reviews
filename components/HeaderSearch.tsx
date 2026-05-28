@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import type { Company } from "@/lib/types";
@@ -15,14 +14,23 @@ function getDomain(website: string) {
 }
 
 export function HeaderSearch({ companies }: { companies: Company[] }) {
-  const pathname = usePathname();
-  const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const isBrandProfilePage = /^\/review\/[^/]+$/.test(pathname);
+  const [isBrandProfilePage, setIsBrandProfilePage] = useState(false);
+
+  useEffect(() => {
+    function syncPathname() {
+      setIsBrandProfilePage(/^\/review\/[^/]+$/.test(window.location.pathname));
+    }
+
+    syncPathname();
+    window.addEventListener("popstate", syncPathname);
+
+    return () => window.removeEventListener("popstate", syncPathname);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 250);
@@ -58,7 +66,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
     if (!company) return;
     setIsOpen(false);
     setQuery("");
-    router.push(`/review/${company.slug}`);
+    window.location.href = `/review/${company.slug}`;
   }
 
   return (

@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CheckCircle2, Clock3, ExternalLink, Globe2, Mail, MessageSquareReply } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
+import { BrandShareActions } from "@/components/BrandShareActions";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { JsonLd } from "@/components/JsonLd";
 import { Rating } from "@/components/Rating";
+import { ReviewIntelligence } from "@/components/ReviewIntelligence";
 import { ReviewSummaryWithFilters } from "@/components/ReviewSummaryWithFilters";
 import { getApprovedReviewsForCompany, getCompanies, getCompanyBySlug, getRatingBreakdown } from "@/lib/data";
+import { getPublishedBlogs } from "@/lib/blogs";
 import {
   buildBrandOrganizationSchema,
   buildBreadcrumbSchema,
@@ -15,7 +18,8 @@ import {
   buildGraph,
   buildReviewItemListSchema
 } from "@/lib/jsonLd";
-import { categoryConfigs, companyMatchesKeywords } from "@/lib/seo-page-config";
+import { getRelatedBlogs, getRelatedBrands, getRelatedCategories, getRelatedComparisons, getRelatedRankingPages } from "@/lib/internal-links";
+import { buildReviewIntelligence, getReviewsForIntelligence } from "@/lib/review-intelligence";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import type { ReviewWithReply } from "@/lib/types";
 
@@ -35,14 +39,15 @@ function countMentions(reviews: ReviewWithReply[], keywords: string[]) {
 }
 
 function getCustomerThemes(reviews: ReviewWithReply[]) {
-  if (reviews.length < 3) return null;
+  const eligibleReviews = getReviewsForIntelligence(reviews);
+  if (eligibleReviews.length < 3) return null;
 
   const themes = [
-    { label: "Delivery experience", count: countMentions(reviews, deliveryKeywords) },
-    { label: "Product quality", count: countMentions(reviews, ["quality", "solid", "comfortable", "material", "finish", "assembly"]) },
-    { label: "Customer service", count: countMentions(reviews, ["service", "support", "reply", "help", "staff", "team"]) },
-    { label: "Value for money", count: countMentions(reviews, ["value", "price", "expensive", "cheap", "cost", "money"]) },
-    { label: "Returns or after-sales support", count: countMentions(reviews, ["return", "refund", "after-sales", "replacement", "warranty"]) }
+    { label: "Delivery experience", count: countMentions(eligibleReviews, deliveryKeywords) },
+    { label: "Product quality", count: countMentions(eligibleReviews, ["quality", "solid", "comfortable", "material", "finish", "assembly"]) },
+    { label: "Customer service", count: countMentions(eligibleReviews, ["service", "support", "reply", "help", "staff", "team"]) },
+    { label: "Value for money", count: countMentions(eligibleReviews, ["value", "price", "expensive", "cheap", "cost", "money"]) },
+    { label: "Returns or after-sales support", count: countMentions(eligibleReviews, ["return", "refund", "after-sales", "replacement", "warranty"]) }
   ];
 
   return themes.map((theme) => ({
@@ -118,7 +123,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${company.name} Reviews | Customer Ratings, Delivery & Complaints`;
   const hasReviews = company.review_count > 0 && company.average_rating > 0;
   const description = hasReviews
-    ? `Read ${company.review_count} independent ${company.name} reviews with an average rating of ${company.average_rating.toFixed(1)}/5. Compare delivery, product quality, service and customer feedback.`
+    ? `Read ${company.review_count} ${company.name} reviews covering delivery, product quality, customer service and complaints. Average rating: ${company.average_rating.toFixed(1)}/5.`
     : `Read and write independent ${company.name} reviews. Compare furniture delivery, product quality, customer service and complaints.`;
   const canonical = `${baseUrl}/review/${company.slug}`;
   const image = company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? "/logo.png";
@@ -151,11 +156,17 @@ export default async function CompanyReviewPage({ params }: Props) {
   const reviews = await getApprovedReviewsForCompany(company.id);
   const breakdown = getRatingBreakdown(reviews);
   const companies = await getCompanies();
-  const similarBrands = companies.filter((item) => item.slug !== company.slug).slice(0, 4);
-  const relatedCategories = categoryConfigs.filter((category) => companyMatchesKeywords(company, category.keywords)).slice(0, 4);
+  const blogs = await getPublishedBlogs();
+  const relatedBrands = getRelatedBrands(company, companies, 6);
+  const relatedCategories = getRelatedCategories(company, 4);
+  const relatedRankingPages = getRelatedRankingPages(company, 3);
+  const relatedComparisons = getRelatedComparisons(company, relatedBrands, 4);
+  const relatedBlogs = getRelatedBlogs(company, blogs, 3);
+  const intelligence = buildReviewIntelligence(reviews);
   const customerThemes = getCustomerThemes(reviews);
   const faqs = buildFaq(company.name, reviews);
   const canonical = `${baseUrl}/review/${company.slug}`;
+  const writeReviewUrl = `${baseUrl}/review/${company.slug}/write`;
   const aboutText =
     company.description || `${company.name} is listed on Furniture Brand Reviews as part of our UK furniture brand review directory.`;
 
@@ -189,6 +200,14 @@ export default async function CompanyReviewPage({ params }: Props) {
                   <p className="mt-3 max-w-3xl text-base leading-7 text-muted">
                     Customer reviews, ratings, delivery feedback and buying experiences for {company.name}.
                   </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link href={`/review/${company.slug}/write`} className="rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+                      Write a review
+                    </Link>
+                    <Link href={`/review/${company.slug}/write`} className="rounded-full border border-line bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:border-trust">
+                      Share your experience
+                    </Link>
+                  </div>
                   {company.website && (
                     <a
                       href={company.website}
@@ -238,25 +257,21 @@ export default async function CompanyReviewPage({ params }: Props) {
             writeReviewHref={`/review/${company.slug}/write`}
           />
 
-          <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">About {company.name}</h2>
-            <p className="leading-7 text-muted">{aboutText}</p>
+          <ReviewIntelligence companyName={company.name} intelligence={intelligence} />
+
+          <section className="rounded-xl border border-purple-100 bg-purple-50 p-6">
+            <h2 className="text-2xl font-bold text-ink">Share your furniture buying experience</h2>
+            <p className="mt-2 leading-7 text-muted">
+              Have you bought from {company.name}? Share your review to help other furniture buyers compare delivery, product quality and customer service.
+            </p>
+            <Link href={`/review/${company.slug}/write`} className="mt-5 inline-flex rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
+              Write a review for {company.name}
+            </Link>
           </section>
 
           <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">What customers mention about {company.name}</h2>
-            {customerThemes ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {customerThemes.map((theme) => (
-                  <div key={theme.label} className="rounded-xl bg-wash p-4">
-                    <h3 className="font-bold text-ink">{theme.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted">{theme.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="leading-7 text-muted">There are not enough detailed reviews yet to identify clear customer feedback patterns.</p>
-            )}
+            <h2 className="text-2xl font-bold text-ink">About {company.name}</h2>
+            <p className="leading-7 text-muted">{aboutText}</p>
           </section>
 
           <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -266,16 +281,6 @@ export default async function CompanyReviewPage({ params }: Props) {
             </p>
           </section>
 
-          <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">{company.name} delivery reviews</h2>
-            <p className="leading-7 text-muted">{getDeliverySummary(company.name, reviews)}</p>
-          </section>
-
-          <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">{company.name} complaints</h2>
-            <p className="leading-7 text-muted">{getComplaintsSummary(company.name, reviews)}</p>
-          </section>
-
           <section className="rounded-xl border border-gray-200 bg-wash p-6">
             <h2 className="text-2xl font-bold text-ink">Write a review for {company.name}</h2>
             <p className="mt-2 leading-7 text-muted">Share your furniture buying experience to help other shoppers compare delivery, quality and customer service.</p>
@@ -283,6 +288,7 @@ export default async function CompanyReviewPage({ params }: Props) {
               Write a review
             </Link>
           </section>
+          <BrandShareActions brandName={company.name} reviewPageUrl={canonical} writeReviewUrl={writeReviewUrl} />
         </main>
 
         <aside className="grid h-fit gap-5 lg:sticky lg:top-6">
@@ -351,28 +357,73 @@ export default async function CompanyReviewPage({ params }: Props) {
       </section>
 
       <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
+        {relatedComparisons.length > 0 ? (
+          <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Compare with similar brands</h2>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {relatedComparisons.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {relatedCategories.length > 0 ? (
           <div className="mb-10 rounded-xl border border-gray-200 bg-wash p-6">
             <h2 className="text-2xl font-bold text-ink">Related furniture categories</h2>
             <div className="mt-5 flex flex-wrap gap-3">
               {relatedCategories.map((category) => (
                 <Link
-                  key={category.slug}
-                  href={`/category/${category.slug}`}
+                  key={category.href}
+                  href={category.href}
                   className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
                 >
-                  {category.h1.replace(" Reviewed by Customers", "")}
+                  {category.label}
+                </Link>
+              ))}
+              {relatedRankingPages.map((ranking) => (
+                <Link
+                  key={ranking.href}
+                  href={ranking.href}
+                  className="rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+                >
+                  {ranking.label}
                 </Link>
               ))}
             </div>
           </div>
         ) : null}
-        <h2 className="text-2xl font-bold text-ink">People also viewed</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {similarBrands.map((brand) => (
-            <BrandCard key={brand.id} company={brand} />
-          ))}
-        </div>
+
+        {relatedBlogs.length > 0 ? (
+          <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Related buying guides</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {relatedBlogs.map((blog) => (
+                <Link key={blog.href} href={blog.href} className="rounded-xl border border-line bg-wash p-4 hover:border-trust">
+                  <h3 className="font-bold leading-snug text-ink">{blog.label}</h3>
+                  {blog.description ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{blog.description}</p> : null}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {relatedBrands.length > 0 ? (
+          <>
+            <h2 className="text-2xl font-bold text-ink">Related furniture brands</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {relatedBrands.map((brand) => (
+                <BrandCard key={brand.id} company={brand} />
+              ))}
+            </div>
+          </>
+        ) : null}
       </section>
     </div>
   );

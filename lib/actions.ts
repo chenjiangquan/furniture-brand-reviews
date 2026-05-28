@@ -88,6 +88,70 @@ function normalizeWebsiteInput(value: string) {
   }
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function hasSpamPattern(value: string) {
+  const lower = value.toLowerCase();
+  const spamKeywords = ["casino", "crypto giveaway", "free money", "viagra", "loan offer", "click here now"];
+  const repeatedCharacter = /(.)\1{14,}/i.test(value);
+  const repeatedWords = /\b(\w+)\b(?:\s+\1\b){5,}/i.test(lower);
+
+  return repeatedCharacter || repeatedWords || spamKeywords.some((keyword) => lower.includes(keyword));
+}
+
+function validateReviewInput({
+  rating,
+  title,
+  content,
+  reviewerName,
+  reviewerEmail,
+  confirmed
+}: {
+  rating: number;
+  title: string;
+  content: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  confirmed: boolean;
+}) {
+  if (!rating || rating < 1 || rating > 5) return "Please choose an overall rating.";
+  if (title.length < 5) return "Review title must be at least 5 characters.";
+  if (content.length < 50) return "Review content must be at least 50 characters.";
+  if (!reviewerName) return "Please enter your display name.";
+  if (!isValidEmail(reviewerEmail)) return "Please enter a valid email address.";
+  if (!confirmed) return "Please confirm this review is based on your genuine experience.";
+  if (hasSpamPattern(`${title} ${content}`)) return "This review looks like spam. Please edit it and try again.";
+
+  return "";
+}
+
+async function hasRecentReviewSubmission(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  companyId: string | null,
+  pendingBrandSlug: string | null,
+  reviewerEmail: string
+) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  let query = supabase
+    .from("reviews")
+    .select("id")
+    .eq("reviewer_email", reviewerEmail)
+    .gte("created_at", since)
+    .limit(1);
+
+  query = companyId ? query.eq("company_id", companyId) : query.eq("pending_brand_slug", pendingBrandSlug);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn("Recent review duplicate check failed", formatSupabaseError(error));
+    return false;
+  }
+
+  return Boolean(data?.length);
+}
+
 const allowedReviewImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxReviewImageCount = 5;
 const maxReviewImageSize = 5 * 1024 * 1024;
@@ -167,13 +231,25 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   const reviewerName = String(formData.get("name") ?? "").trim();
   const reviewerEmail = String(formData.get("email") ?? "").trim();
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
+  const productType = String(formData.get("productType") ?? "").trim() || null;
+  const orderMonth = String(formData.get("orderMonth") ?? "").trim() || null;
+  const deliveryExperience = String(formData.get("deliveryExperience") ?? "").trim() || null;
+  const customerServiceExperience = String(formData.get("customerServiceExperience") ?? "").trim() || null;
+  const wouldBuyAgain = String(formData.get("wouldBuyAgain") ?? "").trim() || null;
+  const confirmedGenuineExperience = formData.get("confirmedGenuineExperience") === "on";
   const proofImage = formData.get("proofImage");
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
 
-  if (!rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
-    return { ok: false, message: "Please complete all required fields before submitting." };
-  }
+  const validationMessage = validateReviewInput({
+    rating,
+    title,
+    content,
+    reviewerName,
+    reviewerEmail,
+    confirmed: confirmedGenuineExperience
+  });
+  if (validationMessage) return { ok: false, message: validationMessage };
 
   const supabase = getSupabase();
   if (!supabase) {
@@ -208,6 +284,10 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     };
   }
 
+  if (await hasRecentReviewSubmission(supabase, company.id, null, reviewerEmail)) {
+    return { ok: false, message: "You have already submitted a review for this brand in the last 24 hours." };
+  }
+
   const reviewImageUpload = await uploadReviewImages(supabase, reviewImages, `${company.slug}/${Date.now()}`);
   if (!reviewImageUpload.ok) {
     return { ok: false, message: reviewImageUpload.message };
@@ -235,6 +315,11 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     reviewer_name: reviewerName,
     reviewer_email: reviewerEmail,
     order_number: orderNumber,
+    product_type: productType,
+    order_month: orderMonth,
+    delivery_experience: deliveryExperience,
+    customer_service_experience: customerServiceExperience,
+    would_buy_again: wouldBuyAgain,
     proof_image_url: proofImageUrl,
     review_image_urls: reviewImageUpload.urls,
     status: "pending",
@@ -271,7 +356,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
 
   return {
     ok: true,
-    message: "Thank you. Your review has been submitted and will be checked before publishing."
+    message: "Thanks for your review. It will be checked before publication."
   };
 }
 
@@ -285,12 +370,26 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   const reviewerName = String(formData.get("name") ?? "").trim();
   const reviewerEmail = String(formData.get("email") ?? "").trim();
   const orderNumber = String(formData.get("orderNumber") ?? "").trim() || null;
+  const productType = String(formData.get("productType") ?? "").trim() || null;
+  const orderMonth = String(formData.get("orderMonth") ?? "").trim() || null;
+  const deliveryExperience = String(formData.get("deliveryExperience") ?? "").trim() || null;
+  const customerServiceExperience = String(formData.get("customerServiceExperience") ?? "").trim() || null;
+  const wouldBuyAgain = String(formData.get("wouldBuyAgain") ?? "").trim() || null;
+  const confirmedGenuineExperience = formData.get("confirmedGenuineExperience") === "on";
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
 
-  if (!brandName || !brandWebsite || !pendingBrandSlug || !rating || rating < 1 || rating > 5 || !title || !content || !reviewerName || !reviewerEmail) {
-    return { ok: false, message: "Please complete all required fields before submitting." };
-  }
+  if (!brandName || !brandWebsite || !pendingBrandSlug) return { ok: false, message: "Please complete all required brand fields before submitting." };
+
+  const validationMessage = validateReviewInput({
+    rating,
+    title,
+    content,
+    reviewerName,
+    reviewerEmail,
+    confirmed: confirmedGenuineExperience
+  });
+  if (validationMessage) return { ok: false, message: validationMessage };
 
   const supabase = getSupabase();
   if (!supabase) {
@@ -316,6 +415,10 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     return { ok: false, message: `Brand lookup failed: ${formatSupabaseError(companyError)}` };
   }
 
+  if (await hasRecentReviewSubmission(supabase, company?.id ?? null, company ? null : pendingBrandSlug, reviewerEmail)) {
+    return { ok: false, message: "You have already submitted a review for this brand in the last 24 hours." };
+  }
+
   const reviewImageUpload = await uploadReviewImages(supabase, reviewImages, `${pendingBrandSlug}/${Date.now()}`);
   if (!reviewImageUpload.ok) {
     return { ok: false, message: reviewImageUpload.message };
@@ -333,6 +436,11 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     reviewer_name: reviewerName,
     reviewer_email: reviewerEmail,
     order_number: orderNumber,
+    product_type: productType,
+    order_month: orderMonth,
+    delivery_experience: deliveryExperience,
+    customer_service_experience: customerServiceExperience,
+    would_buy_again: wouldBuyAgain,
     proof_image_url: reviewImageUpload.urls[0] ?? null,
     review_image_urls: reviewImageUpload.urls,
     status: "pending",
@@ -370,7 +478,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
 
   return {
     ok: true,
-    message: "Thank you. Your review has been submitted and will be checked before publishing."
+    message: "Thanks for your review. It will be checked before publication."
   };
 }
 
@@ -454,7 +562,7 @@ export async function moderateReview(formData: FormData) {
     }
   }
 
-  if (action === "reject") {
+  if (["reject", "delete", "spam"].includes(action)) {
     const { error: deleteError } = await supabase.from("reviews").delete().eq("id", reviewId);
 
     if (deleteError) {

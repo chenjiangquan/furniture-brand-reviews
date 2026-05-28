@@ -22,6 +22,21 @@ function SubmitButton() {
   );
 }
 
+const productTypes = [
+  "Sofa",
+  "Sofa bed",
+  "Dining table",
+  "Bed / mattress",
+  "Wardrobe / storage",
+  "Outdoor furniture",
+  "Office furniture",
+  "Other"
+];
+
+const deliveryOptions = ["On time", "Delayed", "Damaged on arrival", "Not delivered yet", "Not applicable"];
+const serviceOptions = ["Helpful", "Slow response", "No response", "Not contacted", "Not applicable"];
+const buyAgainOptions = ["Yes", "Maybe", "No"];
+
 export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: string }) {
   const [state, action] = useFormState(slug ? submitReview.bind(null, slug) : submitFirstReview, initialState);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -110,7 +125,7 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
         </div>
       )}
       <label className="grid gap-2">
-        <span className="font-semibold">Rating</span>
+        <span className="font-semibold">Overall rating</span>
         <select name="rating" required className="rounded-xl border border-line px-4 py-3">
           <option value="">Choose a rating</option>
           {[5, 4, 3, 2, 1].map((rating) => (
@@ -122,23 +137,87 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
       </label>
       <label className="grid gap-2">
         <span className="font-semibold">Review title</span>
-        <input name="title" required className="rounded-xl border border-line px-4 py-3" />
+        <input
+          name="title"
+          required
+          minLength={5}
+          placeholder="Summarise your furniture buying experience"
+          className="rounded-xl border border-line px-4 py-3"
+        />
       </label>
       <label className="grid gap-2">
         <span className="font-semibold">Review content</span>
-        <textarea name="content" required rows={7} className="rounded-xl border border-line px-4 py-3" />
+        <textarea
+          name="content"
+          required
+          minLength={50}
+          rows={7}
+          placeholder="What product did you buy? How was delivery? Was the product quality as expected? How was customer service? Would you buy from this brand again?"
+          className="rounded-xl border border-line px-4 py-3"
+        />
+        <span className="text-xs leading-5 text-muted">Please write at least 50 characters and include useful details for other furniture buyers.</span>
       </label>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <label className="grid min-w-0 gap-2">
-          <span className="font-semibold">Name</span>
+          <span className="font-semibold">Display name</span>
           <input name="name" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
+          <span className="text-xs text-muted">Shown publicly with your review.</span>
         </label>
         <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Email</span>
           <input name="email" type="email" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
+          <span className="text-xs text-muted">Used for moderation and spam prevention. Your email is not shown publicly.</span>
         </label>
       </div>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <label className="grid min-w-0 gap-2">
+          <span className="font-semibold">Product type optional</span>
+          <select name="productType" className="w-full max-w-full rounded-xl border border-line px-4 py-3">
+            <option value="">Choose a product type</option>
+            {productTypes.map((productType) => (
+              <option key={productType} value={productType}>
+                {productType}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid min-w-0 gap-2">
+          <span className="font-semibold">Order month optional</span>
+          <input name="orderMonth" type="month" className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
+        </label>
+        <label className="grid min-w-0 gap-2">
+          <span className="font-semibold">Delivery experience optional</span>
+          <select name="deliveryExperience" className="w-full max-w-full rounded-xl border border-line px-4 py-3">
+            <option value="">Choose an option</option>
+            {deliveryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid min-w-0 gap-2">
+          <span className="font-semibold">Customer service optional</span>
+          <select name="customerServiceExperience" className="w-full max-w-full rounded-xl border border-line px-4 py-3">
+            <option value="">Choose an option</option>
+            {serviceOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid min-w-0 gap-2">
+          <span className="font-semibold">Would buy again optional</span>
+          <select name="wouldBuyAgain" className="w-full max-w-full rounded-xl border border-line px-4 py-3">
+            <option value="">Choose an option</option>
+            {buyAgainOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="grid min-w-0 gap-2">
           <span className="font-semibold">Order number optional</span>
           <input name="orderNumber" className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
@@ -173,6 +252,15 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
           ))}
         </div>
       )}
+      <label className="flex items-start gap-3 rounded-xl border border-line bg-wash p-4 text-sm font-semibold text-ink">
+        <input
+          name="confirmedGenuineExperience"
+          type="checkbox"
+          required
+          className="mt-1 h-4 w-4 rounded border-line text-trust focus:ring-2 focus:ring-purple-200"
+        />
+        <span>I confirm this review is based on my genuine experience.</span>
+      </label>
       <SubmitButton />
     </form>
   );

@@ -4,6 +4,8 @@ import { BrandCard } from "@/components/BrandCard";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
+import { getPublishedBlogs } from "@/lib/blogs";
+import { getRelatedBlogs, getRelatedComparisons } from "@/lib/internal-links";
 import { buildBreadcrumbSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
 import { getRankingSeoData } from "@/lib/seo-page-data";
 import { categoryConfigs, type RankingConfig } from "@/lib/seo-page-config";
@@ -11,6 +13,13 @@ import { absoluteUrl } from "@/lib/seo";
 
 export async function RankingSeoPage({ config }: { config: RankingConfig }) {
   const { rankedCompanies, latestReviews, minimumReviewCount } = await getRankingSeoData(config);
+  const blogs = await getPublishedBlogs();
+  const relatedBlogs = getRelatedBlogs(config.h1, blogs, 3);
+  const relatedComparisons = rankedCompanies
+    .slice(0, 4)
+    .flatMap((company) => getRelatedComparisons(company, rankedCompanies, 2))
+    .filter((link, index, links) => links.findIndex((item) => item.href === link.href) === index)
+    .slice(0, 5);
   const pageUrl = absoluteUrl(`/${config.slug}`);
   const now = new Date();
   const itemListSchema = buildItemListSchema(
@@ -143,6 +152,59 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
                   <ArrowRight size={15} />
                 </Link>
               ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Related brand comparisons</h2>
+          {relatedComparisons.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-3">
+              {relatedComparisons.map((comparison) => (
+                <Link
+                  key={comparison.href}
+                  href={comparison.href}
+                  className="inline-flex items-center gap-2 rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust"
+                >
+                  {comparison.label}
+                  <ArrowRight size={15} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">Related comparison pages will appear as more reviewed brands qualify for this ranking.</p>
+          )}
+        </section>
+
+        {relatedBlogs.length > 0 ? (
+          <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Related blog guides</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {relatedBlogs.map((blog) => (
+                <Link key={blog.href} href={blog.href} className="rounded-xl border border-line bg-wash p-4 hover:border-trust">
+                  <h3 className="font-bold leading-snug text-ink">{blog.label}</h3>
+                  {blog.description ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{blog.description}</p> : null}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="rounded-2xl border border-line bg-ink p-6 text-white">
+          <h2 className="text-2xl font-bold">Explore more furniture reviews</h2>
+          <p className="mt-2 text-white/75">Browse all listed furniture brands or read more category pages before comparing companies.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/brands" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-ink">
+              Browse all brands
+            </Link>
+            {config.relatedCategories.slice(0, 2).map((slug) => (
+              <Link
+                key={slug}
+                href={`/category/${slug}`}
+                className="rounded-full border border-white/30 px-5 py-3 text-sm font-bold text-white hover:bg-white/10"
+              >
+                View {slug.replace(/-/g, " ")}
+              </Link>
+            ))}
           </div>
         </section>
 
