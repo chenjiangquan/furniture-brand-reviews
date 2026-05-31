@@ -879,6 +879,22 @@ export async function flagBusinessReview(formData: FormData) {
     businessRedirect(email, companySlug, { error: reviewError ? formatSupabaseError(reviewError) : "Review not found." });
   }
 
+  const { data: existingFlag, error: existingFlagError } = await supabase
+    .from("review_flags")
+    .select("id")
+    .eq("review_id", reviewId)
+    .ilike("reported_by_email", email)
+    .eq("status", "pending")
+    .limit(1);
+
+  if (existingFlagError) {
+    businessRedirect(email, companySlug, { error: formatSupabaseError(existingFlagError) });
+  }
+
+  if (existingFlag?.length) {
+    businessRedirect(email, companySlug, { success: "This review has already been flagged for admin review." });
+  }
+
   const { error } = await supabase.from("review_flags").insert({
     review_id: reviewId,
     company_id: companyId,

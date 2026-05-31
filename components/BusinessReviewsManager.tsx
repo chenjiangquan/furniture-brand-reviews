@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { Flag, MessageSquareReply, X } from "lucide-react";
 import { addBusinessReply, flagBusinessReview } from "@/lib/actions";
 import type { ReviewWithReply } from "@/lib/types";
@@ -20,6 +21,19 @@ const flagReasons = [
 function formatDate(value?: string | null) {
   if (!value) return "Not available";
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
+}
+
+function SubmitFlagButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      disabled={pending}
+      className="mt-5 w-full rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "Submitting flag..." : "Submit flag"}
+    </button>
+  );
 }
 
 export function BusinessReviewsManager({
@@ -217,9 +231,7 @@ export function BusinessReviewsManager({
                   className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
                 />
               </label>
-              <button className="mt-5 w-full rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-                Submit flag
-              </button>
+              <SubmitFlagButton />
             </form>
           </div>
         </div>
