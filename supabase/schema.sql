@@ -198,6 +198,19 @@ create policy "Public can read company replies" on company_replies
     )
   );
 
+drop policy if exists "Public can submit business claims" on business_claims;
+create policy "Public can submit business claims" on business_claims
+  for insert with check (status = 'pending');
+
+drop policy if exists "MVP admin can read business claims" on business_claims;
+create policy "MVP admin can read business claims" on business_claims
+  for select using (true);
+
+drop policy if exists "MVP admin can update business claims" on business_claims;
+create policy "MVP admin can update business claims" on business_claims
+  for update using (true)
+  with check (status in ('pending', 'approved', 'rejected'));
+
 drop policy if exists "Public can upload review images" on storage.objects;
 create policy "Public can upload review images" on storage.objects
   for insert with check (bucket_id = 'review-images');

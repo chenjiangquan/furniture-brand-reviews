@@ -4,9 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getBrandImageCandidates } from "@/lib/brand-images";
 import { parseCsv } from "@/lib/csv";
-import { sendReviewApprovedEmail, sendReviewSubmittedEmail } from "@/lib/email";
+import {
+  sendBusinessClaimApprovedEmail,
+  sendBusinessClaimSubmittedEmail,
+  sendReviewApprovedEmail,
+  sendReviewSubmittedEmail
+} from "@/lib/email";
 import { slugifyBrandName } from "@/lib/slug";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
+import { hasBusinessAccess } from "@/lib/business";
 import type { Company } from "@/lib/types";
 
 export type ReviewFormState = {
@@ -86,6 +92,16 @@ function normalizeWebsiteInput(value: string) {
   } catch {
     return trimmed;
   }
+}
+
+function businessRedirect(email: string, companySlug?: string | null, params?: Record<string, string>): never {
+  const searchParams = new URLSearchParams({ email, ...(companySlug ? { company: companySlug } : {}), ...(params ?? {}) });
+  redirect(`/business/dashboard?${searchParams.toString()}`);
+}
+
+function businessClaimsAdminRedirect(password: string, params?: Record<string, string>): never {
+  const searchParams = new URLSearchParams({ password, ...(params ?? {}) });
+  redirect(`/admin/business-claims?${searchParams.toString()}`);
 }
 
 function isValidEmail(value: string) {
@@ -636,6 +652,191 @@ export async function moderateReview(formData: FormData) {
   }
 
   adminRedirect(password);
+}
+
+export async function submitBusinessClaim(formData: FormData) {
+  const brandName = String(formData.get("brandName") ?? "").trim();
+  const companyId = String(formData.get("companyId") ?? "").trim() || null;
+  const website = normalizeWebsiteInput(String(formData.get("website") ?? ""));
+  const contactName = String(formData.get("contactName") ?? "").trim();
+  const contactEmail = String(formData.get("contactEmail") ?? "").trim().toLowerCase();
+  const messageInput = String(formData.get("message") ?? "").trim();
+  const message = [website ? `Website: ${website}` : null, messageInput || null].filter(Boolean).join("\n\n") || null;
+
+  if (!brandName || !website || !contactName || !isValidEmail(contactEmail)) {
+    redirect("/claim-your-profile?error=missing");
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) redirect("/claim-your-profile?error=supabase");
+
+  const { error } = await supabase.from("business_claims").insert({
+    company_id: companyId,
+    brand_name: brandName,
+    contact_name: contactName,
+    contact_email: contactEmail,
+    message,
+    status: "pending"
+  });
+
+  if (error) {
+    console.error("Business claim submit failed", formatSupabaseError(error));
+    redirect("/claim-your-profile?error=submit");
+  }
+
+  await sendBusinessClaimSubmittedEmail({
+    to: contactEmail,
+    contactName,
+    brandName
+  });
+
+  revalidatePath("/admin/tools");
+  revalidatePath("/admin/business-claims");
+  redirect("/claim-your-profile?submitted=1");
+}
+
+export async function moderateBusinessClaim(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const claimId = String(formData.get("claimId") ?? "");
+  const action = String(formData.get("action") ?? "");
+
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
+    redirect("/admin/business-claims?error=1");
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) businessClaimsAdminRedirect(password, { error: "Supabase is not configured." });
+
+  const { data: claim, error: claimError } = await supabase
+    .from("business_claims")
+    .select("id, company_id, brand_name, contact_name, contact_email, status, companies(id, name, slug)")
+    .eq("id", claimId)
+    .single();
+
+  if (claimError || !claim) {
+    businessClaimsAdminRedirect(password, { error: claimError ? formatSupabaseError(claimError) : "Claim not found." });
+  }
+
+  if (!["approve", "reject"].includes(action)) {
+    businessClaimsAdminRedirect(password, { error: "Unknown claim action." });
+  }
+
+  if (action === "approve" && !claim.company_id) {
+    businessClaimsAdminRedirect(password, { error: "Choose a company_id for this claim before approving." });
+  }
+
+  const nextStatus = action === "approve" ? "approved" : "rejected";
+  const { error: updateError } = await supabase.from("business_claims").update({ status: nextStatus }).eq("id", claimId);
+
+  if (updateError) {
+    businessClaimsAdminRedirect(password, { error: formatSupabaseError(updateError) });
+  }
+
+  const companyRelation = Array.isArray(claim.companies) ? claim.companies[0] : claim.companies;
+  if (action === "approve" && claim.company_id) {
+    await supabase.from("companies").update({ is_claimed: true }).eq("id", claim.company_id);
+
+    await sendBusinessClaimApprovedEmail({
+      to: claim.contact_email,
+      contactName: claim.contact_name,
+      brandName: companyRelation?.name ?? claim.brand_name,
+      loginEmail: claim.contact_email
+    });
+
+    if (companyRelation?.slug) revalidatePath(`/review/${companyRelation.slug}`);
+  }
+
+  revalidatePath("/admin/business-claims");
+  revalidatePath("/brands");
+  revalidatePath("/");
+  businessClaimsAdminRedirect(password, { success: action === "approve" ? "Claim approved and email sent." : "Claim rejected." });
+}
+
+export async function updateBusinessProfile(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const website = normalizeWebsiteInput(String(formData.get("website") ?? ""));
+  const category = String(formData.get("category") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const logoUrl = String(formData.get("logoUrl") ?? "").trim() || null;
+  const coverImageUrl = String(formData.get("coverImageUrl") ?? "").trim() || null;
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (!website || !category) {
+    businessRedirect(email, companySlug, { error: "Website and category are required." });
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      website,
+      category,
+      description,
+      logo_url: logoUrl,
+      cover_image_url: coverImageUrl,
+      is_claimed: true
+    })
+    .eq("id", companyId);
+
+  if (error) {
+    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+  }
+
+  revalidatePath(`/review/${companySlug}`);
+  revalidatePath("/brands");
+  revalidatePath("/");
+  businessRedirect(email, companySlug, { success: "Profile updated." });
+}
+
+export async function addBusinessReply(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const reviewId = String(formData.get("reviewId") ?? "").trim();
+  const reply = String(formData.get("reply") ?? "").trim();
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (!reviewId || reply.length < 10) {
+    businessRedirect(email, companySlug, { error: "Reply must be at least 10 characters." });
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+
+  const { data: review, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("company_id", companyId)
+    .eq("status", "approved")
+    .single();
+
+  if (reviewError || !review) {
+    businessRedirect(email, companySlug, { error: "Review not found." });
+  }
+
+  const { error } = await supabase.from("company_replies").insert({
+    review_id: reviewId,
+    company_id: companyId,
+    reply
+  });
+
+  if (error) {
+    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+  }
+
+  revalidatePath(`/review/${companySlug}`);
+  businessRedirect(email, companySlug, { success: "Reply published." });
 }
 
 export async function importCsv(_state: ImportState, formData: FormData): Promise<ImportState> {

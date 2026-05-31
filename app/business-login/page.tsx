@@ -11,17 +11,17 @@ export default function BusinessLoginPage() {
   return (
     <InfoPage
       title="Business login"
-      subtitle="Business tools are coming soon for furniture companies listed on Furniture Brand Reviews."
+      subtitle="Claimed furniture brands can now access a simple business dashboard for profile details, review replies and review invitation links."
       sections={[
         {
-          title: "Coming soon",
+          title: "Business dashboard MVP",
           body: (
             <p>
-              We are preparing business tools for profile management, review responses and customer feedback insights.
-              There is no public business login yet.
+              Use the email from your approved claim request to access the business dashboard. You can manage profile information,
+              reply to approved reviews, copy review invitation links and get widget embed codes.
             </p>
           ),
-          cta: { label: "Contact us", href: "/contact" }
+          cta: { label: "Business login", href: "/business/login" }
         }
       ]}
     />

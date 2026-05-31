@@ -29,6 +29,9 @@ export async function Header() {
           <Link href="/compare">Compare</Link>
           <Link href="/review-guidelines">Guidelines</Link>
           <Link href="/contact">Contact</Link>
+          <Link href="/business/login" className="rounded-full border border-purple-200 px-4 py-2 font-bold text-trust-dark hover:bg-purple-50">
+            Business login
+          </Link>
         </nav>
         <Link
           href="/brands"

@@ -1,0 +1,283 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ExternalLink, MessageSquareReply } from "lucide-react";
+import { addBusinessReply, updateBusinessProfile } from "@/lib/actions";
+import { getBusinessCompanyByEmail, getBusinessReviews } from "@/lib/business";
+import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
+import { Rating } from "@/components/Rating";
+
+export const metadata: Metadata = createNoIndexMetadata(
+  "Business dashboard",
+  "Manage claimed brand profiles, review replies and customer review invitation links on Furniture Brand Reviews."
+);
+
+function formatDate(value?: string | null) {
+  if (!value) return "Not available";
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
+}
+
+function dashboardUrl(email: string, company?: string) {
+  const params = new URLSearchParams({ email, ...(company ? { company } : {}) });
+  return `/business/dashboard?${params.toString()}`;
+}
+
+export default async function BusinessDashboardPage({
+  searchParams
+}: {
+  searchParams?: { email?: string; company?: string; success?: string; error?: string };
+}) {
+  const email = String(searchParams?.email ?? "").trim().toLowerCase();
+
+  if (!email) {
+    return (
+      <main className="mx-auto max-w-[960px] px-4 py-16 sm:px-6 lg:px-10">
+        <div className="rounded-2xl border border-purple-100 bg-white p-8 shadow-sm">
+          <h1 className="text-3xl font-bold text-ink">Business dashboard</h1>
+          <p className="mt-3 text-muted">Enter your business email to access claimed brand tools.</p>
+          <Link href="/business/login" className="mt-6 inline-flex rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
+            Business login
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const { companies, company } = await getBusinessCompanyByEmail(email, searchParams?.company);
+  const reviews = company ? await getBusinessReviews(company.id) : [];
+  const unansweredCount = reviews.filter((review) => !review.company_replies?.length).length;
+  const reviewPageUrl = company ? `${siteUrl}/review/${company.slug}` : "";
+  const writeReviewUrl = company ? `${siteUrl}/review/${company.slug}/write` : "";
+  const carouselWidgetCode = company
+    ? `<div class="fbr-widget" data-brand="${company.slug}" data-layout="carousel"></div>\n<script async src="${siteUrl}/widget.js"></script>`
+    : "";
+  const microWidgetCode = company
+    ? `<div class="fbr-widget" data-brand="${company.slug}" data-layout="micro"></div>\n<script async src="${siteUrl}/widget.js"></script>`
+    : "";
+
+  if (!company) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-12 sm:px-6 lg:px-10">
+        <div className="rounded-2xl border border-purple-100 bg-white p-8 shadow-sm">
+          <p className="text-sm font-bold uppercase tracking-wide text-trust-dark">Business dashboard</p>
+          <h1 className="mt-3 text-3xl font-bold text-ink">No approved brand claim found</h1>
+          <p className="mt-3 max-w-2xl leading-7 text-muted">
+            We could not find an approved brand claim for <strong>{email}</strong>. Submit a claim request or ask an admin to approve the claim before using business tools.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/claim-your-profile" className="rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
+              Claim your profile
+            </Link>
+            <Link href="/business/login" className="rounded-full border border-purple-200 px-5 py-3 font-bold text-trust-dark hover:bg-purple-50">
+              Try another email
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="bg-wash">
+      <section className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-purple-100 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-trust-dark">Claimed business tools</p>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight text-ink">{company.name}</h1>
+            <p className="mt-2 text-sm text-muted">Logged in as {email}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {companies.length > 1 ? (
+              <details className="relative">
+                <summary className="cursor-pointer rounded-full border border-purple-200 bg-white px-4 py-3 text-sm font-bold text-ink hover:bg-purple-50">
+                  Switch brand
+                </summary>
+                <div className="absolute right-0 z-10 mt-2 grid min-w-64 gap-1 rounded-2xl border border-purple-100 bg-white p-2 shadow-lg">
+                {companies.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={dashboardUrl(email, item.slug)}
+                    className={`rounded-xl px-3 py-2 text-sm font-bold ${item.slug === company.slug ? "bg-purple-50 text-trust-dark" : "text-slate-700 hover:bg-wash"}`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                </div>
+              </details>
+            ) : null}
+            <Link href={`/review/${company.slug}`} className="inline-flex items-center gap-2 rounded-full border border-purple-200 px-5 py-3 text-sm font-bold text-trust-dark hover:bg-purple-50">
+              View public profile <ExternalLink size={16} />
+            </Link>
+          </div>
+        </div>
+
+        {searchParams?.success ? <div className="mb-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">{searchParams.success}</div> : null}
+        {searchParams?.error ? <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">{searchParams.error}</div> : null}
+
+        <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <aside className="h-fit rounded-2xl border border-purple-100 bg-white p-4 shadow-sm lg:sticky lg:top-6">
+            <nav className="grid gap-2 text-sm font-bold">
+              {["Overview", "Reviews", "Profile", "Invite customers", "Widgets"].map((item) => (
+                <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="rounded-xl px-4 py-3 text-slate-700 hover:bg-purple-50 hover:text-trust-dark">
+                  {item}
+                </a>
+              ))}
+            </nav>
+          </aside>
+
+          <div className="grid gap-6">
+            <section id="overview" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Overview</h2>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl bg-wash p-5">
+                  <p className="text-sm font-bold text-muted">Average rating</p>
+                  <div className="mt-3">
+                    <Rating value={Number(company.average_rating || 0)} size="medium" />
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-wash p-5">
+                  <p className="text-sm font-bold text-muted">Published reviews</p>
+                  <p className="mt-3 text-3xl font-bold text-ink">{company.review_count}</p>
+                </div>
+                <div className="rounded-2xl bg-wash p-5">
+                  <p className="text-sm font-bold text-muted">Reviews without replies</p>
+                  <p className="mt-3 text-3xl font-bold text-ink">{unansweredCount}</p>
+                </div>
+              </div>
+            </section>
+
+            <section id="reviews" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-bold text-ink">Reviews</h2>
+                  <p className="mt-1 text-sm text-muted">Reply to approved customer reviews. Replies are public on the brand profile.</p>
+                </div>
+                <Link href={`/review/${company.slug}`} className="rounded-full bg-trust px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark">
+                  Read all reviews
+                </Link>
+              </div>
+
+              <div className="mt-6 grid gap-4">
+                {reviews.slice(0, 12).map((review) => (
+                  <article key={review.id} className="rounded-2xl border border-purple-100 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <Rating value={review.rating} size="small" />
+                        <h3 className="mt-3 text-lg font-bold text-ink">{review.title}</h3>
+                        <p className="mt-2 line-clamp-4 leading-7 text-muted">{review.content}</p>
+                        <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted">
+                          {review.reviewer_name} · {formatDate(review.created_at)}
+                        </p>
+                      </div>
+                      {review.company_replies?.length ? (
+                        <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-trust-dark">Replied</span>
+                      ) : (
+                        <span className="rounded-full bg-wash px-3 py-1 text-xs font-bold text-muted">Needs reply</span>
+                      )}
+                    </div>
+
+                    {review.company_replies?.map((reply) => (
+                      <div key={reply.id} className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
+                        <p className="font-bold text-trust-dark">Your reply</p>
+                        <p className="mt-1">{reply.reply}</p>
+                      </div>
+                    ))}
+
+                    {!review.company_replies?.length ? (
+                      <form action={addBusinessReply} className="mt-4 grid gap-3">
+                        <input type="hidden" name="email" value={email} />
+                        <input type="hidden" name="companyId" value={company.id} />
+                        <input type="hidden" name="companySlug" value={company.slug} />
+                        <input type="hidden" name="reviewId" value={review.id} />
+                        <textarea
+                          name="reply"
+                          required
+                          minLength={10}
+                          placeholder="Write a helpful, professional public reply..."
+                          className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                        />
+                        <button className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+                          <MessageSquareReply size={16} />
+                          Publish reply
+                        </button>
+                      </form>
+                    ) : null}
+                  </article>
+                ))}
+                {!reviews.length ? <p className="rounded-xl bg-wash p-5 text-muted">No approved reviews yet.</p> : null}
+              </div>
+            </section>
+
+            <section id="profile" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Profile details</h2>
+              <form action={updateBusinessProfile} className="mt-5 grid gap-4">
+                <input type="hidden" name="email" value={email} />
+                <input type="hidden" name="companyId" value={company.id} />
+                <input type="hidden" name="companySlug" value={company.slug} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">Website</span>
+                    <input name="website" required defaultValue={company.website} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">Category</span>
+                    <input name="category" required defaultValue={company.category} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                  </label>
+                </div>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Description</span>
+                  <textarea name="description" defaultValue={company.description ?? ""} className="min-h-[120px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">Logo URL</span>
+                    <input name="logoUrl" defaultValue={company.logo_url ?? ""} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">Cover image URL</span>
+                    <input name="coverImageUrl" defaultValue={company.cover_image_url ?? ""} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                  </label>
+                </div>
+                <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Save profile</button>
+              </form>
+            </section>
+
+            <section id="invite-customers" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Invite customers</h2>
+              <p className="mt-2 text-muted">Use this neutral invitation message. Do not offer rewards or ask only satisfied customers to review.</p>
+              <div className="mt-5 grid gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Write review link</span>
+                  <input readOnly value={writeReviewUrl} className="w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm text-muted" />
+                </label>
+                <textarea
+                  readOnly
+                  value={`Hi, thank you for choosing ${company.name}.\n\nIf you have a moment, we would appreciate your honest feedback on Furniture Brand Reviews:\n${writeReviewUrl}\n\nYour review helps other furniture buyers make more informed decisions.`}
+                  className="min-h-[180px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm leading-6 text-muted"
+                />
+              </div>
+            </section>
+
+            <section id="widgets" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Embed widgets</h2>
+              <p className="mt-2 text-muted">Copy these snippets into your website to show Furniture Brand Reviews ratings and reviews.</p>
+              <div className="mt-5 grid gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Carousel widget</span>
+                  <textarea readOnly value={carouselWidgetCode} className="min-h-[92px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 font-mono text-xs text-muted" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Micro widget</span>
+                  <textarea readOnly value={microWidgetCode} className="min-h-[92px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 font-mono text-xs text-muted" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Public review page</span>
+                  <input readOnly value={reviewPageUrl} className="w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm text-muted" />
+                </label>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

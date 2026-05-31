@@ -15,6 +15,16 @@ type ReviewApprovedEmailInput = ReviewSubmittedEmailInput & {
   brandSlug: string;
 };
 
+type BusinessClaimEmailInput = {
+  to: string | null | undefined;
+  contactName: string;
+  brandName: string;
+};
+
+type BusinessClaimApprovedEmailInput = BusinessClaimEmailInput & {
+  loginEmail: string;
+};
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -169,6 +179,84 @@ Independent furniture brand reviews worldwide.`;
   return sendEmail({
     to,
     subject: "Your review has been published",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessClaimSubmittedEmail({ to, contactName, brandName }: BusinessClaimEmailInput) {
+  const displayContactName = safeValue(contactName, "there");
+  const displayBrandName = safeValue(brandName, "your brand");
+  const safeContactName = escapeHtml(displayContactName);
+  const safeBrandName = escapeHtml(displayBrandName);
+  const text = `Hi ${displayContactName},
+
+Thank you for submitting a business claim for ${displayBrandName}.
+
+Your claim is pending review. We check business claims before enabling dashboard access so brand profiles and customer reviews stay protected.
+
+We will notify you once your claim has been approved.
+
+Furniture Brand Reviews
+Independent furniture brand reviews worldwide.`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Business claim received</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Hi ${safeContactName},</p>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Thank you for submitting a business claim for <strong style="color:#111827;">${safeBrandName}</strong>.</p>
+<p style="margin:0 0 22px 0;font-size:16px;line-height:1.7;color:#374151;">Your claim is pending review. We check business claims before enabling dashboard access so brand profiles and customer reviews stay protected.</p>
+<div style="margin:24px 0 0 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;font-weight:700;">We will notify you once your claim has been approved.</div>`);
+
+  return sendEmail({
+    to,
+    subject: "Your business claim has been submitted",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessClaimApprovedEmail({ to, contactName, brandName, loginEmail }: BusinessClaimApprovedEmailInput) {
+  const displayContactName = safeValue(contactName, "there");
+  const displayBrandName = safeValue(brandName, "your brand");
+  const displayLoginEmail = safeValue(loginEmail, "your approved business email");
+  const safeContactName = escapeHtml(displayContactName);
+  const safeBrandName = escapeHtml(displayBrandName);
+  const safeLoginEmail = escapeHtml(displayLoginEmail);
+  const loginUrl = `https://www.furniturebrandreviews.com/business/login?email=${encodeURIComponent(displayLoginEmail)}`;
+  const safeLoginUrl = escapeHtml(loginUrl);
+  const text = `Hi ${displayContactName},
+
+Your business claim for ${displayBrandName} has been approved.
+
+You can log in to the Furniture Brand Reviews business dashboard using:
+${displayLoginEmail}
+
+Login here:
+${loginUrl}
+
+Inside the dashboard you can manage profile information, reply to approved reviews, copy review invitation links and get widget embed codes.
+
+Furniture Brand Reviews
+Independent furniture brand reviews worldwide.`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Your business dashboard is ready</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Hi ${safeContactName},</p>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Your business claim for <strong style="color:#111827;">${safeBrandName}</strong> has been approved.</p>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;">
+  <strong>Login email:</strong> ${safeLoginEmail}<br />
+  Use this email on the business login page to access your dashboard.
+</div>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeLoginUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Open business dashboard</a>
+    </td>
+  </tr>
+</table>
+<p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">Inside the dashboard you can manage profile information, reply to approved reviews, copy review invitation links and get widget embed codes.</p>`);
+
+  return sendEmail({
+    to,
+    subject: "Your Furniture Brand Reviews business dashboard is ready",
     text,
     html
   });
