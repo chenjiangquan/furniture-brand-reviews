@@ -146,7 +146,8 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
     .from("company_replies")
     .select("*")
     .eq("company_id", companyId)
-    .in("review_id", reviewIds);
+    .in("review_id", reviewIds)
+    .order("created_at", { ascending: false });
 
   if (repliesError) {
     console.error(repliesError);
@@ -155,7 +156,7 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
 
   return reviews.map((review) => ({
     ...review,
-    company_replies: (replies ?? []).filter((reply) => reply.review_id === review.id)
+    company_replies: (replies ?? []).filter((reply) => reply.review_id === review.id).slice(0, 1)
   })) as ReviewWithReply[];
 });
 

@@ -36,7 +36,7 @@ function SubmitFlagButton() {
   );
 }
 
-function SubmitReplyButton() {
+function SubmitReplyButton({ hasExistingReply }: { hasExistingReply: boolean }) {
   const { pending } = useFormStatus();
 
   return (
@@ -45,7 +45,7 @@ function SubmitReplyButton() {
       className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark disabled:cursor-not-allowed disabled:opacity-60"
     >
       <MessageSquareReply size={16} />
-      {pending ? "Publishing reply..." : "Publish reply"}
+      {pending ? "Saving reply..." : hasExistingReply ? "Save reply" : "Publish reply"}
     </button>
   );
 }
@@ -54,12 +54,14 @@ function BusinessReplyForm({
   email,
   companyId,
   companySlug,
-  reviewId
+  reviewId,
+  existingReply
 }: {
   email: string;
   companyId: string;
   companySlug: string;
   reviewId: string;
+  existingReply?: string;
 }) {
   const [replyState, replyAction] = useFormState(addBusinessReplyInline, { ok: false, message: "" });
 
@@ -80,10 +82,11 @@ function BusinessReplyForm({
             name="reply"
             required
             minLength={10}
+            defaultValue={existingReply ?? ""}
             placeholder="Write a helpful, professional public reply..."
             className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
           />
-          <SubmitReplyButton />
+          <SubmitReplyButton hasExistingReply={Boolean(existingReply)} />
         </>
       ) : null}
     </form>
@@ -256,14 +259,14 @@ export function BusinessReviewsManager({
               </div>
             </div>
 
-            {review.company_replies?.map((reply) => (
-              <div key={reply.id} className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
+            {review.company_replies?.[0] ? (
+              <div className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
                 <p className="font-bold text-trust-dark">Your reply</p>
-                <p className="mt-1">{reply.reply}</p>
+                <p className="mt-1">{review.company_replies[0].reply}</p>
               </div>
-            ))}
+            ) : null}
 
-            {!review.company_replies?.length ? <BusinessReplyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} /> : null}
+            <BusinessReplyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} existingReply={review.company_replies?.[0]?.reply} />
           </article>
         ))}
 

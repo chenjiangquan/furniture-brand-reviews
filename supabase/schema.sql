@@ -151,6 +151,7 @@ create index if not exists reviews_status_created_idx on reviews(status, created
 create index if not exists blogs_status_published_idx on blogs(status, published_at);
 create index if not exists review_flags_status_created_idx on review_flags(status, created_at);
 create index if not exists review_flags_review_idx on review_flags(review_id);
+create unique index if not exists company_replies_review_id_key on company_replies(review_id);
 
 alter table companies enable row level security;
 alter table reviews enable row level security;

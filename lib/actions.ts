@@ -835,11 +835,26 @@ export async function addBusinessReply(formData: FormData) {
     businessRedirect(email, companySlug, { error: "Review not found." });
   }
 
-  const { error } = await supabase.from("company_replies").insert({
-    review_id: reviewId,
-    company_id: companyId,
-    reply
-  });
+  const { data: existingReplies, error: existingReplyError } = await supabase
+    .from("company_replies")
+    .select("id")
+    .eq("review_id", reviewId)
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (existingReplyError) {
+    businessRedirect(email, companySlug, { error: formatSupabaseError(existingReplyError) });
+  }
+
+  const existingReply = existingReplies?.[0] ?? null;
+  const { error } = existingReply
+    ? await supabase.from("company_replies").update({ reply }).eq("id", existingReply.id)
+    : await supabase.from("company_replies").insert({
+        review_id: reviewId,
+        company_id: companyId,
+        reply
+      });
 
   if (error) {
     businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
@@ -879,26 +894,26 @@ export async function addBusinessReplyInline(_state: BusinessReplyState, formDat
     return { ok: false, message: reviewError ? formatSupabaseError(reviewError) : "Review not found." };
   }
 
-  const { data: existingReply, error: existingReplyError } = await supabase
+  const { data: existingReplies, error: existingReplyError } = await supabase
     .from("company_replies")
     .select("id")
     .eq("review_id", reviewId)
     .eq("company_id", companyId)
+    .order("created_at", { ascending: false })
     .limit(1);
 
   if (existingReplyError) {
     return { ok: false, message: formatSupabaseError(existingReplyError) };
   }
 
-  if (existingReply?.length) {
-    return { ok: true, message: "A public reply has already been published for this review." };
-  }
-
-  const { error } = await supabase.from("company_replies").insert({
-    review_id: reviewId,
-    company_id: companyId,
-    reply
-  });
+  const existingReply = existingReplies?.[0] ?? null;
+  const { error } = existingReply
+    ? await supabase.from("company_replies").update({ reply }).eq("id", existingReply.id)
+    : await supabase.from("company_replies").insert({
+        review_id: reviewId,
+        company_id: companyId,
+        reply
+      });
 
   if (error) {
     return { ok: false, message: formatSupabaseError(error) };
@@ -906,7 +921,7 @@ export async function addBusinessReplyInline(_state: BusinessReplyState, formDat
 
   revalidatePath(`/review/${companySlug}`);
   revalidatePath(`/business/dashboard`);
-  return { ok: true, message: "Reply published. It is now visible on the public brand profile." };
+  return { ok: true, message: existingReply ? "Reply updated. The latest reply is now visible on the public brand profile." : "Reply published. It is now visible on the public brand profile." };
 }
 
 const reviewFlagReasons = new Set([

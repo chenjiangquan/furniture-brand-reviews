@@ -16,6 +16,7 @@ function getInitials(name: string) {
 
 export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; brandSlug?: string }) {
   const actionBrandSlug = brandSlug ?? review.companies?.slug ?? "";
+  const latestReply = review.company_replies?.[0];
 
   return (
     <article id={`review-${review.id}`} className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 shadow-sm">
@@ -46,12 +47,12 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
           {review.review_image_urls && review.review_image_urls.length > 0 && (
             <ReviewImageGallery images={review.review_image_urls} maxImages={4} />
           )}
-          {review.company_replies?.map((reply) => (
-            <div key={reply.id} className="mt-5 rounded-xl border border-line bg-wash p-4">
+          {latestReply ? (
+            <div className="mt-5 rounded-xl border border-line bg-wash p-4">
               <p className="text-sm font-bold text-ink">Company reply</p>
-              <p className="mt-2 text-sm leading-6 text-muted">{reply.reply}</p>
+              <p className="mt-2 text-sm leading-6 text-muted">{latestReply.reply}</p>
             </div>
-          ))}
+          ) : null}
           {actionBrandSlug && (
             <ReviewCardActions
               reviewId={review.id}
