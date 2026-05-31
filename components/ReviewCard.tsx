@@ -50,7 +50,7 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
           {latestReply ? (
             <div className="mt-5 rounded-xl border border-line bg-wash p-4">
               <p className="text-sm font-bold text-ink">Company reply</p>
-              <p className="mt-2 text-sm leading-6 text-muted">{latestReply.reply}</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{latestReply.reply}</p>
             </div>
           ) : null}
           {actionBrandSlug && (

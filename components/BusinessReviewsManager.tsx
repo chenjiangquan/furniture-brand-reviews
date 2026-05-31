@@ -262,7 +262,7 @@ export function BusinessReviewsManager({
             {review.company_replies?.[0] ? (
               <div className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
                 <p className="font-bold text-trust-dark">Your reply</p>
-                <p className="mt-1">{review.company_replies[0].reply}</p>
+                <p className="mt-1 whitespace-pre-line">{review.company_replies[0].reply}</p>
               </div>
             ) : null}
 
