@@ -2,7 +2,7 @@ import { cache } from "react";
 import { unstable_noStore as noStore } from "next/cache";
 import { sampleCompanies, sampleReviews } from "@/lib/sample-data";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
-import type { Company, Review, ReviewWithReply } from "@/lib/types";
+import type { Company, Review, ReviewFlag, ReviewWithReply } from "@/lib/types";
 
 function normalizeCompany(company: Company): Company {
   return {
@@ -228,6 +228,32 @@ export async function getPendingReviews(password: string): Promise<Review[]> {
     ...review,
     companies: Array.isArray(review.companies) ? review.companies[0] : review.companies
   })) as Review[];
+}
+
+export async function getPendingReviewFlags(password: string): Promise<ReviewFlag[]> {
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) return [];
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("review_flags")
+    .select(
+      "id, review_id, company_id, reason, details, reported_by_email, status, created_at, reviewed_at, reviews(id, rating, title, content, reviewer_name, reviewer_email, created_at), companies(name, slug)"
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return (data ?? []).map((flag) => ({
+    ...flag,
+    reviews: Array.isArray(flag.reviews) ? flag.reviews[0] : flag.reviews,
+    companies: Array.isArray(flag.companies) ? flag.companies[0] : flag.companies
+  })) as ReviewFlag[];
 }
 
 export function getRatingBreakdown(reviews: ReviewWithReply[]) {

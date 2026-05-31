@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink, MessageSquareReply } from "lucide-react";
-import { addBusinessReply, updateBusinessProfile } from "@/lib/actions";
+import { ExternalLink } from "lucide-react";
+import { updateBusinessProfile } from "@/lib/actions";
 import { getBusinessCompanyByEmail, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
+import { BusinessReviewsManager } from "@/components/BusinessReviewsManager";
 
 export const metadata: Metadata = createNoIndexMetadata(
   "Business dashboard",
   "Manage claimed brand profiles, review replies and customer review invitation links on Furniture Brand Reviews."
 );
-
-function formatDate(value?: string | null) {
-  if (!value) return "Not available";
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
-}
 
 function dashboardUrl(email: string, company?: string) {
   const params = new URLSearchParams({ email, ...(company ? { company } : {}) });
@@ -145,67 +141,7 @@ export default async function BusinessDashboardPage({
               </div>
             </section>
 
-            <section id="reviews" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-bold text-ink">Reviews</h2>
-                  <p className="mt-1 text-sm text-muted">Reply to approved customer reviews. Replies are public on the brand profile.</p>
-                </div>
-                <Link href={`/review/${company.slug}`} className="rounded-full bg-trust px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark">
-                  Read all reviews
-                </Link>
-              </div>
-
-              <div className="mt-6 grid gap-4">
-                {reviews.slice(0, 12).map((review) => (
-                  <article key={review.id} className="rounded-2xl border border-purple-100 p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <Rating value={review.rating} size="small" />
-                        <h3 className="mt-3 text-lg font-bold text-ink">{review.title}</h3>
-                        <p className="mt-2 line-clamp-4 leading-7 text-muted">{review.content}</p>
-                        <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted">
-                          {review.reviewer_name} · {formatDate(review.created_at)}
-                        </p>
-                      </div>
-                      {review.company_replies?.length ? (
-                        <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-trust-dark">Replied</span>
-                      ) : (
-                        <span className="rounded-full bg-wash px-3 py-1 text-xs font-bold text-muted">Needs reply</span>
-                      )}
-                    </div>
-
-                    {review.company_replies?.map((reply) => (
-                      <div key={reply.id} className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
-                        <p className="font-bold text-trust-dark">Your reply</p>
-                        <p className="mt-1">{reply.reply}</p>
-                      </div>
-                    ))}
-
-                    {!review.company_replies?.length ? (
-                      <form action={addBusinessReply} className="mt-4 grid gap-3">
-                        <input type="hidden" name="email" value={email} />
-                        <input type="hidden" name="companyId" value={company.id} />
-                        <input type="hidden" name="companySlug" value={company.slug} />
-                        <input type="hidden" name="reviewId" value={review.id} />
-                        <textarea
-                          name="reply"
-                          required
-                          minLength={10}
-                          placeholder="Write a helpful, professional public reply..."
-                          className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                        />
-                        <button className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-                          <MessageSquareReply size={16} />
-                          Publish reply
-                        </button>
-                      </form>
-                    ) : null}
-                  </article>
-                ))}
-                {!reviews.length ? <p className="rounded-xl bg-wash p-5 text-muted">No approved reviews yet.</p> : null}
-              </div>
-            </section>
+            <BusinessReviewsManager reviews={reviews} email={email} companyId={company.id} companySlug={company.slug} />
 
             <section id="profile" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Profile details</h2>

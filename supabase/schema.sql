@@ -103,6 +103,18 @@ create table if not exists business_claims (
   created_at timestamptz not null default now()
 );
 
+create table if not exists review_flags (
+  id uuid primary key default gen_random_uuid(),
+  review_id uuid not null references reviews(id) on delete cascade,
+  company_id uuid not null references companies(id) on delete cascade,
+  reason text not null,
+  details text,
+  reported_by_email text not null,
+  status text not null default 'pending' check (status in ('pending', 'reviewed', 'dismissed')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+
 create table if not exists blogs (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -137,12 +149,15 @@ alter table blogs add column if not exists updated_at timestamptz not null defau
 create index if not exists reviews_company_status_idx on reviews(company_id, status);
 create index if not exists reviews_status_created_idx on reviews(status, created_at);
 create index if not exists blogs_status_published_idx on blogs(status, published_at);
+create index if not exists review_flags_status_created_idx on review_flags(status, created_at);
+create index if not exists review_flags_review_idx on review_flags(review_id);
 
 alter table companies enable row level security;
 alter table reviews enable row level security;
 alter table company_replies enable row level security;
 alter table business_claims enable row level security;
 alter table blogs enable row level security;
+alter table review_flags enable row level security;
 
 drop policy if exists "Public can read companies" on companies;
 create policy "Public can read companies" on companies
@@ -210,6 +225,19 @@ drop policy if exists "MVP admin can update business claims" on business_claims;
 create policy "MVP admin can update business claims" on business_claims
   for update using (true)
   with check (status in ('pending', 'approved', 'rejected'));
+
+drop policy if exists "MVP admin can read review flags" on review_flags;
+create policy "MVP admin can read review flags" on review_flags
+  for select using (true);
+
+drop policy if exists "Business users can submit review flags" on review_flags;
+create policy "Business users can submit review flags" on review_flags
+  for insert with check (status = 'pending');
+
+drop policy if exists "MVP admin can update review flags" on review_flags;
+create policy "MVP admin can update review flags" on review_flags
+  for update using (true)
+  with check (status in ('pending', 'reviewed', 'dismissed'));
 
 drop policy if exists "Public can upload review images" on storage.objects;
 create policy "Public can upload review images" on storage.objects

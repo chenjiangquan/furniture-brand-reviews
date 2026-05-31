@@ -839,6 +839,92 @@ export async function addBusinessReply(formData: FormData) {
   businessRedirect(email, companySlug, { success: "Reply published." });
 }
 
+const reviewFlagReasons = new Set([
+  "Harmful or illegal",
+  "Personal information",
+  "Advertising or promotional",
+  "About a different business",
+  "Not based on a genuine experience",
+  "None of the flagging reasons apply"
+]);
+
+export async function flagBusinessReview(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const reviewId = String(formData.get("reviewId") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  const details = String(formData.get("details") ?? "").trim() || null;
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (!reviewId || !reviewFlagReasons.has(reason)) {
+    businessRedirect(email, companySlug, { error: "Choose a valid flag reason." });
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+
+  const { data: review, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("company_id", companyId)
+    .eq("status", "approved")
+    .single();
+
+  if (reviewError || !review) {
+    businessRedirect(email, companySlug, { error: reviewError ? formatSupabaseError(reviewError) : "Review not found." });
+  }
+
+  const { error } = await supabase.from("review_flags").insert({
+    review_id: reviewId,
+    company_id: companyId,
+    reason,
+    details,
+    reported_by_email: email,
+    status: "pending"
+  });
+
+  if (error) {
+    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+  }
+
+  revalidatePath("/admin/reviews");
+  businessRedirect(email, companySlug, { success: "Review flagged for admin review." });
+}
+
+export async function moderateReviewFlag(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const flagId = String(formData.get("flagId") ?? "");
+  const action = String(formData.get("action") ?? "");
+
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
+    redirect("/admin/reviews?error=1");
+  }
+
+  if (!flagId || !["reviewed", "dismissed"].includes(action)) {
+    adminRedirect(password, { error: "Unknown flag action." });
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) adminRedirect(password, { error: "Supabase is not configured yet." });
+
+  const { error } = await supabase
+    .from("review_flags")
+    .update({ status: action, reviewed_at: new Date().toISOString() })
+    .eq("id", flagId);
+
+  if (error) {
+    adminRedirect(password, { error: formatSupabaseError(error) });
+  }
+
+  revalidatePath("/admin/reviews");
+  adminRedirect(password, { success: action === "reviewed" ? "Flag marked as reviewed." : "Flag dismissed." });
+}
+
 export async function importCsv(_state: ImportState, formData: FormData): Promise<ImportState> {
   const password = String(formData.get("password") ?? "");
   const importType = String(formData.get("importType") ?? "");

@@ -56,3 +56,19 @@ export type CompanyReply = {
 export type ReviewWithReply = Review & {
   company_replies?: CompanyReply[];
 };
+
+export type ReviewFlagStatus = "pending" | "reviewed" | "dismissed";
+
+export type ReviewFlag = {
+  id: string;
+  review_id: string;
+  company_id: string;
+  reason: string;
+  details: string | null;
+  reported_by_email: string;
+  status: ReviewFlagStatus;
+  created_at: string;
+  reviewed_at?: string | null;
+  reviews?: Pick<Review, "id" | "rating" | "title" | "content" | "reviewer_name" | "reviewer_email" | "created_at"> | null;
+  companies?: Pick<Company, "name" | "slug"> | null;
+};
