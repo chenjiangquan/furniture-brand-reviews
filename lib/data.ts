@@ -141,12 +141,10 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
   const reviews = data ?? [];
   if (reviews.length === 0) return [];
 
-  const reviewIds = reviews.map((review) => review.id);
   const { data: replies, error: repliesError } = await supabase
     .from("company_replies")
     .select("*")
     .eq("company_id", companyId)
-    .in("review_id", reviewIds)
     .order("created_at", { ascending: false });
 
   if (repliesError) {
