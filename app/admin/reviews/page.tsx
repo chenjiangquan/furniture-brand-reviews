@@ -160,14 +160,14 @@ export default async function AdminReviewsPage({
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       {[
-                        ["reviewed", "Mark reviewed"],
-                        ["dismissed", "Dismiss flag"]
+                        ["dismissed", "Dismiss flag"],
+                        ["remove_review", "Remove review"]
                       ].map(([actionName, label]) => (
                         <form key={actionName} action={moderateReviewFlag}>
                           <input type="hidden" name="password" value={password} />
                           <input type="hidden" name="flagId" value={flag.id} />
                           <input type="hidden" name="action" value={actionName} />
-                          <button className="rounded-full border border-line px-3 py-2 font-semibold hover:border-trust hover:text-trust-dark">
+                          <button className={`rounded-full border px-3 py-2 font-semibold ${actionName === "remove_review" ? "border-red-200 text-red-700 hover:bg-red-50" : "border-line hover:border-trust hover:text-trust-dark"}`}>
                             {label}
                           </button>
                         </form>

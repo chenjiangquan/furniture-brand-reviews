@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom";
 import { Flag, MessageSquareReply, X } from "lucide-react";
-import { addBusinessReply, flagBusinessReview } from "@/lib/actions";
+import { addBusinessReply, flagBusinessReviewInline } from "@/lib/actions";
 import type { ReviewWithReply } from "@/lib/types";
 import { Rating } from "@/components/Rating";
 
@@ -36,18 +36,74 @@ function SubmitFlagButton() {
   );
 }
 
+function FlagReviewForm({
+  email,
+  companyId,
+  companySlug,
+  review,
+  reason,
+  onReasonChange
+}: {
+  email: string;
+  companyId: string;
+  companySlug: string;
+  review: ReviewWithReply;
+  reason: string;
+  onReasonChange: (reason: string) => void;
+}) {
+  const [flagState, flagAction] = useFormState(flagBusinessReviewInline, { ok: false, message: "" });
+
+  return (
+    <form action={flagAction} className="p-5">
+      <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="companySlug" value={companySlug} />
+      <input type="hidden" name="reviewId" value={review.id} />
+      <input type="hidden" name="reason" value={reason} />
+      {flagState.message ? (
+        <div className={`mb-4 rounded-xl border p-4 text-sm font-bold ${flagState.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>
+          {flagState.message}
+        </div>
+      ) : null}
+      <p className="font-bold text-ink">Why are you flagging this review?</p>
+      <div className="mt-4 grid divide-y divide-line rounded-2xl border border-line">
+        {flagReasons.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onReasonChange(item)}
+            className={`flex items-center justify-between px-4 py-4 text-left text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-300 ${
+              reason === item ? "bg-purple-50 text-trust-dark" : "text-slate-700 hover:bg-wash"
+            }`}
+          >
+            {item}
+            <span aria-hidden="true">›</span>
+          </button>
+        ))}
+      </div>
+      <label className="mt-4 grid gap-2">
+        <span className="text-sm font-bold text-ink">Optional details</span>
+        <textarea
+          name="details"
+          placeholder="Add helpful context for the admin reviewer..."
+          className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+        />
+      </label>
+      <SubmitFlagButton />
+    </form>
+  );
+}
+
 export function BusinessReviewsManager({
   reviews,
   email,
   companyId,
-  companySlug,
-  statusMessage
+  companySlug
 }: {
   reviews: ReviewWithReply[];
   email: string;
   companyId: string;
   companySlug: string;
-  statusMessage?: string;
 }) {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -93,12 +149,6 @@ export function BusinessReviewsManager({
           </button>
         ))}
       </div>
-
-      {statusMessage ? (
-        <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
-          {statusMessage}
-        </div>
-      ) : null}
 
       <p className="mt-4 text-sm font-semibold text-muted">
         Showing {visibleReviews.length ? (page - 1) * REVIEWS_PER_PAGE + 1 : 0}-{Math.min(page * REVIEWS_PER_PAGE, filteredReviews.length)} of {filteredReviews.length} reviews
@@ -209,38 +259,15 @@ export function BusinessReviewsManager({
                 <X size={20} />
               </button>
             </div>
-            <form action={flagBusinessReview} className="p-5">
-              <input type="hidden" name="email" value={email} />
-              <input type="hidden" name="companyId" value={companyId} />
-              <input type="hidden" name="companySlug" value={companySlug} />
-              <input type="hidden" name="reviewId" value={flaggedReview.id} />
-              <input type="hidden" name="reason" value={flagReason} />
-              <p className="font-bold text-ink">Why are you flagging this review?</p>
-              <div className="mt-4 grid divide-y divide-line rounded-2xl border border-line">
-                {flagReasons.map((reason) => (
-                  <button
-                    key={reason}
-                    type="button"
-                    onClick={() => setFlagReason(reason)}
-                    className={`flex items-center justify-between px-4 py-4 text-left text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-300 ${
-                      flagReason === reason ? "bg-purple-50 text-trust-dark" : "text-slate-700 hover:bg-wash"
-                    }`}
-                  >
-                    {reason}
-                    <span aria-hidden="true">›</span>
-                  </button>
-                ))}
-              </div>
-              <label className="mt-4 grid gap-2">
-                <span className="text-sm font-bold text-ink">Optional details</span>
-                <textarea
-                  name="details"
-                  placeholder="Add helpful context for the admin reviewer..."
-                  className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                />
-              </label>
-              <SubmitFlagButton />
-            </form>
+            <FlagReviewForm
+              key={flaggedReview.id}
+              email={email}
+              companyId={companyId}
+              companySlug={companySlug}
+              review={flaggedReview}
+              reason={flagReason}
+              onReasonChange={setFlagReason}
+            />
           </div>
         </div>
       ) : null}

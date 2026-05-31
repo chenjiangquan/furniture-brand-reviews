@@ -28,6 +28,11 @@ export type ImportState = {
   errors: string[];
 };
 
+export type BusinessFlagState = {
+  ok: boolean;
+  message: string;
+};
+
 const initialImportResult: ImportState = {
   ok: false,
   message: "",
@@ -912,6 +917,69 @@ export async function flagBusinessReview(formData: FormData) {
   businessRedirect(email, companySlug, { success: "Flag submitted. We will manually review this report." });
 }
 
+export async function flagBusinessReviewInline(_state: BusinessFlagState, formData: FormData): Promise<BusinessFlagState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const reviewId = String(formData.get("reviewId") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  const details = String(formData.get("details") ?? "").trim() || null;
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    return { ok: false, message: "Access denied." };
+  }
+
+  if (!reviewId || !reviewFlagReasons.has(reason)) {
+    return { ok: false, message: "Choose a valid flag reason." };
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return { ok: false, message: "Supabase is not configured." };
+
+  const { data: review, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("company_id", companyId)
+    .eq("status", "approved")
+    .single();
+
+  if (reviewError || !review) {
+    return { ok: false, message: reviewError ? formatSupabaseError(reviewError) : "Review not found." };
+  }
+
+  const { data: existingFlag, error: existingFlagError } = await supabase
+    .from("review_flags")
+    .select("id")
+    .eq("review_id", reviewId)
+    .ilike("reported_by_email", email)
+    .eq("status", "pending")
+    .limit(1);
+
+  if (existingFlagError) {
+    return { ok: false, message: formatSupabaseError(existingFlagError) };
+  }
+
+  if (existingFlag?.length) {
+    return { ok: true, message: "This review is already flagged and waiting for manual review." };
+  }
+
+  const { error } = await supabase.from("review_flags").insert({
+    review_id: reviewId,
+    company_id: companyId,
+    reason,
+    details,
+    reported_by_email: email,
+    status: "pending"
+  });
+
+  if (error) {
+    return { ok: false, message: formatSupabaseError(error) };
+  }
+
+  revalidatePath("/admin/reviews");
+  return { ok: true, message: "Flag submitted. We will manually review this report." };
+}
+
 export async function moderateReviewFlag(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const flagId = String(formData.get("flagId") ?? "");
@@ -921,16 +989,43 @@ export async function moderateReviewFlag(formData: FormData) {
     redirect("/admin/reviews?error=1");
   }
 
-  if (!flagId || !["reviewed", "dismissed"].includes(action)) {
+  if (!flagId || !["dismissed", "remove_review"].includes(action)) {
     adminRedirect(password, { error: "Unknown flag action." });
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) adminRedirect(password, { error: "Supabase is not configured yet." });
 
+  if (action === "remove_review") {
+    const { data: flag, error: flagError } = await supabase
+      .from("review_flags")
+      .select("id, review_id, companies(slug)")
+      .eq("id", flagId)
+      .single();
+
+    if (flagError || !flag) {
+      adminRedirect(password, { error: flagError ? formatSupabaseError(flagError) : "Flag not found." });
+    }
+
+    const { error: deleteError } = await supabase.from("reviews").delete().eq("id", flag.review_id);
+
+    if (deleteError) {
+      adminRedirect(password, { error: formatSupabaseError(deleteError) });
+    }
+
+    const companyRelation = Array.isArray(flag.companies) ? flag.companies[0] : flag.companies;
+    if (companyRelation?.slug) {
+      revalidatePath(`/review/${companyRelation.slug}`);
+    }
+    revalidatePath("/");
+    revalidatePath("/brands");
+    revalidatePath("/admin/reviews");
+    adminRedirect(password, { success: "Review removed." });
+  }
+
   const { error } = await supabase
     .from("review_flags")
-    .update({ status: action, reviewed_at: new Date().toISOString() })
+    .update({ status: "dismissed", reviewed_at: new Date().toISOString() })
     .eq("id", flagId);
 
   if (error) {
@@ -938,7 +1033,7 @@ export async function moderateReviewFlag(formData: FormData) {
   }
 
   revalidatePath("/admin/reviews");
-  adminRedirect(password, { success: action === "reviewed" ? "Flag marked as reviewed." : "Flag dismissed." });
+  adminRedirect(password, { success: "Flag dismissed." });
 }
 
 export async function importCsv(_state: ImportState, formData: FormData): Promise<ImportState> {
