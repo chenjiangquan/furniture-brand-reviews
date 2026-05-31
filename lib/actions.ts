@@ -33,6 +33,11 @@ export type BusinessFlagState = {
   message: string;
 };
 
+export type BusinessReplyState = {
+  ok: boolean;
+  message: string;
+};
+
 const initialImportResult: ImportState = {
   ok: false,
   message: "",
@@ -842,6 +847,66 @@ export async function addBusinessReply(formData: FormData) {
 
   revalidatePath(`/review/${companySlug}`);
   businessRedirect(email, companySlug, { success: "Reply published." });
+}
+
+export async function addBusinessReplyInline(_state: BusinessReplyState, formData: FormData): Promise<BusinessReplyState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const reviewId = String(formData.get("reviewId") ?? "").trim();
+  const reply = String(formData.get("reply") ?? "").trim();
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    return { ok: false, message: "Access denied." };
+  }
+
+  if (!reviewId || reply.length < 10) {
+    return { ok: false, message: "Reply must be at least 10 characters." };
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return { ok: false, message: "Supabase is not configured." };
+
+  const { data: review, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("company_id", companyId)
+    .eq("status", "approved")
+    .single();
+
+  if (reviewError || !review) {
+    return { ok: false, message: reviewError ? formatSupabaseError(reviewError) : "Review not found." };
+  }
+
+  const { data: existingReply, error: existingReplyError } = await supabase
+    .from("company_replies")
+    .select("id")
+    .eq("review_id", reviewId)
+    .eq("company_id", companyId)
+    .limit(1);
+
+  if (existingReplyError) {
+    return { ok: false, message: formatSupabaseError(existingReplyError) };
+  }
+
+  if (existingReply?.length) {
+    return { ok: true, message: "A public reply has already been published for this review." };
+  }
+
+  const { error } = await supabase.from("company_replies").insert({
+    review_id: reviewId,
+    company_id: companyId,
+    reply
+  });
+
+  if (error) {
+    return { ok: false, message: formatSupabaseError(error) };
+  }
+
+  revalidatePath(`/review/${companySlug}`);
+  revalidatePath(`/business/dashboard`);
+  return { ok: true, message: "Reply published. It is now visible on the public brand profile." };
 }
 
 const reviewFlagReasons = new Set([

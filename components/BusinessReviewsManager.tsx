@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Flag, MessageSquareReply, X } from "lucide-react";
-import { addBusinessReply, flagBusinessReviewInline } from "@/lib/actions";
+import { addBusinessReplyInline, flagBusinessReviewInline } from "@/lib/actions";
 import type { ReviewWithReply } from "@/lib/types";
 import { Rating } from "@/components/Rating";
 
@@ -33,6 +33,60 @@ function SubmitFlagButton() {
     >
       {pending ? "Submitting flag..." : "Submit flag"}
     </button>
+  );
+}
+
+function SubmitReplyButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      disabled={pending}
+      className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <MessageSquareReply size={16} />
+      {pending ? "Publishing reply..." : "Publish reply"}
+    </button>
+  );
+}
+
+function BusinessReplyForm({
+  email,
+  companyId,
+  companySlug,
+  reviewId
+}: {
+  email: string;
+  companyId: string;
+  companySlug: string;
+  reviewId: string;
+}) {
+  const [replyState, replyAction] = useFormState(addBusinessReplyInline, { ok: false, message: "" });
+
+  return (
+    <form action={replyAction} className="mt-4 grid gap-3">
+      <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="companySlug" value={companySlug} />
+      <input type="hidden" name="reviewId" value={reviewId} />
+      {replyState.message ? (
+        <div className={`rounded-xl border p-4 text-sm font-bold ${replyState.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>
+          {replyState.message}
+        </div>
+      ) : null}
+      {!replyState.ok ? (
+        <>
+          <textarea
+            name="reply"
+            required
+            minLength={10}
+            placeholder="Write a helpful, professional public reply..."
+            className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+          />
+          <SubmitReplyButton />
+        </>
+      ) : null}
+    </form>
   );
 }
 
@@ -92,6 +146,22 @@ function FlagReviewForm({
       <SubmitFlagButton />
     </form>
   );
+}
+
+function getPaginationItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 5) {
+    return [1, 2, 3, 4, 5, "ellipsis-end", totalPages];
+  }
+
+  if (currentPage >= totalPages - 4) {
+    return [1, "ellipsis-start", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "ellipsis-start", currentPage - 1, currentPage, currentPage + 1, "ellipsis-end", totalPages];
 }
 
 export function BusinessReviewsManager({
@@ -193,25 +263,7 @@ export function BusinessReviewsManager({
               </div>
             ))}
 
-            {!review.company_replies?.length ? (
-              <form action={addBusinessReply} className="mt-4 grid gap-3">
-                <input type="hidden" name="email" value={email} />
-                <input type="hidden" name="companyId" value={companyId} />
-                <input type="hidden" name="companySlug" value={companySlug} />
-                <input type="hidden" name="reviewId" value={review.id} />
-                <textarea
-                  name="reply"
-                  required
-                  minLength={10}
-                  placeholder="Write a helpful, professional public reply..."
-                  className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                />
-                <button className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-                  <MessageSquareReply size={16} />
-                  Publish reply
-                </button>
-              </form>
-            ) : null}
+            {!review.company_replies?.length ? <BusinessReplyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} /> : null}
           </article>
         ))}
 
@@ -232,9 +284,27 @@ export function BusinessReviewsManager({
           >
             Previous
           </button>
-          <span className="text-sm font-bold text-muted">
-            Page {page} of {totalPages}
-          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {getPaginationItems(page, totalPages).map((item) =>
+              typeof item === "number" ? (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                  className={`h-10 min-w-10 rounded-full px-3 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${
+                    page === item ? "bg-trust text-white" : "border border-purple-200 text-slate-700 hover:bg-purple-50"
+                  }`}
+                  aria-current={page === item ? "page" : undefined}
+                >
+                  {item}
+                </button>
+              ) : (
+                <span key={item} className="px-1 text-sm font-bold text-muted">
+                  ...
+                </span>
+              )
+            )}
+          </div>
           <button
             type="button"
             disabled={page >= totalPages}

@@ -104,14 +104,10 @@ export async function getBusinessReviews(companyId: string): Promise<ReviewWithR
     return [];
   }
 
-  const reviewIds = (reviews ?? []).map((review) => review.id);
-  if (!reviewIds.length) return [];
-
   const { data: replies, error: repliesError } = await supabase
     .from("company_replies")
     .select("*")
-    .eq("company_id", companyId)
-    .in("review_id", reviewIds);
+    .eq("company_id", companyId);
 
   if (repliesError) {
     console.error("Business replies lookup failed", repliesError);
