@@ -892,7 +892,7 @@ export async function flagBusinessReview(formData: FormData) {
   }
 
   if (existingFlag?.length) {
-    businessRedirect(email, companySlug, { success: "This review has already been flagged for admin review." });
+    businessRedirect(email, companySlug, { success: "This review is already flagged and waiting for manual review." });
   }
 
   const { error } = await supabase.from("review_flags").insert({
@@ -909,7 +909,7 @@ export async function flagBusinessReview(formData: FormData) {
   }
 
   revalidatePath("/admin/reviews");
-  businessRedirect(email, companySlug, { success: "Review flagged for admin review." });
+  businessRedirect(email, companySlug, { success: "Flag submitted. We will manually review this report." });
 }
 
 export async function moderateReviewFlag(formData: FormData) {

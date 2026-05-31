@@ -40,12 +40,14 @@ export function BusinessReviewsManager({
   reviews,
   email,
   companyId,
-  companySlug
+  companySlug,
+  statusMessage
 }: {
   reviews: ReviewWithReply[];
   email: string;
   companyId: string;
   companySlug: string;
+  statusMessage?: string;
 }) {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -91,6 +93,12 @@ export function BusinessReviewsManager({
           </button>
         ))}
       </div>
+
+      {statusMessage ? (
+        <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
+          {statusMessage}
+        </div>
+      ) : null}
 
       <p className="mt-4 text-sm font-semibold text-muted">
         Showing {visibleReviews.length ? (page - 1) * REVIEWS_PER_PAGE + 1 : 0}-{Math.min(page * REVIEWS_PER_PAGE, filteredReviews.length)} of {filteredReviews.length} reviews
