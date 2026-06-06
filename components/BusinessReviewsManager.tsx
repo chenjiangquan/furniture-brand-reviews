@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Flag, MessageSquareReply, X } from "lucide-react";
-import { addBusinessReplyInline, flagBusinessReviewInline } from "@/lib/actions";
+import { CheckCircle2, Flag, MessageSquareReply, X } from "lucide-react";
+import { addBusinessReplyInline, flagBusinessReviewInline, verifyBusinessReviewInline } from "@/lib/actions";
 import type { ReviewWithReply } from "@/lib/types";
 import { Rating } from "@/components/Rating";
 
@@ -47,6 +47,49 @@ function SubmitReplyButton({ hasExistingReply }: { hasExistingReply: boolean }) 
       <MessageSquareReply size={16} />
       {pending ? "Saving reply..." : hasExistingReply ? "Save reply" : "Publish reply"}
     </button>
+  );
+}
+
+function SubmitVerifyButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      disabled={pending}
+      className="inline-flex items-center gap-2 rounded-full border border-green-200 px-3 py-1.5 text-xs font-bold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <CheckCircle2 size={14} />
+      {pending ? "Saving..." : "Mark verified"}
+    </button>
+  );
+}
+
+function BusinessVerifyForm({
+  email,
+  companyId,
+  companySlug,
+  reviewId
+}: {
+  email: string;
+  companyId: string;
+  companySlug: string;
+  reviewId: string;
+}) {
+  const [verifyState, verifyAction] = useFormState(verifyBusinessReviewInline, { ok: false, message: "" });
+
+  return (
+    <form action={verifyAction} className="inline-flex items-center gap-2">
+      <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="companySlug" value={companySlug} />
+      <input type="hidden" name="reviewId" value={reviewId} />
+      {verifyState.message ? (
+        <span className={`text-xs font-bold ${verifyState.ok ? "text-green-700" : "text-red-600"}`}>
+          {verifyState.message}
+        </span>
+      ) : null}
+      {!verifyState.ok ? <SubmitVerifyButton /> : null}
+    </form>
   );
 }
 
@@ -240,6 +283,14 @@ export function BusinessReviewsManager({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {review.is_verified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                    <CheckCircle2 size={14} />
+                    Verified
+                  </span>
+                ) : (
+                  <BusinessVerifyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} />
+                )}
                 {review.company_replies?.length ? (
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-trust-dark">Replied</span>
                 ) : (

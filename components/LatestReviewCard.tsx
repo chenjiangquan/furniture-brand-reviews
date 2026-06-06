@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCardActions } from "@/components/ReviewCardActions";
@@ -25,8 +25,13 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
       className="flex h-[360px] scroll-mt-24 flex-col rounded-2xl border border-line bg-white p-5 pb-6 shadow-sm"
     >
       <div className="flex min-h-0 flex-1 items-start gap-4 overflow-hidden">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
           {getInitials(review.reviewer_name) || "R"}
+          {review.is_verified ? (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-[4px] bg-emerald-600 text-white ring-2 ring-white" title="Verified review" aria-label="Verified review">
+              <Check size={11} strokeWidth={3} />
+            </span>
+          ) : null}
         </div>
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -42,12 +47,6 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
               ) : null}
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <RatingStars rating={review.rating} size="small" />
-                {review.is_verified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-trust-dark">
-                    <CheckCircle2 size={14} />
-                    Verified
-                  </span>
-                )}
               </div>
             </div>
             <time className="shrink-0 text-sm text-muted" dateTime={review.created_at}>

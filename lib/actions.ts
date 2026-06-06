@@ -38,6 +38,11 @@ export type BusinessReplyState = {
   message: string;
 };
 
+export type BusinessVerifyState = {
+  ok: boolean;
+  message: string;
+};
+
 const initialImportResult: ImportState = {
   ok: false,
   message: "",
@@ -922,6 +927,50 @@ export async function addBusinessReplyInline(_state: BusinessReplyState, formDat
   revalidatePath(`/review/${companySlug}`);
   revalidatePath(`/business/dashboard`);
   return { ok: true, message: existingReply ? "Reply updated. The latest reply is now visible on the public brand profile." : "Reply published. It is now visible on the public brand profile." };
+}
+
+export async function verifyBusinessReviewInline(_state: BusinessVerifyState, formData: FormData): Promise<BusinessVerifyState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const reviewId = String(formData.get("reviewId") ?? "").trim();
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    return { ok: false, message: "Access denied." };
+  }
+
+  if (!reviewId) {
+    return { ok: false, message: "Review is missing." };
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return { ok: false, message: "Supabase is not configured." };
+
+  const { data: review, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("company_id", companyId)
+    .eq("status", "approved")
+    .single();
+
+  if (reviewError || !review) {
+    return { ok: false, message: reviewError ? formatSupabaseError(reviewError) : "Review not found." };
+  }
+
+  const { error } = await supabase
+    .from("reviews")
+    .update({ is_verified: true })
+    .eq("id", reviewId)
+    .eq("company_id", companyId);
+
+  if (error) {
+    return { ok: false, message: formatSupabaseError(error) };
+  }
+
+  revalidatePath(`/review/${companySlug}`);
+  revalidatePath(`/business/dashboard`);
+  return { ok: true, message: "Review marked as verified." };
 }
 
 const reviewFlagReasons = new Set([

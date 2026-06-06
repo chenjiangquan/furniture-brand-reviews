@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCardActions } from "@/components/ReviewCardActions";
 import { ReviewImageGallery } from "@/components/ReviewImageGallery";
@@ -21,8 +21,13 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
   return (
     <article id={`review-${review.id}`} className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
           {getInitials(review.reviewer_name) || "R"}
+          {review.is_verified ? (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-[4px] bg-emerald-600 text-white ring-2 ring-white" title="Verified review" aria-label="Verified review">
+              <Check size={11} strokeWidth={3} />
+            </span>
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -30,12 +35,6 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
               <p className="font-bold text-ink">{review.reviewer_name}</p>
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <RatingStars rating={review.rating} size="small" />
-                {review.is_verified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-trust-dark">
-                    <CheckCircle2 size={14} />
-                    Verified
-                  </span>
-                )}
               </div>
             </div>
             <time className="text-sm text-muted" dateTime={review.created_at}>

@@ -13,6 +13,9 @@ type ImportReviewPayload = {
   reviewerName?: unknown;
   sourceType?: unknown;
   reviewDate?: unknown;
+  isVerified?: unknown;
+  is_verified?: unknown;
+  verified?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status: number) {
@@ -35,6 +38,18 @@ function parseReviewDate(value: unknown) {
   if (Number.isNaN(date.getTime())) return null;
 
   return date.toISOString();
+}
+
+function parseVerifiedValue(payload: ImportReviewPayload) {
+  const rawValue = payload.isVerified ?? payload.is_verified ?? payload.verified;
+
+  if (typeof rawValue === "boolean") return rawValue;
+  if (typeof rawValue === "number") return rawValue === 1;
+  if (typeof rawValue === "string") {
+    return ["true", "1", "yes", "y", "verified"].includes(rawValue.trim().toLowerCase());
+  }
+
+  return true;
 }
 
 export async function GET() {
@@ -64,6 +79,7 @@ export async function POST(request: Request) {
   const reviewerName = stringValue(payload.reviewerName);
   const sourceType = stringValue(payload.sourceType) || "manual/import";
   const createdAt = parseReviewDate(payload.reviewDate);
+  const isVerified = parseVerifiedValue(payload);
 
   if (!brandId) return jsonResponse({ success: false, message: "brandId is required" }, 400);
   if (!brandName) return jsonResponse({ success: false, message: "brandName is required" }, 400);
@@ -125,7 +141,7 @@ export async function POST(request: Request) {
     proof_image_url: null,
     review_image_urls: [],
     status: "approved",
-    is_verified: false,
+    is_verified: isVerified,
     created_at: createdAt
   };
 
