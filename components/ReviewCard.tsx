@@ -33,6 +33,9 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="font-bold text-ink">{review.reviewer_name}</p>
+              {review.is_verified ? (
+                <p className="mt-0.5 text-xs font-bold text-emerald-700">Verified customer</p>
+              ) : null}
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <RatingStars rating={review.rating} size="small" />
               </div>

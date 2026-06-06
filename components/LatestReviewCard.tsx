@@ -37,6 +37,9 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold text-ink">{review.reviewer_name}</p>
+              {review.is_verified ? (
+                <p className="mt-0.5 truncate text-xs font-bold text-emerald-700">Verified customer</p>
+              ) : null}
               {brandSlug && brandName ? (
                 <Link
                   href={`/review/${brandSlug}`}
