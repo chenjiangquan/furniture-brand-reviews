@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { createAutoReplyForReview } from "@/lib/auto-reply";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -155,6 +156,14 @@ export async function POST(request: Request) {
     console.error("Import review insert failed", insertError);
     return jsonResponse({ success: false, message: "Database write failed" }, 500);
   }
+
+  await createAutoReplyForReview(supabase, {
+    reviewId: insertedReview.id,
+    companyId: company.id,
+    reviewerName,
+    rating,
+    reviewTitle: title
+  });
 
   return jsonResponse(
     {

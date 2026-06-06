@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { CheckCircle2, Flag, MessageSquareReply, X } from "lucide-react";
-import { addBusinessReplyInline, flagBusinessReviewInline, verifyBusinessReviewInline } from "@/lib/actions";
+import { addBusinessReplyInline, flagBusinessReviewInline, saveBusinessAutoReplySettings, verifyBusinessReviewInline } from "@/lib/actions";
 import type { ReviewWithReply } from "@/lib/types";
 import { Rating } from "@/components/Rating";
 
@@ -47,6 +47,80 @@ function SubmitReplyButton({ hasExistingReply }: { hasExistingReply: boolean }) 
       <MessageSquareReply size={16} />
       {pending ? "Saving reply..." : hasExistingReply ? "Save reply" : "Publish reply"}
     </button>
+  );
+}
+
+function SubmitAutoReplyButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      disabled={pending}
+      className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "Saving auto reply..." : "Save auto reply settings"}
+    </button>
+  );
+}
+
+function AutoReplySettingsForm({
+  email,
+  companyId,
+  companySlug,
+  enabled,
+  template
+}: {
+  email: string;
+  companyId: string;
+  companySlug: string;
+  enabled: boolean;
+  template: string;
+}) {
+  const [state, action] = useFormState(saveBusinessAutoReplySettings, { ok: false, message: "" });
+
+  return (
+    <form action={action} className="mt-5 rounded-2xl border border-purple-100 bg-purple-50/50 p-5">
+      <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="companySlug" value={companySlug} />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-ink">Auto reply to future reviews</h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
+            When this is on, each newly approved review without an existing reply will receive this public reply automatically. Existing reviews will not be backfilled.
+          </p>
+        </div>
+        <label className="inline-flex w-fit cursor-pointer items-center gap-3 rounded-full border border-purple-200 bg-white px-4 py-2 text-sm font-bold text-ink">
+          <input
+            type="checkbox"
+            name="autoReplyEnabled"
+            defaultChecked={enabled}
+            className="h-4 w-4 rounded border-purple-200 text-trust focus:ring-purple-300"
+          />
+          Auto reply on
+        </label>
+      </div>
+      <label className="mt-4 grid gap-2">
+        <span className="text-sm font-bold text-ink">Reply template</span>
+        <textarea
+          name="autoReplyTemplate"
+          defaultValue={template}
+          placeholder={"Thank you for your review, {reviewerName}.\n\nWe appreciate you taking the time to share your experience with {brandName}.\n\nKind regards,\n{brandName}"}
+          className="min-h-[140px] w-full rounded-xl border border-purple-100 bg-white px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-purple-200"
+        />
+      </label>
+      <p className="mt-2 text-xs font-semibold text-muted">
+        Supported variables: {"{brandName}"}, {"{reviewerName}"}, {"{rating}"}, {"{reviewTitle}"}.
+      </p>
+      {state.message ? (
+        <div className={`mt-4 rounded-xl border p-4 text-sm font-bold ${state.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>
+          {state.message}
+        </div>
+      ) : null}
+      <div className="mt-4">
+        <SubmitAutoReplyButton />
+      </div>
+    </form>
   );
 }
 
@@ -214,12 +288,16 @@ export function BusinessReviewsManager({
   reviews,
   email,
   companyId,
-  companySlug
+  companySlug,
+  autoReplyEnabled = false,
+  autoReplyTemplate = ""
 }: {
   reviews: ReviewWithReply[];
   email: string;
   companyId: string;
   companySlug: string;
+  autoReplyEnabled?: boolean;
+  autoReplyTemplate?: string;
 }) {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -250,6 +328,14 @@ export function BusinessReviewsManager({
           Read all reviews
         </a>
       </div>
+
+      <AutoReplySettingsForm
+        email={email}
+        companyId={companyId}
+        companySlug={companySlug}
+        enabled={autoReplyEnabled}
+        template={autoReplyTemplate}
+      />
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         {["all", "5", "4", "3", "2", "1"].map((option) => (

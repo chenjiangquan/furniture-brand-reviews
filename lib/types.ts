@@ -6,6 +6,8 @@ export type Company = {
   slug: string;
   status?: "published" | "draft" | null;
   is_claimed?: boolean | null;
+  auto_reply_enabled?: boolean | null;
+  auto_reply_template?: string | null;
   website: string;
   category: string;
   description: string | null;

@@ -141,7 +141,14 @@ export default async function BusinessDashboardPage({
               </div>
             </section>
 
-            <BusinessReviewsManager reviews={reviews} email={email} companyId={company.id} companySlug={company.slug} />
+            <BusinessReviewsManager
+              reviews={reviews}
+              email={email}
+              companyId={company.id}
+              companySlug={company.slug}
+              autoReplyEnabled={Boolean(company.auto_reply_enabled)}
+              autoReplyTemplate={company.auto_reply_template ?? ""}
+            />
 
             <section id="profile" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Profile details</h2>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getBrandImageCandidates } from "@/lib/brand-images";
+import { createAutoReplyForReview } from "@/lib/auto-reply";
 import { parseCsv } from "@/lib/csv";
 import {
   sendBusinessClaimApprovedEmail,
@@ -39,6 +40,11 @@ export type BusinessReplyState = {
 };
 
 export type BusinessVerifyState = {
+  ok: boolean;
+  message: string;
+};
+
+export type BusinessAutoReplyState = {
   ok: boolean;
   message: string;
 };
@@ -527,7 +533,7 @@ export async function moderateReview(formData: FormData) {
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
-    .select("id, company_id, pending_brand_name, pending_brand_slug, pending_brand_website, status, is_verified, reviewer_name, reviewer_email, companies(name, slug)")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, pending_brand_website, rating, title, status, is_verified, reviewer_name, reviewer_email, companies(name, slug)")
     .eq("id", reviewId)
     .single();
 
@@ -647,6 +653,17 @@ export async function moderateReview(formData: FormData) {
 
   const companyRelation = Array.isArray(review.companies) ? review.companies[0] : review.companies;
   if (action === "approve") {
+    const approvedCompanyId = updatePayload.company_id ?? review.company_id;
+    if (approvedCompanyId) {
+      await createAutoReplyForReview(supabase, {
+        reviewId,
+        companyId: approvedCompanyId,
+        reviewerName: review.reviewer_name,
+        rating: review.rating,
+        reviewTitle: review.title
+      });
+    }
+
     const brandSlug = companyRelation?.slug ?? approvedCompanySlug;
     const brandName = companyRelation?.name ?? approvedCompanyName ?? review.pending_brand_name ?? brandSlug;
     if (brandSlug && brandName) {
@@ -971,6 +988,49 @@ export async function verifyBusinessReviewInline(_state: BusinessVerifyState, fo
   revalidatePath(`/review/${companySlug}`);
   revalidatePath(`/business/dashboard`);
   return { ok: true, message: "Review marked as verified." };
+}
+
+export async function saveBusinessAutoReplySettings(_state: BusinessAutoReplyState, formData: FormData): Promise<BusinessAutoReplyState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const enabled = formData.get("autoReplyEnabled") === "on";
+  const template = String(formData.get("autoReplyTemplate") ?? "").trim();
+
+  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+    return { ok: false, message: "Access denied." };
+  }
+
+  if (enabled && template.length < 10) {
+    return { ok: false, message: "Add an auto reply template before turning this on." };
+  }
+
+  if (template.length > 1500) {
+    return { ok: false, message: "Auto reply template must be under 1,500 characters." };
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return { ok: false, message: "Supabase is not configured." };
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      auto_reply_enabled: enabled,
+      auto_reply_template: template || null
+    })
+    .eq("id", companyId);
+
+  if (error) {
+    return { ok: false, message: formatSupabaseError(error) };
+  }
+
+  revalidatePath(`/business/dashboard`);
+  revalidatePath(`/review/${companySlug}`);
+
+  return {
+    ok: true,
+    message: enabled ? "Auto reply is on for future approved reviews." : "Auto reply is off for future reviews."
+  };
 }
 
 const reviewFlagReasons = new Set([
