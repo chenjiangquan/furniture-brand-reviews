@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { moderateBusinessClaim } from "@/lib/actions";
+import { bulkRejectBusinessClaims, moderateBusinessClaim } from "@/lib/actions";
 import { getAdminBusinessClaims } from "@/lib/business";
 import { createNoIndexMetadata } from "@/lib/seo";
 
@@ -49,10 +49,21 @@ export default async function AdminBusinessClaimsPage({
       {errorMessage && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">Error: {errorMessage}</p>}
       {searchParams.success && <p className="mt-4 rounded-xl bg-green-50 p-4 text-sm font-semibold text-green-700">{searchParams.success}</p>}
 
+      {password && claims.length > 0 ? (
+        <form id="bulk-reject-claims" action={bulkRejectBusinessClaims} className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-white p-4">
+          <input type="hidden" name="password" value={password} />
+          <p className="text-sm font-semibold text-muted">Select claim requests below, then reject and remove them in one action.</p>
+          <button className="rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">
+            Reject selected
+          </button>
+        </form>
+      ) : null}
+
       <div className="mt-8 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
           <thead className="bg-wash text-ink">
             <tr>
+              <th className="px-4 py-3">Select</th>
               <th className="px-4 py-3">Brand</th>
               <th className="px-4 py-3">Matched profile</th>
               <th className="px-4 py-3">Contact</th>
@@ -65,6 +76,16 @@ export default async function AdminBusinessClaimsPage({
           <tbody>
             {claims.map((claim) => (
               <tr key={claim.id} className="border-t border-line align-top">
+                <td className="px-4 py-3">
+                  <input
+                    form="bulk-reject-claims"
+                    type="checkbox"
+                    name="claimIds"
+                    value={claim.id}
+                    className="h-4 w-4 rounded border-purple-200 text-trust focus:ring-purple-300"
+                    aria-label={`Select claim request for ${claim.brand_name}`}
+                  />
+                </td>
                 <td className="px-4 py-3 font-semibold text-ink">{claim.brand_name}</td>
                 <td className="px-4 py-3">
                   {claim.companies ? (
@@ -120,7 +141,7 @@ export default async function AdminBusinessClaimsPage({
             ))}
             {password && claims.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted">
                   No business claim requests found.
                 </td>
               </tr>

@@ -15,6 +15,15 @@ type ReviewApprovedEmailInput = ReviewSubmittedEmailInput & {
   brandSlug: string;
 };
 
+type AdminReviewNotificationInput = {
+  brandName: string;
+  rating: number;
+  title: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  adminUrl?: string;
+};
+
 type BusinessClaimEmailInput = {
   to: string | null | undefined;
   contactName: string;
@@ -179,6 +188,60 @@ Independent furniture brand reviews worldwide.`;
   return sendEmail({
     to,
     subject: "Your review has been published",
+    text,
+    html
+  });
+}
+
+export async function sendAdminNewReviewNotificationEmail({
+  brandName,
+  rating,
+  title,
+  reviewerName,
+  reviewerEmail,
+  adminUrl = "https://www.furniturebrandreviews.com/admin/reviews"
+}: AdminReviewNotificationInput) {
+  const to = process.env.REVIEW_ADMIN_EMAIL || "chenjiangquan123@gmail.com";
+  const displayBrandName = safeValue(brandName, "Unknown brand");
+  const displayTitle = safeValue(title, "Customer review");
+  const displayReviewerName = safeValue(reviewerName, "Unknown reviewer");
+  const displayReviewerEmail = safeValue(reviewerEmail, "No email provided");
+  const safeBrandName = escapeHtml(displayBrandName);
+  const safeTitle = escapeHtml(displayTitle);
+  const safeReviewerName = escapeHtml(displayReviewerName);
+  const safeReviewerEmail = escapeHtml(displayReviewerEmail);
+  const safeAdminUrl = escapeHtml(adminUrl);
+  const text = `A new review is waiting for moderation.
+
+Brand: ${displayBrandName}
+Rating: ${rating}/5
+Title: ${displayTitle}
+Reviewer: ${displayReviewerName}
+Email: ${displayReviewerEmail}
+
+Open admin reviews:
+${adminUrl}`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">New review waiting for moderation</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">A new customer review has been submitted and is pending moderation.</p>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#374151;font-size:15px;line-height:1.7;">
+  <strong>Brand:</strong> ${safeBrandName}<br />
+  <strong>Rating:</strong> ${rating}/5<br />
+  <strong>Title:</strong> ${safeTitle}<br />
+  <strong>Reviewer:</strong> ${safeReviewerName}<br />
+  <strong>Email:</strong> ${safeReviewerEmail}
+</div>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeAdminUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Open review admin</a>
+    </td>
+  </tr>
+</table>`);
+
+  return sendEmail({
+    to,
+    subject: `New review submitted for ${displayBrandName}`,
     text,
     html
   });

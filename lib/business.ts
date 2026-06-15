@@ -131,6 +131,7 @@ export async function getAdminBusinessClaims(password: string): Promise<AdminBus
   const { data, error } = await supabase
     .from("business_claims")
     .select("id, company_id, brand_name, contact_name, contact_email, message, status, created_at, companies(id, name, slug, website)")
+    .neq("status", "rejected")
     .order("created_at", { ascending: false });
 
   if (error) {

@@ -8,6 +8,7 @@ import { parseCsv } from "@/lib/csv";
 import {
   sendBusinessClaimApprovedEmail,
   sendBusinessClaimSubmittedEmail,
+  sendAdminNewReviewNotificationEmail,
   sendReviewApprovedEmail,
   sendReviewSubmittedEmail
 } from "@/lib/email";
@@ -388,6 +389,13 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     reviewerName,
     brandName: company.name
   });
+  await sendAdminNewReviewNotificationEmail({
+    brandName: company.name,
+    rating,
+    title,
+    reviewerName,
+    reviewerEmail
+  });
 
   revalidatePath("/admin/reviews");
 
@@ -509,6 +517,13 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     to: reviewerEmail,
     reviewerName,
     brandName: company?.name ?? brandName
+  });
+  await sendAdminNewReviewNotificationEmail({
+    brandName: company?.name ?? brandName,
+    rating,
+    title,
+    reviewerName,
+    reviewerEmail
   });
 
   revalidatePath("/admin/reviews");
@@ -757,14 +772,25 @@ export async function moderateBusinessClaim(formData: FormData) {
     businessClaimsAdminRedirect(password, { error: "Choose a company_id for this claim before approving." });
   }
 
-  const nextStatus = action === "approve" ? "approved" : "rejected";
-  const { error: updateError } = await supabase.from("business_claims").update({ status: nextStatus }).eq("id", claimId);
+  const companyRelation = Array.isArray(claim.companies) ? claim.companies[0] : claim.companies;
+
+  if (action === "reject") {
+    const { error: deleteError } = await supabase.from("business_claims").delete().eq("id", claimId);
+
+    if (deleteError) {
+      businessClaimsAdminRedirect(password, { error: formatSupabaseError(deleteError) });
+    }
+
+    revalidatePath("/admin/business-claims");
+    businessClaimsAdminRedirect(password, { success: "Claim rejected and removed." });
+  }
+
+  const { error: updateError } = await supabase.from("business_claims").update({ status: "approved" }).eq("id", claimId);
 
   if (updateError) {
     businessClaimsAdminRedirect(password, { error: formatSupabaseError(updateError) });
   }
 
-  const companyRelation = Array.isArray(claim.companies) ? claim.companies[0] : claim.companies;
   if (action === "approve" && claim.company_id) {
     await supabase.from("companies").update({ is_claimed: true }).eq("id", claim.company_id);
 
@@ -781,7 +807,32 @@ export async function moderateBusinessClaim(formData: FormData) {
   revalidatePath("/admin/business-claims");
   revalidatePath("/brands");
   revalidatePath("/");
-  businessClaimsAdminRedirect(password, { success: action === "approve" ? "Claim approved and email sent." : "Claim rejected." });
+  businessClaimsAdminRedirect(password, { success: "Claim approved and email sent." });
+}
+
+export async function bulkRejectBusinessClaims(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const claimIds = formData.getAll("claimIds").map((value) => String(value)).filter(Boolean);
+
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
+    redirect("/admin/business-claims?error=1");
+  }
+
+  if (!claimIds.length) {
+    businessClaimsAdminRedirect(password, { error: "Select at least one claim to reject." });
+  }
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) businessClaimsAdminRedirect(password, { error: "Supabase is not configured." });
+
+  const { error } = await supabase.from("business_claims").delete().in("id", claimIds);
+
+  if (error) {
+    businessClaimsAdminRedirect(password, { error: formatSupabaseError(error) });
+  }
+
+  revalidatePath("/admin/business-claims");
+  businessClaimsAdminRedirect(password, { success: `${claimIds.length} claim request${claimIds.length === 1 ? "" : "s"} rejected and removed.` });
 }
 
 export async function updateBusinessProfile(formData: FormData) {
