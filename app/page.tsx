@@ -23,7 +23,7 @@ export const metadata: Metadata = createSeoMetadata({
 
 export default async function HomePage() {
   const companies = await getCompanies();
-  const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk"));
+  const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk") && Number(company.review_count || 0) >= 30);
   const latestReviews = await getLatestApprovedReviews();
   const latestBlogs = await getLatestBlogs(4);
   const featuredComparisons = await getIndexableFeaturedComparisonLinks(3);
@@ -80,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-10">
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line" aria-hidden="true" />
             <Link
