@@ -79,6 +79,23 @@ export default async function HomePage() {
         <div className="home-hero-mobile-image md:hidden" aria-hidden="true" />
       </section>
 
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line" aria-hidden="true" />
+            <Link
+              href="/write-review"
+              className="relative inline-flex items-center gap-2 rounded-full border border-line bg-white px-5 py-3 text-sm font-semibold text-ink shadow-sm transition hover:border-trust hover:text-trust-dark"
+            >
+              <span>Bought furniture recently?</span>
+              <span className="inline-flex items-center gap-1 font-bold text-trust-dark">
+                Write a review <ArrowRight size={16} />
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-ink">Popular furniture brands</h2>

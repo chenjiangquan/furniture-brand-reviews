@@ -49,6 +49,11 @@ type AutoDraftResult =
 
 const bannedClaims = ["best ever", "guaranteed", "100% trusted", "worst brand", "scam", "fake", "avoid this brand", "definitely bad"];
 const model = process.env.BLOG_AUTO_DRAFT_MODEL || "gpt-4o-mini";
+const externalReferenceLinks = [
+  "https://www.gov.uk/accepting-returns-and-giving-refunds",
+  "https://www.citizensadvice.org.uk/consumer/",
+  "https://www.gov.uk/online-and-distance-selling-for-businesses"
+];
 
 function normalise(value: string | null | undefined) {
   return (value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -84,6 +89,11 @@ function getFaqCount(markdown: string, faq: GeneratedBlogDraft["faq"]) {
 function getValidInternalLinkCount(markdown: string, links: string[]) {
   const markdownLinks = Array.from(markdown.matchAll(/\]\((\/[^)]+)\)/g)).map((match) => match[1]);
   return new Set([...markdownLinks, ...links].filter((href) => href.startsWith("/") && !href.startsWith("/admin") && !href.startsWith("/api"))).size;
+}
+
+function getValidExternalLinkCount(markdown: string, links: string[]) {
+  const markdownLinks = Array.from(markdown.matchAll(/\]\((https?:\/\/[^)]+)\)/g)).map((match) => match[1]);
+  return new Set([...markdownLinks, ...links].filter((href) => /^https?:\/\//.test(href) && !href.includes("furniturebrandreviews.com"))).size;
 }
 
 function isRecent(value: string | null | undefined, days: number) {
@@ -253,11 +263,12 @@ function buildContext(topic: AutoDraftTopic, companies: Company[], reviews: Revi
     categoryLinks: [`/category/${relatedCategory}`],
     rankingLinks: [`/${relatedRanking}`],
     comparisonLinks: relatedComparison ? [`/compare/${relatedComparison}`] : [],
+    externalReferenceLinks,
     reviewSamples
   };
 }
 
-async function callOpenAI(context: ReturnType<typeof buildContext>): Promise<GeneratedBlogDraft> {
+async function callOpenAI(context: ReturnType<typeof buildContext>, retryFeedback?: string): Promise<GeneratedBlogDraft> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("Missing OPENAI_API_KEY");
@@ -272,17 +283,20 @@ async function callOpenAI(context: ReturnType<typeof buildContext>): Promise<Gen
     body: JSON.stringify({
       model,
       temperature: 0.35,
+      max_tokens: 4200,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            "You write neutral SEO drafts for Furniture Brand Reviews, a review platform. Use only provided approved-review data. Do not invent facts. Do not use absolute claims, defamatory wording, or advertising language. Return valid JSON only."
+            "You write complete, neutral, long-form SEO drafts for Furniture Brand Reviews, a review platform. Use only provided approved-review data. Do not invent facts. Do not use absolute claims, defamatory wording, or advertising language. The first draft must already satisfy all length and link requirements. Return valid JSON only."
         },
         {
           role: "user",
           content: JSON.stringify({
             instructions: {
+              minimumContentWords: 1000,
+              targetContentWords: "1100-1200",
               outputShape: {
                 title: "string",
                 slug: "string",
@@ -290,10 +304,18 @@ async function callOpenAI(context: ReturnType<typeof buildContext>): Promise<Gen
                 metaDescription: "100-160 characters",
                 excerpt: "string",
                 category: "string",
-                content: "Markdown article, 900-1400 words, H1-free, 4-6 H2 sections, FAQ section with H3 questions, neutral tone",
+                content: "Markdown article, 1000-1200 words, H1-free, 5 H2 sections plus FAQ, neutral tone",
                 faq: [{ question: "string", answer: "string" }],
-                relatedLinks: ["internal URLs only"]
+                relatedLinks: ["internal and external URLs used in the article"]
               },
+              requiredArticleStructure: [
+                "Open with a 120-160 word introduction before the first H2.",
+                "Use exactly 5 H2 sections before FAQ.",
+                "Each non-FAQ H2 section must contain 2 paragraphs and at least 140 words.",
+                "Use a FAQ H2 with at least 4 H3 questions and 50-80 word answers.",
+                "Include at least 5 internal markdown links naturally inside the article body.",
+                "Include at least 1 external markdown link from externalReferenceLinks naturally inside the article body."
+              ],
               requiredSections: [
                 "Intro",
                 "What the current approved reviews can and cannot tell shoppers",
@@ -307,8 +329,12 @@ async function callOpenAI(context: ReturnType<typeof buildContext>): Promise<Gen
                 "at least 3 /review/ links where available",
                 "at least 1 /category/ link",
                 "at least 1 ranking link",
-                "comparison link if supplied"
+                "comparison link if supplied",
+                "at least 1 external reference link from externalReferenceLinks"
               ],
+              retryFeedback: retryFeedback ?? null,
+              strictQualityGate:
+                "Do not return a draft under 1000 content words. Count the words before returning JSON. If retryFeedback is present, fix every listed issue and expand the article before returning JSON.",
               bannedClaims,
               cta: ["Browse all furniture brands", "Write a furniture review"]
             },
@@ -349,6 +375,7 @@ function validateDraft(draft: GeneratedBlogDraft) {
   if (getH2Count(content) < 4) warnings.push("Content has fewer than 4 H2 sections.");
   if (getFaqCount(content, draft.faq ?? []) < 4) warnings.push("Content has fewer than 4 FAQ items.");
   if (getValidInternalLinkCount(content, draft.relatedLinks ?? []) < 5) warnings.push("Content has fewer than 5 valid internal links.");
+  if (getValidExternalLinkCount(content, draft.relatedLinks ?? []) < 1) warnings.push("Content has fewer than 1 valid external link.");
 
   const plainText = normalise(`${draft.title} ${draft.metaDescription} ${draft.excerpt} ${content}`);
   for (const claim of bannedClaims) {
@@ -356,6 +383,36 @@ function validateDraft(draft: GeneratedBlogDraft) {
   }
 
   return warnings;
+}
+
+async function generateDraftWithRetry(context: ReturnType<typeof buildContext>) {
+  const firstDraft = await callOpenAI(context);
+  firstDraft.slug = slugify(firstDraft.slug || context.topic.slug);
+
+  const firstWarnings = validateDraft(firstDraft);
+  const firstBlockingWarnings = getBlockingWarnings(firstWarnings);
+  if (firstBlockingWarnings.length === 0) {
+    return { draft: firstDraft, qualityWarnings: firstWarnings };
+  }
+
+  const retryDraft = await callOpenAI(
+    context,
+    `Previous draft failed these quality checks: ${firstBlockingWarnings.join("; ")}. Expand and revise the article so it is 900-1400 words, includes at least 5 valid internal links, at least 1 external reference link, at least 4 H2 sections, and at least 4 FAQ items.`
+  );
+  retryDraft.slug = slugify(retryDraft.slug || firstDraft.slug || context.topic.slug);
+
+  const retryWarnings = validateDraft(retryDraft);
+  return {
+    draft: retryDraft,
+    qualityWarnings: retryWarnings,
+    retryReason: firstBlockingWarnings.join("; ")
+  };
+}
+
+function getBlockingWarnings(warnings: string[]) {
+  return warnings.filter((warning) =>
+    /missing|under 800|fewer than 4 H2|fewer than 4 FAQ|fewer than 5 valid internal|fewer than 1 valid external|Banned claim/i.test(warning)
+  );
 }
 
 async function logAutoDraft(status: "success" | "failed" | "skipped", topic: AutoDraftTopic | null, slug: string | null, message: string) {
@@ -460,8 +517,7 @@ export async function runBlogAutoDraft(): Promise<AutoDraftResult> {
     }
 
     const context = buildContext(topic, companies, reviews);
-    const draft = await callOpenAI(context);
-    draft.slug = slugify(draft.slug || topic.slug);
+    const { draft, qualityWarnings, retryReason } = await generateDraftWithRetry(context);
 
     if (blogs.some((blog) => blog.slug === draft.slug)) {
       const error = `Duplicate generated slug: ${draft.slug}`;
@@ -469,19 +525,16 @@ export async function runBlogAutoDraft(): Promise<AutoDraftResult> {
       return { success: false, skipped: true, error, topicType: topic.type, slug: draft.slug };
     }
 
-    const qualityWarnings = validateDraft(draft);
-    const blockingWarnings = qualityWarnings.filter((warning) =>
-      /missing|under 800|fewer than 4 H2|fewer than 4 FAQ|Banned claim/i.test(warning)
-    );
+    const blockingWarnings = getBlockingWarnings(qualityWarnings);
 
     if (blockingWarnings.length > 0) {
-      const error = `Draft failed quality checks: ${blockingWarnings.join("; ")}`;
+      const error = `Draft failed quality checks after retry: ${blockingWarnings.join("; ")}`;
       await logAutoDraft("failed", topic, draft.slug, error);
       return { success: false, error, topicType: topic.type, slug: draft.slug };
     }
 
     const inserted = await insertDraft(draft, topic, qualityWarnings);
-    await logAutoDraft("success", topic, inserted.slug, "Draft created successfully");
+    await logAutoDraft("success", topic, inserted.slug, retryReason ? `Draft created successfully after retry: ${retryReason}` : "Draft created successfully");
 
     return {
       success: true,
