@@ -9,7 +9,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { Rating } from "@/components/Rating";
 import { ReviewIntelligence } from "@/components/ReviewIntelligence";
 import { ReviewSummaryWithFilters } from "@/components/ReviewSummaryWithFilters";
-import { getApprovedReviewsForCompany, getCompanies, getCompanyBySlug, getRatingBreakdown } from "@/lib/data";
+import { getApprovedReviewStatsForCompany, getApprovedReviewsForCompany, getCompanies, getCompanyBySlug, getRatingBreakdownFromStats } from "@/lib/data";
 import { getPublishedBlogs } from "@/lib/blogs";
 import {
   buildBrandOrganizationSchema,
@@ -80,7 +80,7 @@ function getComplaintsSummary(companyName: string, reviews: ReviewWithReply[]) {
   return `${complaintReviews.length} approved ${complaintReviews.length === 1 ? "review includes" : "reviews include"} a low rating or complaint-related wording. Check the review cards above for the exact customer comments before making a buying decision.`;
 }
 
-function buildFaq(companyName: string, reviews: ReviewWithReply[]) {
+function buildFaq(companyName: string, reviews: ReviewWithReply[], totalApprovedReviewCount: number) {
   const themes = getCustomerThemes(reviews);
   const verifiedCount = reviews.filter((review) => review.is_verified).length;
 
@@ -88,8 +88,8 @@ function buildFaq(companyName: string, reviews: ReviewWithReply[]) {
     {
       question: `Is ${companyName} a good furniture brand?`,
       answer:
-        reviews.length > 0
-          ? `${companyName} has ${reviews.length} approved customer ${reviews.length === 1 ? "review" : "reviews"} on Furniture Brand Reviews with an average rating based on currently published feedback.`
+        totalApprovedReviewCount > 0
+          ? `${companyName} has ${totalApprovedReviewCount} approved customer ${totalApprovedReviewCount === 1 ? "review" : "reviews"} on Furniture Brand Reviews with an average rating based on currently published feedback.`
           : `There are not enough approved reviews yet to say how customers rate ${companyName}.`
     },
     {
@@ -154,7 +154,18 @@ export default async function CompanyReviewPage({ params }: Props) {
   if (!company) notFound();
 
   const reviews = await getApprovedReviewsForCompany(company.id);
-  const breakdown = getRatingBreakdown(reviews);
+  const approvedReviewStats = await getApprovedReviewStatsForCompany(company.id);
+  const totalApprovedReviewCount = approvedReviewStats.count || company.review_count;
+  const averageApprovedRating = approvedReviewStats.count ? approvedReviewStats.averageRating : company.average_rating;
+  const breakdown = getRatingBreakdownFromStats(
+    approvedReviewStats.count
+      ? approvedReviewStats
+      : {
+          count: company.review_count,
+          averageRating: company.average_rating,
+          ratingCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+        }
+  );
   const companies = await getCompanies();
   const blogs = await getPublishedBlogs();
   const relatedBrands = getRelatedBrands(company, companies, 6);
@@ -162,9 +173,22 @@ export default async function CompanyReviewPage({ params }: Props) {
   const relatedRankingPages = getRelatedRankingPages(company, 3);
   const relatedComparisons = getRelatedComparisons(company, relatedBrands, 4);
   const relatedBlogs = getRelatedBlogs(company, blogs, 3);
-  const intelligence = buildReviewIntelligence(reviews);
+  const intelligenceSample = buildReviewIntelligence(reviews);
+  const intelligence = {
+    ...intelligenceSample,
+    approvedReviewCount: totalApprovedReviewCount,
+    averageRating: averageApprovedRating,
+    starDistribution: breakdown.map((item) => ({
+      rating: item.rating as 5 | 4 | 3 | 2 | 1,
+      count: item.count,
+      percentage: item.percentage
+    })),
+    hasEnoughForPatterns: totalApprovedReviewCount >= 3,
+    hasEnoughForTopics: totalApprovedReviewCount >= 5,
+    hasEnoughForSummaries: totalApprovedReviewCount >= 10
+  };
   const customerThemes = getCustomerThemes(reviews);
-  const faqs = buildFaq(company.name, reviews);
+  const faqs = buildFaq(company.name, reviews, totalApprovedReviewCount);
   const canonical = `${baseUrl}/review/${company.slug}`;
   const writeReviewUrl = `${baseUrl}/review/${company.slug}/write`;
   const aboutText =
@@ -223,7 +247,7 @@ export default async function CompanyReviewPage({ params }: Props) {
               </div>
 
               <div className="grid gap-4 rounded-xl border border-gray-200 bg-wash p-4 sm:min-w-72">
-                <Rating value={company.average_rating} count={company.review_count} size="medium" />
+                <Rating value={averageApprovedRating} count={totalApprovedReviewCount} size="medium" />
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <Link href={`/review/${company.slug}/write`} className="rounded-full bg-trust px-5 py-3 text-center font-bold text-white hover:bg-trust-dark">
                     Write a review
@@ -249,9 +273,10 @@ export default async function CompanyReviewPage({ params }: Props) {
         <main className="grid gap-8">
           <ReviewSummaryWithFilters
             companyName={company.name}
-            averageRating={company.average_rating}
+            averageRating={averageApprovedRating}
             reviews={reviews}
-            totalReviewCount={company.review_count}
+            totalReviewCount={totalApprovedReviewCount}
+            loadedReviewCount={reviews.length}
             breakdown={breakdown}
             brandSlug={company.slug}
             writeReviewHref={`/review/${company.slug}/write`}

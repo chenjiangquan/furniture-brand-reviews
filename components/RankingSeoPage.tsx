@@ -13,6 +13,7 @@ import { absoluteUrl } from "@/lib/seo";
 
 export async function RankingSeoPage({ config }: { config: RankingConfig }) {
   const { rankedCompanies, latestReviews, minimumReviewCount } = await getRankingSeoData(config);
+  const usesWeightedRanking = config.mode === "best";
   const blogs = await getPublishedBlogs();
   const relatedBlogs = getRelatedBlogs(config.h1, blogs, 3);
   const relatedComparisons = rankedCompanies
@@ -65,10 +66,22 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
           <h2 className="text-2xl font-bold text-ink">Ranking methodology</h2>
           <ul className="mt-4 grid gap-2 text-sm leading-6 text-muted md:grid-cols-2">
             <li>Only approved reviews are included.</li>
-            <li>Primary sort: {config.mode === "best" ? "highest average rating" : "lowest average rating"}.</li>
+            <li>
+              Primary sort:{" "}
+              {usesWeightedRanking
+                ? "Bayesian weighted score using average rating, review volume and the site-wide approved review average"
+                : "lowest average rating"}.
+            </li>
             <li>Secondary sort: higher review count.</li>
+            {usesWeightedRanking ? <li>Third sort: higher average rating.</li> : null}
             <li>Minimum review count: {minimumReviewCount} approved reviews.</li>
+            {usesWeightedRanking ? <li>Weighted model confidence baseline: 20 approved reviews.</li> : null}
           </ul>
+          {usesWeightedRanking ? (
+            <p className="mt-4 text-sm leading-6 text-muted">
+              Rankings use approved reviews, average rating, review volume and a weighted scoring model to reduce the impact of very small review samples.
+            </p>
+          ) : null}
         </section>
 
         <section>
@@ -82,6 +95,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
                     <th className="px-4 py-3">Brand</th>
                     <th className="px-4 py-3">Average rating</th>
                     <th className="px-4 py-3">Review count</th>
+                    {usesWeightedRanking ? <th className="px-4 py-3">Weighted score</th> : null}
                     <th className="px-4 py-3">Category</th>
                     <th className="px-4 py-3">Profile</th>
                   </tr>
@@ -98,6 +112,9 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted">{company.review_count}</td>
+                      {usesWeightedRanking ? (
+                        <td className="px-4 py-3 font-semibold text-ink">{Number(company.weighted_score || 0).toFixed(2)}</td>
+                      ) : null}
                       <td className="px-4 py-3 text-muted">{company.category}</td>
                       <td className="px-4 py-3">
                         <Link href={`/review/${company.slug}`} className="font-bold text-trust-dark hover:underline">
@@ -213,7 +230,11 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div>
               <h3 className="font-bold text-ink">How are these rankings calculated?</h3>
-              <p className="mt-2 text-sm leading-6 text-muted">Rankings use approved reviews, average rating and review count. Pending and rejected reviews are not included.</p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {usesWeightedRanking
+                  ? "Rankings use approved reviews, average rating, review volume and a weighted scoring model to reduce the impact of very small review samples."
+                  : "Rankings use approved reviews, average rating and review count. Pending and rejected reviews are not included."}
+              </p>
             </div>
             <div>
               <h3 className="font-bold text-ink">Why is there a minimum review count?</h3>

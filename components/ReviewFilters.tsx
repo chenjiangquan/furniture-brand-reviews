@@ -60,12 +60,16 @@ function sortReviews(reviews: ReviewWithReply[], sort: SortOption) {
 
 export function ReviewFilters({
   reviews,
+  totalApprovedReviewCount,
+  loadedReviewCount,
   brandSlug,
   writeReviewHref,
   ratingFilter,
   onRatingFilterChange
 }: {
   reviews: ReviewWithReply[];
+  totalApprovedReviewCount: number;
+  loadedReviewCount: number;
   brandSlug: string;
   writeReviewHref: string;
   ratingFilter?: RatingFilter;
@@ -128,6 +132,9 @@ export function ReviewFilters({
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedReviews = filteredReviews.slice((safeCurrentPage - 1) * reviewsPerPage, safeCurrentPage * reviewsPerPage);
   const hasActiveFilters = keyword.trim() || activeRatingFilter.length > 0 || verifiedOnly || sort !== "recent";
+  const hasLoadedAllReviews = loadedReviewCount >= totalApprovedReviewCount;
+  const visibleStart = filteredReviews.length > 0 ? (safeCurrentPage - 1) * reviewsPerPage + 1 : 0;
+  const visibleEnd = Math.min(safeCurrentPage * reviewsPerPage, filteredReviews.length);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -290,10 +297,27 @@ export function ReviewFilters({
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 text-sm text-muted">
-          <p>
-            Showing <span className="font-bold text-ink">{filteredReviews.length}</span> of{" "}
-            <span className="font-bold text-ink">{reviews.length}</span> reviews
-          </p>
+          {hasActiveFilters ? (
+            <p>
+              Showing <span className="font-bold text-ink">{visibleStart}-{visibleEnd}</span> of{" "}
+              <span className="font-bold text-ink">{filteredReviews.length}</span> matching approved reviews
+              {hasLoadedAllReviews ? (
+                <> from <span className="font-bold text-ink">{totalApprovedReviewCount}</span> total</>
+              ) : (
+                <> from the latest <span className="font-bold text-ink">{loadedReviewCount}</span> of <span className="font-bold text-ink">{totalApprovedReviewCount}</span> total</>
+              )}
+            </p>
+          ) : hasLoadedAllReviews ? (
+            <p>
+              Showing <span className="font-bold text-ink">{visibleStart}-{visibleEnd}</span> of{" "}
+              <span className="font-bold text-ink">{totalApprovedReviewCount}</span> approved reviews
+            </p>
+          ) : (
+            <p>
+              Showing latest <span className="font-bold text-ink">{loadedReviewCount}</span> of{" "}
+              <span className="font-bold text-ink">{totalApprovedReviewCount}</span> approved reviews
+            </p>
+          )}
           {hasActiveFilters && (
             <button type="button" onClick={clearFilters} className="inline-flex items-center font-bold text-trust-dark hover:text-ink">
               Clear filters

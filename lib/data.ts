@@ -23,6 +23,12 @@ type ApprovedReviewRating = {
   rating: number;
 };
 
+export type ApprovedReviewStats = {
+  count: number;
+  averageRating: number;
+  ratingCounts: Record<1 | 2 | 3 | 4 | 5, number>;
+};
+
 function applyApprovedReviewStats(companies: Company[], approvedReviews: ApprovedReviewRating[]) {
   const stats = new Map<string, { count: number; total: number }>();
 
@@ -56,6 +62,70 @@ function applyApprovedReviewStats(companies: Company[], approvedReviews: Approve
     };
   });
 }
+
+function buildApprovedReviewStats(reviews: Array<{ rating: number | null }>): ApprovedReviewStats {
+  const ratingCounts: ApprovedReviewStats["ratingCounts"] = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0
+  };
+  let total = 0;
+  let count = 0;
+
+  for (const review of reviews) {
+    const rating = Number(review.rating);
+    if (![1, 2, 3, 4, 5].includes(rating)) continue;
+
+    ratingCounts[rating as 1 | 2 | 3 | 4 | 5] += 1;
+    total += rating;
+    count += 1;
+  }
+
+  return {
+    count,
+    averageRating: count ? Math.round((total / count) * 10) / 10 : 0,
+    ratingCounts
+  };
+}
+
+export const getApprovedReviewStatsForCompany = cache(async (companyId: string): Promise<ApprovedReviewStats> => {
+  noStore();
+  const supabase = getSupabase();
+
+  if (!supabase) {
+    return buildApprovedReviewStats(sampleReviews.filter((review) => review.company_id === companyId));
+  }
+
+  const pageSize = 1000;
+  let from = 0;
+  const ratings: Array<{ rating: number | null }> = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("rating")
+      .eq("company_id", companyId)
+      .eq("status", "approved")
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      console.error(error);
+      break;
+    }
+
+    ratings.push(...(data ?? []));
+
+    if (!data || data.length < pageSize) {
+      break;
+    }
+
+    from += pageSize;
+  }
+
+  return buildApprovedReviewStats(ratings);
+});
 
 export const getCompanies = cache(async (): Promise<Company[]> => {
   noStore();
@@ -107,18 +177,16 @@ export const getCompanyBySlug = cache(async (slug: string): Promise<Company | nu
   const company = data ? normalizeCompany(data) : sampleCompany ? normalizeCompany(sampleCompany) : null;
   if (!company) return null;
 
-  const { data: approvedReviews, error: reviewsError } = await supabase
-    .from("reviews")
-    .select("company_id, rating")
-    .eq("company_id", company.id)
-    .eq("status", "approved");
+  const approvedStats = await getApprovedReviewStatsForCompany(company.id);
+  const storedReviewCount = Number(company.review_count ?? 0);
+  const storedAverageRating = Number(company.average_rating ?? 0);
+  const shouldUseStoredStats = storedReviewCount > approvedStats.count;
 
-  if (reviewsError) {
-    console.error(reviewsError);
-    return company;
-  }
-
-  return applyApprovedReviewStats([company], approvedReviews ?? [])[0];
+  return {
+    ...company,
+    average_rating: shouldUseStoredStats ? storedAverageRating : approvedStats.averageRating,
+    review_count: Math.max(storedReviewCount, approvedStats.count)
+  };
 });
 
 export const getApprovedReviewsForCompany = cache(async (companyId: string): Promise<ReviewWithReply[]> => {
@@ -131,7 +199,8 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
     .select("id, company_id, pending_brand_name, pending_brand_slug, rating, title, content, reviewer_name, reviewer_email, order_number, product_type, order_month, delivery_experience, customer_service_experience, would_buy_again, proof_image_url, review_image_urls, status, is_verified, useful_count, created_at")
     .eq("company_id", companyId)
     .eq("status", "approved")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1000);
 
   if (error) {
     console.error(error);
@@ -259,5 +328,16 @@ export function getRatingBreakdown(reviews: ReviewWithReply[]) {
   return [5, 4, 3, 2, 1].map((rating) => {
     const count = reviews.filter((review) => review.rating === rating).length;
     return { rating, count, percentage: reviews.length ? Math.round((count / reviews.length) * 100) : 0 };
+  });
+}
+
+export function getRatingBreakdownFromStats(stats: ApprovedReviewStats) {
+  return ([5, 4, 3, 2, 1] as const).map((rating) => {
+    const count = stats.ratingCounts[rating];
+    return {
+      rating,
+      count,
+      percentage: stats.count ? Math.round((count / stats.count) * 100) : 0
+    };
   });
 }

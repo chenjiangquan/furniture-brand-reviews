@@ -17,6 +17,10 @@ export type BlogPost = {
   category: string | null;
   status: BlogStatus;
   allow_index?: boolean | null;
+  generated_by?: string | null;
+  generation_topic?: string | null;
+  generation_notes?: string | null;
+  needs_review?: boolean | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;

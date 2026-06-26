@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "blog:auto-draft": "node scripts/blog-auto-draft.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

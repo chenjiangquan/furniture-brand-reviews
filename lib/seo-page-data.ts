@@ -7,6 +7,27 @@ import {
 } from "@/lib/seo-page-config";
 
 const rankingMinimumReviewCount = 5;
+const categoryReviewKeywords: Record<string, string[]> = {
+  "sofa-brands": ["sofa", "sofa bed", "sectional", "couch", "armchair", "lounge chair", "living room seating"],
+  "dining-table-brands": ["dining table", "dining set", "table", "dining chair"],
+  "bedroom-furniture-brands": ["bed", "mattress", "wardrobe", "dresser", "bedside", "bedroom"],
+  "outdoor-furniture-brands": ["outdoor", "garden", "patio", "weatherproof", "rattan"],
+  "home-office-furniture-brands": ["desk", "office chair", "study", "workspace"]
+};
+
+function normaliseText(value: string | null | undefined) {
+  return (value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function reviewMatchesCategory(review: Awaited<ReturnType<typeof getLatestApprovedReviewsForCompanies>>[number], config: SeoCategoryConfig) {
+  const keywords = categoryReviewKeywords[config.slug] ?? config.keywords;
+  if (!keywords.length) return true;
+
+  const haystack = normaliseText(`${review.product_type ?? ""} ${review.title ?? ""} ${review.content ?? ""}`);
+  if (!haystack) return false;
+
+  return keywords.some((keyword) => haystack.includes(normaliseText(keyword)));
+}
 
 function sortByRating(companies: Awaited<ReturnType<typeof getCompanies>>) {
   return [...companies]
@@ -33,14 +54,15 @@ export async function getCategorySeoData(config: SeoCategoryConfig) {
   const mostReviewedCompanies = sortByReviewCount(categoryCompanies).slice(0, 6);
   const latestReviews = await getLatestApprovedReviewsForCompanies(
     categoryCompanies.map((company) => company.id),
-    6
+    40
   );
+  const categorySpecificLatestReviews = latestReviews.filter((review) => reviewMatchesCategory(review, config)).slice(0, 6);
 
   return {
     categoryCompanies,
     topRatedCompanies,
     mostReviewedCompanies,
-    latestReviews,
+    latestReviews: categorySpecificLatestReviews,
     shouldIndex: categoryCompanies.length >= 3
   };
 }

@@ -132,6 +132,10 @@ create table if not exists blogs (
   category text,
   status text not null default 'draft' check (status in ('draft', 'published')),
   allow_index boolean not null default false,
+  generated_by text,
+  generation_topic text,
+  generation_notes text,
+  needs_review boolean not null default false,
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -146,13 +150,28 @@ alter table blogs add column if not exists cover_image_alt text;
 alter table blogs add column if not exists category text;
 alter table blogs add column if not exists status text not null default 'draft' check (status in ('draft', 'published'));
 alter table blogs add column if not exists allow_index boolean not null default false;
+alter table blogs add column if not exists generated_by text;
+alter table blogs add column if not exists generation_topic text;
+alter table blogs add column if not exists generation_notes text;
+alter table blogs add column if not exists needs_review boolean not null default false;
 alter table blogs add column if not exists published_at timestamptz;
 alter table blogs add column if not exists created_at timestamptz not null default now();
 alter table blogs add column if not exists updated_at timestamptz not null default now();
 
+create table if not exists blog_auto_draft_logs (
+  id uuid primary key default gen_random_uuid(),
+  ran_at timestamptz not null default now(),
+  status text not null check (status in ('success', 'failed', 'skipped')),
+  topic_type text,
+  topic_title text,
+  slug text,
+  message text
+);
+
 create index if not exists reviews_company_status_idx on reviews(company_id, status);
 create index if not exists reviews_status_created_idx on reviews(status, created_at);
 create index if not exists blogs_status_published_idx on blogs(status, published_at);
+create index if not exists blog_auto_draft_logs_ran_at_idx on blog_auto_draft_logs(ran_at desc);
 create index if not exists review_flags_status_created_idx on review_flags(status, created_at);
 create index if not exists review_flags_review_idx on review_flags(review_id);
 create unique index if not exists company_replies_review_id_key on company_replies(review_id);
@@ -162,6 +181,7 @@ alter table reviews enable row level security;
 alter table company_replies enable row level security;
 alter table business_claims enable row level security;
 alter table blogs enable row level security;
+alter table blog_auto_draft_logs enable row level security;
 alter table review_flags enable row level security;
 
 drop policy if exists "Public can read companies" on companies;
@@ -180,6 +200,14 @@ create policy "MVP admin can update companies" on companies
 drop policy if exists "Public can read published blogs" on blogs;
 create policy "Public can read published blogs" on blogs
   for select using (status = 'published');
+
+drop policy if exists "MVP admin can insert blog auto draft logs" on blog_auto_draft_logs;
+create policy "MVP admin can insert blog auto draft logs" on blog_auto_draft_logs
+  for insert with check (true);
+
+drop policy if exists "MVP admin can read blog auto draft logs" on blog_auto_draft_logs;
+create policy "MVP admin can read blog auto draft logs" on blog_auto_draft_logs
+  for select using (true);
 
 drop policy if exists "Public can read approved reviews" on reviews;
 create policy "Public can read approved reviews" on reviews

@@ -105,16 +105,20 @@ export async function CategorySeoPage({ config }: { config: SeoCategoryConfig })
           </div>
         </section>
 
-        {latestReviews.length > 0 ? (
-          <section>
-            <h2 className="text-2xl font-bold text-ink">Latest reviews from brands in this category</h2>
+        <section>
+          <h2 className="text-2xl font-bold text-ink">Latest reviews from brands in this category</h2>
+          {latestReviews.length > 0 ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {latestReviews.map((review) => (
                 <LatestReviewCard key={review.id} review={review} />
               ))}
             </div>
-          </section>
-        ) : null}
+          ) : (
+            <p className="mt-6 rounded-2xl border border-line bg-white p-6 text-muted shadow-sm">
+              There are not enough category-specific reviews yet.
+            </p>
+          )}
+        </section>
 
         <section className="rounded-2xl border border-line bg-wash p-6">
           <h2 className="text-2xl font-bold text-ink">Related categories</h2>

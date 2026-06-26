@@ -99,7 +99,19 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
             <tbody>
               {blogs.map((blog) => (
                 <tr key={blog.id} className="border-t border-line">
-                  <td className="px-4 py-3 font-semibold text-ink">{blog.title}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-ink">{blog.title}</div>
+                    {(blog.generated_by === "blog-auto-draft" || blog.needs_review) && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {blog.generated_by === "blog-auto-draft" && (
+                          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-trust-dark">AI Draft</span>
+                        )}
+                        {blog.needs_review && (
+                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Needs review</span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted">{blog.slug}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-3 py-1 text-xs font-bold ${blog.status === "published" ? "bg-green-50 text-green-700" : "bg-purple-50 text-trust-dark"}`}>
@@ -142,6 +154,19 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
           <input type="hidden" name="password" value={password} />
           <input type="hidden" name="id" value={selectedBlog?.id ?? ""} />
           <input type="hidden" name="published_at" value={selectedBlog?.published_at ?? ""} />
+
+          {selectedBlog?.generated_by === "blog-auto-draft" && (
+            <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-4 text-sm text-slate-700">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-trust-dark">AI Draft</span>
+                {selectedBlog.needs_review && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Needs editorial review</span>}
+              </div>
+              <p className="mt-2">
+                Topic: <span className="font-semibold text-ink">{selectedBlog.generation_topic ?? "Auto draft"}</span>
+              </p>
+              {selectedBlog.generation_notes && <p className="mt-1 whitespace-pre-line text-xs leading-5 text-muted">{selectedBlog.generation_notes}</p>}
+            </div>
+          )}
 
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Title</span>

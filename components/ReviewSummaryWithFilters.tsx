@@ -19,6 +19,7 @@ export function ReviewSummaryWithFilters({
   averageRating,
   reviews,
   totalReviewCount,
+  loadedReviewCount,
   breakdown,
   brandSlug,
   writeReviewHref
@@ -27,6 +28,7 @@ export function ReviewSummaryWithFilters({
   averageRating: number;
   reviews: ReviewWithReply[];
   totalReviewCount: number;
+  loadedReviewCount: number;
   breakdown: RatingBreakdownItem[];
   brandSlug: string;
   writeReviewHref: string;
@@ -121,6 +123,8 @@ export function ReviewSummaryWithFilters({
         <div className="mt-5">
           <ReviewFilters
             reviews={reviews}
+            totalApprovedReviewCount={totalReviewCount}
+            loadedReviewCount={loadedReviewCount}
             brandSlug={brandSlug}
             writeReviewHref={writeReviewHref}
             ratingFilter={ratingFilter}

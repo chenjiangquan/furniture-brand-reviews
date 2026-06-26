@@ -22,6 +22,12 @@ export type RankingConfig = {
   relatedCategories: string[];
 };
 
+export type RankedCompany = Company & {
+  weighted_score?: number;
+};
+
+const BAYESIAN_MINIMUM_REVIEW_COUNT = 20;
+
 export const categoryConfigs: SeoCategoryConfig[] = [
   {
     slug: "sofa-brands",
@@ -400,7 +406,41 @@ export function getCategoryCompanies(companies: Company[], category: SeoCategory
   return companies.filter((company) => isPublicCompany(company) && companyMatchesKeywords(company, category.keywords));
 }
 
+export function getSiteAverageRating(companies: Company[]) {
+  const totals = companies.reduce(
+    (accumulator, company) => {
+      const reviewCount = Number(company.review_count || 0);
+      const averageRating = Number(company.average_rating || 0);
+
+      if (!isPublicCompany(company) || reviewCount <= 0 || averageRating <= 0) {
+        return accumulator;
+      }
+
+      return {
+        reviewCount: accumulator.reviewCount + reviewCount,
+        ratingTotal: accumulator.ratingTotal + averageRating * reviewCount
+      };
+    },
+    { reviewCount: 0, ratingTotal: 0 }
+  );
+
+  return totals.reviewCount > 0 ? totals.ratingTotal / totals.reviewCount : 0;
+}
+
+export function getBayesianWeightedScore(company: Company, siteAverageRating: number, minimumReviewCount = BAYESIAN_MINIMUM_REVIEW_COUNT) {
+  const rating = Number(company.average_rating || 0);
+  const reviewCount = Number(company.review_count || 0);
+
+  if (rating <= 0 || reviewCount <= 0) {
+    return 0;
+  }
+
+  return (reviewCount / (reviewCount + minimumReviewCount)) * rating + (minimumReviewCount / (reviewCount + minimumReviewCount)) * siteAverageRating;
+}
+
 export function getRankingCompanies(companies: Company[], config: RankingConfig, minimumReviewCount = 5) {
+  const siteAverageRating = getSiteAverageRating(companies);
+
   return companies
     .filter(
       (company) =>
@@ -409,11 +449,20 @@ export function getRankingCompanies(companies: Company[], config: RankingConfig,
         Number(company.review_count || 0) >= minimumReviewCount &&
         Number(company.average_rating || 0) > 0
     )
+    .map((company): RankedCompany => ({
+      ...company,
+      weighted_score: config.mode === "best" ? getBayesianWeightedScore(company, siteAverageRating) : undefined
+    }))
     .sort((first, second) => {
-      const ratingSort =
-        config.mode === "best"
-          ? Number(second.average_rating || 0) - Number(first.average_rating || 0)
-          : Number(first.average_rating || 0) - Number(second.average_rating || 0);
+      if (config.mode === "best") {
+        const weightedScoreSort = Number(second.weighted_score || 0) - Number(first.weighted_score || 0);
+        const reviewCountSort = Number(second.review_count || 0) - Number(first.review_count || 0);
+        const ratingSort = Number(second.average_rating || 0) - Number(first.average_rating || 0);
+
+        return weightedScoreSort || reviewCountSort || ratingSort;
+      }
+
+      const ratingSort = Number(first.average_rating || 0) - Number(second.average_rating || 0);
 
       return ratingSort || Number(second.review_count || 0) - Number(first.review_count || 0);
     })
