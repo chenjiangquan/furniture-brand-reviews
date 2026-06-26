@@ -43,6 +43,45 @@ function getFinalExcerpt(formData: FormData) {
   return generateExcerpt(readString(formData, "content"), readString(formData, "title")) || null;
 }
 
+const optionalBlogColumns = [
+  "seo_title",
+  "seo_description",
+  "cover_image_url",
+  "cover_image_alt",
+  "category",
+  "allow_index",
+  "published_at",
+  "updated_at"
+] as const;
+
+function isOptionalBlogColumn(column: string): column is (typeof optionalBlogColumns)[number] {
+  return optionalBlogColumns.includes(column as (typeof optionalBlogColumns)[number]);
+}
+
+function getMissingColumn(message: string) {
+  return message.match(/Could not find the '([^']+)' column/i)?.[1] ?? null;
+}
+
+async function saveBlogPayload(
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  payload: Record<string, string | boolean | null>,
+  id: string
+) {
+  const savePayload = { ...payload };
+
+  for (let attempt = 0; attempt <= optionalBlogColumns.length; attempt += 1) {
+    const result = id ? await supabase.from("blogs").update(savePayload).eq("id", id) : await supabase.from("blogs").insert(savePayload);
+    if (!result.error) return null;
+
+    const missingColumn = getMissingColumn(result.error.message);
+    if (!missingColumn || !isOptionalBlogColumn(missingColumn)) return result.error;
+
+    delete savePayload[missingColumn];
+  }
+
+  return { message: "Blog save failed after removing optional columns." };
+}
+
 export async function saveBlogPost(_state: BlogActionState, formData: FormData): Promise<BlogActionState> {
   const password = readString(formData, "password");
   if (!validateAdminPassword(password)) return { ok: false, message: "Invalid admin password." };
@@ -58,7 +97,7 @@ export async function saveBlogPost(_state: BlogActionState, formData: FormData):
   if (!title) return { ok: false, message: "Title is required." };
   if (!slug) return { ok: false, message: "Slug is required." };
 
-  const payload = {
+  const payload: Record<string, string | boolean | null> = {
     title,
     slug,
     excerpt: getFinalExcerpt(formData),
@@ -74,9 +113,7 @@ export async function saveBlogPost(_state: BlogActionState, formData: FormData):
     updated_at: new Date().toISOString()
   };
 
-  const { error } = id
-    ? await supabase.from("blogs").update(payload).eq("id", id)
-    : await supabase.from("blogs").insert(payload);
+  const error = await saveBlogPayload(supabase, payload, id);
 
   if (error) {
     console.error("Blog save failed", error);
