@@ -437,7 +437,25 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase admin client is not configured");
 
-  const payload = {
+  const optionalBlogColumns = [
+    "seo_title",
+    "seo_description",
+    "category",
+    "allow_index",
+    "cover_image_alt",
+    "generated_by",
+    "generation_topic",
+    "generation_notes",
+    "needs_review",
+    "updated_at"
+  ] as const;
+
+  const isOptionalBlogColumn = (column: string): column is (typeof optionalBlogColumns)[number] =>
+    optionalBlogColumns.includes(column as (typeof optionalBlogColumns)[number]);
+
+  const getMissingColumn = (message: string) => message.match(/Could not find the '([^']+)' column/i)?.[1] ?? null;
+
+  const payload: Record<string, string | boolean> = {
     title: draft.title.trim(),
     slug: draft.slug.trim(),
     excerpt: draft.excerpt?.trim() || draft.metaDescription,
@@ -455,29 +473,23 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
     updated_at: new Date().toISOString()
   };
 
-  const result = await supabase.from("blogs").insert(payload).select("id, slug").single();
+  const insertPayload = { ...payload };
+  const removedColumns: string[] = [];
 
-  if (!result.error) return result.data as { id: string; slug: string };
+  for (let attempt = 0; attempt <= optionalBlogColumns.length; attempt += 1) {
+    const result = await supabase.from("blogs").insert(insertPayload).select("id, slug").single();
+    if (!result.error) return result.data as { id: string; slug: string };
 
-  if (!/generated_by|generation_topic|generation_notes|needs_review|allow_index|cover_image_alt/i.test(result.error.message)) {
-    throw new Error(`Blog draft insert failed: ${result.error.message}`);
+    const missingColumn = getMissingColumn(result.error.message);
+    if (!missingColumn || !isOptionalBlogColumn(missingColumn)) {
+      throw new Error(`Blog draft insert failed: ${result.error.message}`);
+    }
+
+    delete insertPayload[missingColumn];
+    removedColumns.push(missingColumn);
   }
 
-  const fallbackPayload = {
-    title: payload.title,
-    slug: payload.slug,
-    excerpt: payload.excerpt,
-    seo_title: payload.seo_title,
-    seo_description: payload.seo_description,
-    category: payload.category,
-    content: payload.content,
-    status: payload.status,
-    updated_at: payload.updated_at
-  };
-
-  const fallback = await supabase.from("blogs").insert(fallbackPayload).select("id, slug").single();
-  if (fallback.error) throw new Error(`Blog draft insert failed: ${fallback.error.message}`);
-  return fallback.data as { id: string; slug: string };
+  throw new Error(`Blog draft insert failed after removing optional columns: ${removedColumns.join(", ")}`);
 }
 
 export async function runBlogAutoDraft(): Promise<AutoDraftResult> {
