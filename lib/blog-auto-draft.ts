@@ -459,7 +459,7 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
 
   if (!result.error) return result.data as { id: string; slug: string };
 
-  if (!/generated_by|generation_topic|generation_notes|needs_review|allow_index/i.test(result.error.message)) {
+  if (!/generated_by|generation_topic|generation_notes|needs_review|allow_index|cover_image_alt/i.test(result.error.message)) {
     throw new Error(`Blog draft insert failed: ${result.error.message}`);
   }
 
@@ -472,7 +472,6 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
     category: payload.category,
     content: payload.content,
     status: payload.status,
-    cover_image_alt: payload.cover_image_alt,
     updated_at: payload.updated_at
   };
 
