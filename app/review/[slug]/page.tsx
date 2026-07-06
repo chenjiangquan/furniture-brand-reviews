@@ -19,6 +19,7 @@ import {
   buildReviewItemListSchema
 } from "@/lib/jsonLd";
 import { getRelatedBlogs, getRelatedBrands, getRelatedCategories, getRelatedComparisons, getRelatedRankingPages } from "@/lib/internal-links";
+import { shouldIndexBrandPage } from "@/lib/indexing-rules";
 import { buildReviewIntelligence, getReviewsForIntelligence } from "@/lib/review-intelligence";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import type { ReviewWithReply } from "@/lib/types";
@@ -120,13 +121,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const company = await getCompanyBySlug(params.slug);
   if (!company) return createNoIndexMetadata("Brand not found", "This furniture brand review page could not be found.");
 
+  const approvedStats = await getApprovedReviewStatsForCompany(company.id);
+  const approvedReviewCount = approvedStats.count || company.review_count;
+  const approvedAverageRating = approvedStats.count ? approvedStats.averageRating : company.average_rating;
   const title = `${company.name} Reviews | Customer Ratings, Delivery & Complaints`;
-  const hasReviews = company.review_count > 0 && company.average_rating > 0;
+  const hasReviews = approvedReviewCount > 0 && approvedAverageRating > 0;
   const description = hasReviews
-    ? `Read ${company.review_count} ${company.name} reviews covering delivery, product quality, customer service and complaints. Average rating: ${company.average_rating.toFixed(1)}/5.`
+    ? `Read ${approvedReviewCount} approved ${company.name} reviews with an average rating of ${approvedAverageRating.toFixed(1)}/5. Compare delivery, product quality, customer service and complaints.`
     : `Read and write independent ${company.name} reviews. Compare furniture delivery, product quality, customer service and complaints.`;
   const canonical = `${baseUrl}/review/${company.slug}`;
   const image = company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? "/logo.png";
+  const shouldIndex = shouldIndexBrandPage(company, approvedReviewCount);
 
   return {
     title: { absolute: title },
@@ -145,7 +150,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       images: [image]
-    }
+    },
+    robots: shouldIndex ? undefined : { index: false, follow: true }
   };
 }
 
@@ -194,7 +200,12 @@ export default async function CompanyReviewPage({ params }: Props) {
   const aboutText =
     company.description || `${company.name} is listed on Furniture Brand Reviews as part of our UK furniture brand review directory.`;
 
-  const brandOrganizationSchema = buildBrandOrganizationSchema(company);
+  const companyForSchema = {
+    ...company,
+    average_rating: averageApprovedRating,
+    review_count: totalApprovedReviewCount
+  };
+  const brandOrganizationSchema = buildBrandOrganizationSchema(companyForSchema);
   const reviewSchema = buildReviewItemListSchema(company, reviews, canonical);
   const faqSchema = buildFaqSchema(faqs);
   const breadcrumbSchema = buildBreadcrumbSchema([
@@ -292,6 +303,21 @@ export default async function CompanyReviewPage({ params }: Props) {
             <Link href={`/review/${company.slug}/write`} className="mt-5 inline-flex rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
               Write a review for {company.name}
             </Link>
+          </section>
+
+          <section className="grid gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-3">
+            <div>
+              <h2 className="text-lg font-bold text-ink">Moderated reviews</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">Reviews are moderated before publishing so shoppers can compare furniture brands using checked customer feedback.</p>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-ink">No paid removal</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">Companies cannot pay Furniture Brand Reviews to remove approved reviews or change customer ratings.</p>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-ink">Disclosure rules</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">Incentivised reviews must be disclosed, and suspicious content can be reported for manual review.</p>
+            </div>
           </section>
 
           <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

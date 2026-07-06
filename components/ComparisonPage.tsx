@@ -5,7 +5,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
 import { getPublishedBlogs, shouldIndexBlog } from "@/lib/blogs";
-import { buildBreadcrumbSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
+import { buildBreadcrumbSchema, buildFaqSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
 import { getRelatedBlogs, getRelatedCategories, getRelatedRankingPages } from "@/lib/internal-links";
 import { absoluteUrl } from "@/lib/seo";
 import type { ComparisonBrandData, ComparisonPageData } from "@/lib/comparison-data";
@@ -113,6 +113,24 @@ export async function ComparisonPage({ data }: { data: ComparisonPageData }) {
       description: blog.excerpt ?? undefined
     }));
   const visibleBlogLinks = relatedBlogs.length > 0 ? relatedBlogs : fallbackBlogs;
+  const comparisonFaqs = [
+    {
+      question: `How is the ${brandAName} vs ${brandBName} comparison calculated?`,
+      answer: `This page compares approved customer reviews for ${brandAName} and ${brandBName}, including average rating, review count, delivery mentions, product quality mentions, customer service mentions and complaint signals.`
+    },
+    {
+      question: `Does Furniture Brand Reviews decide whether ${brandAName} or ${brandBName} is better?`,
+      answer: "No. The comparison shows current approved review data and avoids making unsupported claims about which brand is better."
+    },
+    {
+      question: `Can I read the full ${brandAName} and ${brandBName} reviews?`,
+      answer: `Yes. Each brand has a full review profile where you can read approved customer reviews and write your own review.`
+    },
+    {
+      question: "Are pending reviews included in this comparison?",
+      answer: "No. Pending, rejected and hidden reviews are not used in comparison scores, review counts or review intelligence."
+    }
+  ];
 
   const webPageSchema = {
     "@type": "WebPage",
@@ -148,7 +166,8 @@ export async function ComparisonPage({ data }: { data: ComparisonPageData }) {
             { name: `${brandAName} vs ${brandBName}`, url: pageUrl }
           ]),
           webPageSchema,
-          itemListSchema
+          itemListSchema,
+          buildFaqSchema(comparisonFaqs)
         ])}
       />
 
@@ -249,6 +268,27 @@ export async function ComparisonPage({ data }: { data: ComparisonPageData }) {
           </div>
         </section>
 
+        <section className="grid gap-4 md:grid-cols-2">
+          <article className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Who might compare {brandAName}?</h2>
+            <p className="mt-3 leading-7 text-muted">
+              Shoppers may want to read {brandAName} reviews if they are comparing brands by current approved customer ratings, delivery feedback, product quality comments and after-sales experience.
+            </p>
+            <Link href={`/review/${brandA.company.slug}`} className="mt-5 inline-flex items-center gap-2 rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+              Read {brandAName} reviews <ArrowRight size={15} />
+            </Link>
+          </article>
+          <article className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Who might compare {brandBName}?</h2>
+            <p className="mt-3 leading-7 text-muted">
+              Shoppers may want to read {brandBName} reviews if they need more context on customer service, delivery timing, quality mentions, returns or complaint signals before choosing a furniture brand.
+            </p>
+            <Link href={`/review/${brandB.company.slug}`} className="mt-5 inline-flex items-center gap-2 rounded-full bg-wash px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-line hover:ring-trust">
+              Read {brandBName} reviews <ArrowRight size={15} />
+            </Link>
+          </article>
+        </section>
+
         {(brandA.intelligence.deliveryMentionCount >= 3 || brandB.intelligence.deliveryMentionCount >= 3) && (
           <section className="rounded-2xl border border-line bg-wash p-6">
             <h2 className="text-2xl font-bold text-ink">Delivery feedback comparison</h2>
@@ -345,6 +385,18 @@ export async function ComparisonPage({ data }: { data: ComparisonPageData }) {
             </div>
           </section>
         ) : null}
+
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">FAQ</h2>
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            {comparisonFaqs.map((faq) => (
+              <div key={faq.question}>
+                <h3 className="font-bold text-ink">{faq.question}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="rounded-2xl border border-line bg-ink p-6 text-white">
           <div className="flex items-start gap-3">

@@ -7,12 +7,19 @@ import { RatingStars } from "@/components/RatingStars";
 import { getPublishedBlogs } from "@/lib/blogs";
 import { getCategoryComparisons, getRelatedBlogs, getRelatedRankingPages } from "@/lib/internal-links";
 import { buildBreadcrumbSchema, buildCollectionPageSchema, buildFaqSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
-import { getCategorySeoData } from "@/lib/seo-page-data";
+import { getCategorySeoData, type CategorySort } from "@/lib/seo-page-data";
 import { getCategoryConfig, type SeoCategoryConfig } from "@/lib/seo-page-config";
 import { absoluteUrl } from "@/lib/seo";
 
-export async function CategorySeoPage({ config }: { config: SeoCategoryConfig }) {
-  const { categoryCompanies, topRatedCompanies, mostReviewedCompanies, latestReviews } = await getCategorySeoData(config);
+const sortOptions: Array<{ value: CategorySort; label: string }> = [
+  { value: "highest-rated", label: "Highest rated" },
+  { value: "most-reviewed", label: "Most reviewed" },
+  { value: "best-delivery", label: "Best delivery signals" },
+  { value: "fewest-complaints", label: "Fewest complaint signals" }
+];
+
+export async function CategorySeoPage({ config, sort = "highest-rated" }: { config: SeoCategoryConfig; sort?: CategorySort }) {
+  const { categoryCompanies, categoryBrandInsights, topRatedCompanies, mostReviewedCompanies, latestReviews } = await getCategorySeoData(config, sort);
   const blogs = await getPublishedBlogs();
   const relatedComparisons = getCategoryComparisons(config, categoryCompanies, 5);
   const relatedRankings = getRelatedRankingPages(config, 4);
@@ -77,6 +84,71 @@ export async function CategorySeoPage({ config }: { config: SeoCategoryConfig })
             </div>
           ) : (
             <p className="mt-6 rounded-2xl border border-line bg-white p-6 text-muted shadow-sm">Not enough reviewed brands yet.</p>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-ink">Brand ranking table</h2>
+              <p className="mt-2 text-sm text-muted">Compare rating, review volume, delivery mentions, quality mentions, complaint signals and claimed profile status.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sortOptions.map((option) => (
+                <Link
+                  key={option.value}
+                  href={option.value === "highest-rated" ? `/category/${config.slug}` : `/category/${config.slug}?sort=${option.value}`}
+                  className={`rounded-full px-4 py-2 text-sm font-bold ring-1 ${
+                    sort === option.value ? "bg-trust text-white ring-trust" : "bg-white text-trust-dark ring-line hover:ring-trust"
+                  }`}
+                >
+                  {option.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          {categoryBrandInsights.length > 0 ? (
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-line">
+              <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+                <thead className="bg-purple-50 text-ink">
+                  <tr>
+                    <th className="px-4 py-3">Brand</th>
+                    <th className="px-4 py-3">Rating</th>
+                    <th className="px-4 py-3">Reviews</th>
+                    <th className="px-4 py-3">Delivery mentions</th>
+                    <th className="px-4 py-3">Quality mentions</th>
+                    <th className="px-4 py-3">Complaint signals</th>
+                    <th className="px-4 py-3">Claimed</th>
+                    <th className="px-4 py-3">Profile</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categoryBrandInsights.map(({ company, metrics }) => (
+                    <tr key={company.id} className="border-t border-line">
+                      <td className="px-4 py-3 font-bold text-ink">{company.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <RatingStars rating={company.average_rating} size="small" />
+                          <span className="font-bold">{company.average_rating.toFixed(1)}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted">{company.review_count}</td>
+                      <td className="px-4 py-3 text-muted">{metrics.deliveryMentionCount}</td>
+                      <td className="px-4 py-3 text-muted">{metrics.qualityMentionCount}</td>
+                      <td className="px-4 py-3 text-muted">{metrics.complaintCount}</td>
+                      <td className="px-4 py-3 text-muted">{company.is_claimed ? "Claimed" : "Unclaimed"}</td>
+                      <td className="px-4 py-3">
+                        <Link href={`/review/${company.slug}`} className="font-bold text-trust-dark hover:underline">
+                          Read reviews
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-6 rounded-2xl border border-line bg-wash p-6 text-muted">Not enough reviewed brands yet.</p>
           )}
         </section>
 

@@ -10,7 +10,7 @@ const columns = [
       ["About us", "/about"],
       ["How it works", "/how-it-works"],
       ["Review guidelines", "/review-guidelines"],
-      ["Report a review", "/report-review"],
+      ["Report a review", "/report-a-review"],
       ["Contact", "/contact"]
     ]
   },
@@ -31,6 +31,7 @@ const columns = [
       ["Business login", "/business-login"],
       ["Respond to reviews", "/respond-to-reviews"],
       ["Brand tools", "/brand-tools"],
+      ["Business guidelines", "/business-guidelines"],
       ["Pricing coming soon", "/pricing"]
     ]
   },
