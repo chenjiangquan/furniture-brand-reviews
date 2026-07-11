@@ -61,7 +61,7 @@ export function ReviewSummaryWithFilters({
             </div>
             <p className="mt-2 text-base text-ink underline underline-offset-4">{totalReviewCount} total reviews</p>
           </div>
-          <div className="grid gap-2.5">
+          <div className="grid gap-1">
             {breakdown.map((item) => {
               const rating = item.rating as RatingValue;
               const isActive = ratingFilter.includes(rating);
@@ -69,7 +69,7 @@ export function ReviewSummaryWithFilters({
               return (
                 <label
                   key={item.rating}
-                  className={`grid cursor-pointer grid-cols-[20px_58px_1fr_44px] items-center gap-3 rounded-lg border px-2 py-1.5 text-left text-sm transition hover:bg-wash ${
+                  className={`grid cursor-pointer grid-cols-[20px_58px_1fr_44px] items-center gap-3 rounded-lg border px-2 py-1 text-left text-sm transition hover:bg-wash ${
                     isActive ? "border-[#A855F7] bg-wash font-bold text-ink" : "border-transparent text-ink"
                   }`}
                 >

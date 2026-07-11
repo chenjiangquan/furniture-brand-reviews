@@ -19,52 +19,58 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
   const latestReply = review.company_replies?.[0];
 
   return (
-    <article id={`review-${review.id}`} className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line">
+    <article id={`review-${review.id}`} className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-wash font-bold text-trust-dark ring-1 ring-line sm:h-11 sm:w-11">
           {getInitials(review.reviewer_name) || "R"}
           {review.is_verified ? (
             <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-[4px] bg-emerald-600 text-white ring-2 ring-white" title="Verified review" aria-label="Verified review">
               <Check size={11} strokeWidth={3} />
             </span>
           ) : null}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-bold text-ink">{review.reviewer_name}</p>
-              {review.is_verified ? (
-                <p className="mt-0.5 text-xs font-bold text-emerald-700">Verified customer</p>
-              ) : null}
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <RatingStars rating={review.rating} size="small" />
-              </div>
-            </div>
-            <time className="text-sm text-muted" dateTime={review.created_at}>
-              {formatReviewDate(review.created_at)}
-            </time>
           </div>
-          <h3 className="mt-4 text-lg font-bold text-ink">{review.title}</h3>
-          <p className="mt-2 leading-7 text-muted">{review.content}</p>
-          {review.review_image_urls && review.review_image_urls.length > 0 && (
-            <ReviewImageGallery images={review.review_image_urls} maxImages={4} />
-          )}
-          {latestReply ? (
-            <div className="mt-5 rounded-xl border border-line bg-wash p-4">
-              <p className="text-sm font-bold text-ink">Company reply</p>
-              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{latestReply.reply}</p>
-            </div>
-          ) : null}
-          {actionBrandSlug && (
-            <ReviewCardActions
-              reviewId={review.id}
-              brandSlug={actionBrandSlug}
-              reviewTitle={review.title}
-              initialUsefulCount={review.useful_count}
-            />
-          )}
+          <div className="min-w-0">
+            <p className="truncate text-lg font-bold text-ink sm:text-base">{review.reviewer_name}</p>
+            {review.is_verified ? (
+              <p className="mt-0.5 text-xs font-bold text-emerald-700">Verified customer</p>
+            ) : null}
+          </div>
         </div>
+        <time className="shrink-0 text-sm text-muted" dateTime={review.created_at}>
+          {formatReviewDate(review.created_at)}
+        </time>
       </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-4">
+        <RatingStars rating={review.rating} size="small" />
+      </div>
+
+      <h3 className="mt-4 text-xl font-bold text-ink sm:text-lg">{review.title}</h3>
+      <p className="mt-3 text-base leading-7 text-muted">{review.content}</p>
+
+      {review.review_image_urls && review.review_image_urls.length > 0 && (
+        <ReviewImageGallery images={review.review_image_urls} maxImages={4} />
+      )}
+
+      {actionBrandSlug && (
+        <ReviewCardActions
+          reviewId={review.id}
+          brandSlug={actionBrandSlug}
+          reviewTitle={review.title}
+          initialUsefulCount={review.useful_count}
+        />
+      )}
+
+      {latestReply ? (
+        <div className="mt-5 border-l-4 border-line pl-4 sm:rounded-xl sm:border sm:border-line sm:bg-wash sm:p-4">
+          <p className="text-sm font-bold text-ink">Company reply</p>
+          {latestReply.created_at ? (
+            <p className="mt-1 text-xs font-semibold text-muted">{formatReviewDate(latestReply.created_at)}</p>
+          ) : null}
+          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted">{latestReply.reply}</p>
+        </div>
+      ) : null}
     </article>
   );
 }
