@@ -8,13 +8,15 @@ import { parseCsv } from "@/lib/csv";
 import {
   sendBusinessClaimApprovedEmail,
   sendBusinessClaimSubmittedEmail,
+  sendBusinessLoginLinkEmail,
   sendAdminNewReviewNotificationEmail,
   sendReviewApprovedEmail,
   sendReviewSubmittedEmail
 } from "@/lib/email";
 import { slugifyBrandName } from "@/lib/slug";
+import { siteUrl } from "@/lib/seo";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
-import { hasBusinessAccess } from "@/lib/business";
+import { createBusinessLoginToken, hasBusinessTokenAccess } from "@/lib/business";
 import type { Company } from "@/lib/types";
 
 export type ReviewFormState = {
@@ -121,6 +123,15 @@ function businessRedirect(email: string, companySlug?: string | null, params?: R
   redirect(`/business/dashboard?${searchParams.toString()}`);
 }
 
+function getBusinessToken(formData: FormData) {
+  return String(formData.get("businessToken") ?? "").trim();
+}
+
+async function hasBusinessFormAccess(email: string, companyId: string, token: string) {
+  if (!email || !companyId || !token) return false;
+  return hasBusinessTokenAccess(email, companyId, token);
+}
+
 function businessClaimsAdminRedirect(password: string, params?: Record<string, string>): never {
   const searchParams = new URLSearchParams({ password, ...(params ?? {}) });
   redirect(`/admin/business-claims?${searchParams.toString()}`);
@@ -137,6 +148,32 @@ function hasSpamPattern(value: string) {
   const repeatedWords = /\b(\w+)\b(?:\s+\1\b){5,}/i.test(lower);
 
   return repeatedCharacter || repeatedWords || spamKeywords.some((keyword) => lower.includes(keyword));
+}
+
+export async function requestBusinessLoginLink(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!isValidEmail(email)) {
+    redirect("/business/login?error=invalid-email");
+  }
+
+  const loginToken = await createBusinessLoginToken(email);
+  if (!loginToken) {
+    redirect(`/business/login?email=${encodeURIComponent(email)}&error=no-approved-claim`);
+  }
+
+  const loginUrl = `${siteUrl}/business/dashboard?email=${encodeURIComponent(email)}&token=${encodeURIComponent(loginToken.token)}`;
+  const emailSent = await sendBusinessLoginLinkEmail({
+    to: email,
+    loginUrl,
+    expiresAt: loginToken.expiresAt
+  });
+
+  if (!emailSent) {
+    redirect(`/business/login?email=${encodeURIComponent(email)}&error=email-not-sent`);
+  }
+
+  redirect(`/business/login?email=${encodeURIComponent(email)}&sent=1`);
 }
 
 function validateReviewInput({
@@ -793,12 +830,17 @@ export async function moderateBusinessClaim(formData: FormData) {
 
   if (action === "approve" && claim.company_id) {
     await supabase.from("companies").update({ is_claimed: true }).eq("id", claim.company_id);
+    const loginToken = await createBusinessLoginToken(claim.contact_email);
+    const loginUrl = loginToken
+      ? `${siteUrl}/business/dashboard?email=${encodeURIComponent(claim.contact_email)}&token=${encodeURIComponent(loginToken.token)}`
+      : `${siteUrl}/business/login?email=${encodeURIComponent(claim.contact_email)}`;
 
     await sendBusinessClaimApprovedEmail({
       to: claim.contact_email,
       contactName: claim.contact_name,
       brandName: companyRelation?.name ?? claim.brand_name,
-      loginEmail: claim.contact_email
+      loginEmail: claim.contact_email,
+      loginUrl
     });
 
     if (companyRelation?.slug) revalidatePath(`/review/${companyRelation.slug}`);
@@ -837,6 +879,7 @@ export async function bulkRejectBusinessClaims(formData: FormData) {
 
 export async function updateBusinessProfile(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const website = normalizeWebsiteInput(String(formData.get("website") ?? ""));
@@ -845,16 +888,16 @@ export async function updateBusinessProfile(formData: FormData) {
   const logoUrl = String(formData.get("logoUrl") ?? "").trim() || null;
   const coverImageUrl = String(formData.get("coverImageUrl") ?? "").trim() || null;
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     businessRedirect(email, companySlug, { error: "Access denied." });
   }
 
   if (!website || !category) {
-    businessRedirect(email, companySlug, { error: "Website and category are required." });
+    businessRedirect(email, companySlug, { token: businessToken, error: "Website and category are required." });
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
-  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
 
   const { error } = await supabase
     .from("companies")
@@ -869,32 +912,33 @@ export async function updateBusinessProfile(formData: FormData) {
     .eq("id", companyId);
 
   if (error) {
-    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(error) });
   }
 
   revalidatePath(`/review/${companySlug}`);
   revalidatePath("/brands");
   revalidatePath("/");
-  businessRedirect(email, companySlug, { success: "Profile updated." });
+  businessRedirect(email, companySlug, { token: businessToken, success: "Profile updated." });
 }
 
 export async function addBusinessReply(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const reviewId = String(formData.get("reviewId") ?? "").trim();
   const reply = String(formData.get("reply") ?? "").trim();
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     businessRedirect(email, companySlug, { error: "Access denied." });
   }
 
   if (!reviewId || reply.length < 10) {
-    businessRedirect(email, companySlug, { error: "Reply must be at least 10 characters." });
+    businessRedirect(email, companySlug, { token: businessToken, error: "Reply must be at least 10 characters." });
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
-  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
@@ -905,7 +949,7 @@ export async function addBusinessReply(formData: FormData) {
     .single();
 
   if (reviewError || !review) {
-    businessRedirect(email, companySlug, { error: "Review not found." });
+    businessRedirect(email, companySlug, { token: businessToken, error: "Review not found." });
   }
 
   const { data: existingReplies, error: existingReplyError } = await supabase
@@ -917,34 +961,36 @@ export async function addBusinessReply(formData: FormData) {
     .limit(1);
 
   if (existingReplyError) {
-    businessRedirect(email, companySlug, { error: formatSupabaseError(existingReplyError) });
+    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(existingReplyError) });
   }
 
   const existingReply = existingReplies?.[0] ?? null;
-  const { error } = existingReply
-    ? await supabase.from("company_replies").update({ reply }).eq("id", existingReply.id)
-    : await supabase.from("company_replies").insert({
-        review_id: reviewId,
-        company_id: companyId,
-        reply
-      });
+  const { error } = await supabase.from("company_replies").upsert(
+    {
+      review_id: reviewId,
+      company_id: companyId,
+      reply
+    },
+    { onConflict: "review_id" }
+  );
 
   if (error) {
-    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(error) });
   }
 
   revalidatePath(`/review/${companySlug}`);
-  businessRedirect(email, companySlug, { success: "Reply published." });
+  businessRedirect(email, companySlug, { token: businessToken, success: "Reply published." });
 }
 
 export async function addBusinessReplyInline(_state: BusinessReplyState, formData: FormData): Promise<BusinessReplyState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const reviewId = String(formData.get("reviewId") ?? "").trim();
   const reply = String(formData.get("reply") ?? "").trim();
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     return { ok: false, message: "Access denied." };
   }
 
@@ -980,13 +1026,14 @@ export async function addBusinessReplyInline(_state: BusinessReplyState, formDat
   }
 
   const existingReply = existingReplies?.[0] ?? null;
-  const { error } = existingReply
-    ? await supabase.from("company_replies").update({ reply }).eq("id", existingReply.id)
-    : await supabase.from("company_replies").insert({
-        review_id: reviewId,
-        company_id: companyId,
-        reply
-      });
+  const { error } = await supabase.from("company_replies").upsert(
+    {
+      review_id: reviewId,
+      company_id: companyId,
+      reply
+    },
+    { onConflict: "review_id" }
+  );
 
   if (error) {
     return { ok: false, message: formatSupabaseError(error) };
@@ -999,11 +1046,12 @@ export async function addBusinessReplyInline(_state: BusinessReplyState, formDat
 
 export async function verifyBusinessReviewInline(_state: BusinessVerifyState, formData: FormData): Promise<BusinessVerifyState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const reviewId = String(formData.get("reviewId") ?? "").trim();
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     return { ok: false, message: "Access denied." };
   }
 
@@ -1043,12 +1091,13 @@ export async function verifyBusinessReviewInline(_state: BusinessVerifyState, fo
 
 export async function saveBusinessAutoReplySettings(_state: BusinessAutoReplyState, formData: FormData): Promise<BusinessAutoReplyState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const enabled = formData.get("autoReplyEnabled") === "on";
   const template = String(formData.get("autoReplyTemplate") ?? "").trim();
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     return { ok: false, message: "Access denied." };
   }
 
@@ -1095,22 +1144,23 @@ const reviewFlagReasons = new Set([
 
 export async function flagBusinessReview(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const companySlug = String(formData.get("companySlug") ?? "").trim();
   const reviewId = String(formData.get("reviewId") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
   const details = String(formData.get("details") ?? "").trim() || null;
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     businessRedirect(email, companySlug, { error: "Access denied." });
   }
 
   if (!reviewId || !reviewFlagReasons.has(reason)) {
-    businessRedirect(email, companySlug, { error: "Choose a valid flag reason." });
+    businessRedirect(email, companySlug, { token: businessToken, error: "Choose a valid flag reason." });
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
-  if (!supabase) businessRedirect(email, companySlug, { error: "Supabase is not configured." });
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
 
   const { data: review, error: reviewError } = await supabase
     .from("reviews")
@@ -1121,7 +1171,7 @@ export async function flagBusinessReview(formData: FormData) {
     .single();
 
   if (reviewError || !review) {
-    businessRedirect(email, companySlug, { error: reviewError ? formatSupabaseError(reviewError) : "Review not found." });
+    businessRedirect(email, companySlug, { token: businessToken, error: reviewError ? formatSupabaseError(reviewError) : "Review not found." });
   }
 
   const { data: existingFlag, error: existingFlagError } = await supabase
@@ -1133,11 +1183,11 @@ export async function flagBusinessReview(formData: FormData) {
     .limit(1);
 
   if (existingFlagError) {
-    businessRedirect(email, companySlug, { error: formatSupabaseError(existingFlagError) });
+    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(existingFlagError) });
   }
 
   if (existingFlag?.length) {
-    businessRedirect(email, companySlug, { success: "This review is already flagged and waiting for manual review." });
+    businessRedirect(email, companySlug, { token: businessToken, success: "This review is already flagged and waiting for manual review." });
   }
 
   const { error } = await supabase.from("review_flags").insert({
@@ -1150,21 +1200,22 @@ export async function flagBusinessReview(formData: FormData) {
   });
 
   if (error) {
-    businessRedirect(email, companySlug, { error: formatSupabaseError(error) });
+    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(error) });
   }
 
   revalidatePath("/admin/reviews");
-  businessRedirect(email, companySlug, { success: "Flag submitted. We will manually review this report." });
+  businessRedirect(email, companySlug, { token: businessToken, success: "Flag submitted. We will manually review this report." });
 }
 
 export async function flagBusinessReviewInline(_state: BusinessFlagState, formData: FormData): Promise<BusinessFlagState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
   const companyId = String(formData.get("companyId") ?? "").trim();
   const reviewId = String(formData.get("reviewId") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
   const details = String(formData.get("details") ?? "").trim() || null;
 
-  if (!email || !companyId || !(await hasBusinessAccess(email, companyId))) {
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     return { ok: false, message: "Access denied." };
   }
 

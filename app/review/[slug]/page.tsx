@@ -222,10 +222,10 @@ export default async function CompanyReviewPage({ params }: Props) {
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:py-10 lg:px-10">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex items-start gap-5">
+              <div className="flex flex-col items-center gap-5 text-center md:flex-row md:items-start md:text-left">
                 <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="lg" />
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
                     <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${company.is_claimed ? "bg-purple-50 text-trust-dark ring-purple-200" : "bg-white text-muted ring-line"}`}>
                       {company.is_claimed ? "✓ Claimed Business" : "Unclaimed"}
                     </span>
@@ -235,7 +235,7 @@ export default async function CompanyReviewPage({ params }: Props) {
                   <p className="mt-3 max-w-3xl text-base leading-7 text-muted">
                     Customer reviews, ratings, delivery feedback and buying experiences for {company.name}.
                   </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
+                  <div className="mt-5 flex flex-wrap justify-center gap-3 md:justify-start">
                     <Link href={`/review/${company.slug}/write`} className="rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
                       Write a review
                     </Link>
@@ -248,7 +248,7 @@ export default async function CompanyReviewPage({ params }: Props) {
                       href={company.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-muted hover:text-trust-dark"
+                      className="mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold text-muted hover:text-trust-dark md:justify-start"
                     >
                       <Globe2 size={16} />
                       {company.website.replace(/^https?:\/\//, "")}

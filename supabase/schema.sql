@@ -18,6 +18,8 @@ create table if not exists companies (
   website_screenshot_url text,
   average_rating numeric(2, 1) not null default 0,
   review_count integer not null default 0,
+  last_review_at timestamptz,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
@@ -30,6 +32,8 @@ alter table companies add column if not exists favicon_url text;
 alter table companies add column if not exists og_image_url text;
 alter table companies add column if not exists cover_image_url text;
 alter table companies add column if not exists website_screenshot_url text;
+alter table companies add column if not exists last_review_at timestamptz;
+alter table companies add column if not exists updated_at timestamptz not null default now();
 
 insert into storage.buckets (id, name, public)
 values ('brand-screenshots', 'brand-screenshots', true)
@@ -107,6 +111,15 @@ create table if not exists business_claims (
   created_at timestamptz not null default now()
 );
 
+create table if not exists business_login_tokens (
+  id uuid primary key default gen_random_uuid(),
+  contact_email text not null,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists review_flags (
   id uuid primary key default gen_random_uuid(),
   review_id uuid not null references reviews(id) on delete cascade,
@@ -174,6 +187,15 @@ create index if not exists blogs_status_published_idx on blogs(status, published
 create index if not exists blog_auto_draft_logs_ran_at_idx on blog_auto_draft_logs(ran_at desc);
 create index if not exists review_flags_status_created_idx on review_flags(status, created_at);
 create index if not exists review_flags_review_idx on review_flags(review_id);
+create index if not exists business_login_tokens_email_idx on business_login_tokens(contact_email, expires_at);
+
+with duplicate_replies as (
+  select id, row_number() over (partition by review_id order by created_at desc, id desc) as reply_rank
+  from company_replies
+)
+delete from company_replies
+where id in (select id from duplicate_replies where reply_rank > 1);
+
 create unique index if not exists company_replies_review_id_key on company_replies(review_id);
 
 alter table companies enable row level security;
@@ -183,6 +205,7 @@ alter table business_claims enable row level security;
 alter table blogs enable row level security;
 alter table blog_auto_draft_logs enable row level security;
 alter table review_flags enable row level security;
+alter table business_login_tokens enable row level security;
 
 drop policy if exists "Public can read companies" on companies;
 create policy "Public can read companies" on companies
@@ -305,7 +328,14 @@ begin
       from reviews
       where company_id = affected_company_id
       and status = 'approved'
-    )
+    ),
+    last_review_at = (
+      select max(created_at)
+      from reviews
+      where company_id = affected_company_id
+      and status = 'approved'
+    ),
+    updated_at = now()
   where id = affected_company_id;
   end loop;
 
@@ -331,7 +361,32 @@ set
     from reviews
     where reviews.company_id = companies.id
     and reviews.status = 'approved'
-  );
+  ),
+  last_review_at = (
+    select max(created_at)
+    from reviews
+    where reviews.company_id = companies.id
+    and reviews.status = 'approved'
+  ),
+  updated_at = now();
+
+create or replace view company_review_stats as
+select
+  companies.id as company_id,
+  companies.slug,
+  coalesce(round(avg(reviews.rating)::numeric, 1), 0) as average_rating,
+  count(reviews.id)::integer as approved_review_count,
+  count(*) filter (where reviews.rating = 5)::integer as five_star_count,
+  count(*) filter (where reviews.rating = 4)::integer as four_star_count,
+  count(*) filter (where reviews.rating = 3)::integer as three_star_count,
+  count(*) filter (where reviews.rating = 2)::integer as two_star_count,
+  count(*) filter (where reviews.rating = 1)::integer as one_star_count,
+  max(reviews.created_at) as last_review_at
+from companies
+left join reviews
+  on reviews.company_id = companies.id
+  and reviews.status = 'approved'
+group by companies.id, companies.slug;
 
 insert into companies (name, slug, website, category, description, average_rating, review_count)
 values

@@ -65,12 +65,14 @@ function SubmitAutoReplyButton() {
 
 function AutoReplySettingsForm({
   email,
+  businessToken,
   companyId,
   companySlug,
   enabled,
   template
 }: {
   email: string;
+  businessToken: string;
   companyId: string;
   companySlug: string;
   enabled: boolean;
@@ -81,6 +83,7 @@ function AutoReplySettingsForm({
   return (
     <form action={action} className="mt-5 rounded-2xl border border-purple-100 bg-purple-50/50 p-5">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="businessToken" value={businessToken} />
       <input type="hidden" name="companyId" value={companyId} />
       <input type="hidden" name="companySlug" value={companySlug} />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -140,11 +143,13 @@ function SubmitVerifyButton() {
 
 function BusinessVerifyForm({
   email,
+  businessToken,
   companyId,
   companySlug,
   reviewId
 }: {
   email: string;
+  businessToken: string;
   companyId: string;
   companySlug: string;
   reviewId: string;
@@ -154,6 +159,7 @@ function BusinessVerifyForm({
   return (
     <form action={verifyAction} className="inline-flex items-center gap-2">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="businessToken" value={businessToken} />
       <input type="hidden" name="companyId" value={companyId} />
       <input type="hidden" name="companySlug" value={companySlug} />
       <input type="hidden" name="reviewId" value={reviewId} />
@@ -169,12 +175,14 @@ function BusinessVerifyForm({
 
 function BusinessReplyForm({
   email,
+  businessToken,
   companyId,
   companySlug,
   reviewId,
   existingReply
 }: {
   email: string;
+  businessToken: string;
   companyId: string;
   companySlug: string;
   reviewId: string;
@@ -185,6 +193,7 @@ function BusinessReplyForm({
   return (
     <form action={replyAction} className="mt-4 grid gap-3">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="businessToken" value={businessToken} />
       <input type="hidden" name="companyId" value={companyId} />
       <input type="hidden" name="companySlug" value={companySlug} />
       <input type="hidden" name="reviewId" value={reviewId} />
@@ -212,6 +221,7 @@ function BusinessReplyForm({
 
 function FlagReviewForm({
   email,
+  businessToken,
   companyId,
   companySlug,
   review,
@@ -219,6 +229,7 @@ function FlagReviewForm({
   onReasonChange
 }: {
   email: string;
+  businessToken: string;
   companyId: string;
   companySlug: string;
   review: ReviewWithReply;
@@ -230,6 +241,7 @@ function FlagReviewForm({
   return (
     <form action={flagAction} className="p-5">
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="businessToken" value={businessToken} />
       <input type="hidden" name="companyId" value={companyId} />
       <input type="hidden" name="companySlug" value={companySlug} />
       <input type="hidden" name="reviewId" value={review.id} />
@@ -287,6 +299,7 @@ function getPaginationItems(currentPage: number, totalPages: number) {
 export function BusinessReviewsManager({
   reviews,
   email,
+  businessToken,
   companyId,
   companySlug,
   autoReplyEnabled = false,
@@ -294,6 +307,7 @@ export function BusinessReviewsManager({
 }: {
   reviews: ReviewWithReply[];
   email: string;
+  businessToken: string;
   companyId: string;
   companySlug: string;
   autoReplyEnabled?: boolean;
@@ -331,6 +345,7 @@ export function BusinessReviewsManager({
 
       <AutoReplySettingsForm
         email={email}
+        businessToken={businessToken}
         companyId={companyId}
         companySlug={companySlug}
         enabled={autoReplyEnabled}
@@ -375,7 +390,7 @@ export function BusinessReviewsManager({
                     Verified
                   </span>
                 ) : (
-                  <BusinessVerifyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} />
+                  <BusinessVerifyForm email={email} businessToken={businessToken} companyId={companyId} companySlug={companySlug} reviewId={review.id} />
                 )}
                 {review.company_replies?.length ? (
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-trust-dark">Replied</span>
@@ -403,7 +418,7 @@ export function BusinessReviewsManager({
               </div>
             ) : null}
 
-            <BusinessReplyForm email={email} companyId={companyId} companySlug={companySlug} reviewId={review.id} existingReply={review.company_replies?.[0]?.reply} />
+            <BusinessReplyForm email={email} businessToken={businessToken} companyId={companyId} companySlug={companySlug} reviewId={review.id} existingReply={review.company_replies?.[0]?.reply} />
           </article>
         ))}
 
@@ -472,6 +487,7 @@ export function BusinessReviewsManager({
             <FlagReviewForm
               key={flaggedReview.id}
               email={email}
+              businessToken={businessToken}
               companyId={companyId}
               companySlug={companySlug}
               review={flaggedReview}

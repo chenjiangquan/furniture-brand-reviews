@@ -41,24 +41,20 @@ function applyApprovedReviewStats(companies: Company[], approvedReviews: Approve
 
   return companies.map((company) => {
     const companyStats = stats.get(company.id);
-    const storedReviewCount = Number(company.review_count ?? 0);
-    const storedAverageRating = Number(company.average_rating ?? 0);
-
     if (!companyStats) {
       return {
         ...company,
-        average_rating: storedAverageRating,
-        review_count: storedReviewCount
+        average_rating: 0,
+        review_count: 0
       };
     }
 
     const calculatedAverage = Math.round((companyStats.total / companyStats.count) * 10) / 10;
-    const shouldUseStoredStats = storedReviewCount > companyStats.count;
 
     return {
       ...company,
-      average_rating: shouldUseStoredStats ? storedAverageRating : calculatedAverage,
-      review_count: Math.max(storedReviewCount, companyStats.count)
+      average_rating: calculatedAverage,
+      review_count: companyStats.count
     };
   });
 }
@@ -178,14 +174,10 @@ export const getCompanyBySlug = cache(async (slug: string): Promise<Company | nu
   if (!company) return null;
 
   const approvedStats = await getApprovedReviewStatsForCompany(company.id);
-  const storedReviewCount = Number(company.review_count ?? 0);
-  const storedAverageRating = Number(company.average_rating ?? 0);
-  const shouldUseStoredStats = storedReviewCount > approvedStats.count;
-
   return {
     ...company,
-    average_rating: shouldUseStoredStats ? storedAverageRating : approvedStats.averageRating,
-    review_count: Math.max(storedReviewCount, approvedStats.count)
+    average_rating: approvedStats.averageRating,
+    review_count: approvedStats.count
   };
 });
 

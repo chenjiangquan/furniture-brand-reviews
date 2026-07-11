@@ -2,6 +2,7 @@ type SupabaseLike = {
   from: (table: string) => {
     select: (columns?: string) => any;
     insert: (payload: Record<string, unknown>) => any;
+    upsert: (payload: Record<string, unknown>, options?: Record<string, unknown>) => any;
   };
 };
 
@@ -73,11 +74,14 @@ export async function createAutoReplyForReview(supabase: SupabaseLike, input: Au
 
   if (reply.length < 3) return;
 
-  const { error: insertError } = await supabase.from("company_replies").insert({
-    review_id: input.reviewId,
-    company_id: input.companyId,
-    reply
-  });
+  const { error: insertError } = await supabase.from("company_replies").upsert(
+    {
+      review_id: input.reviewId,
+      company_id: input.companyId,
+      reply
+    },
+    { onConflict: "review_id" }
+  );
 
   if (insertError) {
     console.warn("Auto reply insert skipped", insertError);

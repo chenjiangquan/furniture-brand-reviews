@@ -32,6 +32,14 @@ type BusinessClaimEmailInput = {
 
 type BusinessClaimApprovedEmailInput = BusinessClaimEmailInput & {
   loginEmail: string;
+  loginUrl?: string;
+};
+
+type BusinessLoginLinkEmailInput = {
+  to: string | null | undefined;
+  contactName?: string | null;
+  loginUrl: string;
+  expiresAt?: string | null;
 };
 
 function escapeHtml(value: string) {
@@ -277,14 +285,14 @@ Independent furniture brand reviews worldwide.`;
   });
 }
 
-export async function sendBusinessClaimApprovedEmail({ to, contactName, brandName, loginEmail }: BusinessClaimApprovedEmailInput) {
+export async function sendBusinessClaimApprovedEmail({ to, contactName, brandName, loginEmail, loginUrl: providedLoginUrl }: BusinessClaimApprovedEmailInput) {
   const displayContactName = safeValue(contactName, "there");
   const displayBrandName = safeValue(brandName, "your brand");
   const displayLoginEmail = safeValue(loginEmail, "your approved business email");
   const safeContactName = escapeHtml(displayContactName);
   const safeBrandName = escapeHtml(displayBrandName);
   const safeLoginEmail = escapeHtml(displayLoginEmail);
-  const loginUrl = `https://www.furniturebrandreviews.com/business/login?email=${encodeURIComponent(displayLoginEmail)}`;
+  const loginUrl = providedLoginUrl || `https://www.furniturebrandreviews.com/business/login?email=${encodeURIComponent(displayLoginEmail)}`;
   const safeLoginUrl = escapeHtml(loginUrl);
   const text = `Hi ${displayContactName},
 
@@ -320,6 +328,42 @@ Independent furniture brand reviews worldwide.`;
   return sendEmail({
     to,
     subject: "Your Furniture Brand Reviews business dashboard is ready",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessLoginLinkEmail({ to, contactName, loginUrl, expiresAt }: BusinessLoginLinkEmailInput) {
+  const displayContactName = safeValue(contactName, "there");
+  const safeContactName = escapeHtml(displayContactName);
+  const safeLoginUrl = escapeHtml(loginUrl);
+  const expiresText = expiresAt ? new Date(expiresAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "24 hours";
+  const safeExpiresText = escapeHtml(expiresText);
+  const text = `Hi ${displayContactName},
+
+Use this secure link to access your Furniture Brand Reviews business dashboard:
+${loginUrl}
+
+This link expires at ${expiresText}.
+
+Furniture Brand Reviews
+Independent furniture brand reviews worldwide.`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Your secure business login link</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Hi ${safeContactName},</p>
+<p style="margin:0 0 24px 0;font-size:16px;line-height:1.7;color:#374151;">Use this secure link to access your Furniture Brand Reviews business dashboard.</p>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeLoginUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Open business dashboard</a>
+    </td>
+  </tr>
+</table>
+<div style="margin:20px 0 0 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;font-weight:700;">This link expires at ${safeExpiresText}.</div>`);
+
+  return sendEmail({
+    to,
+    subject: "Your Furniture Brand Reviews business login link",
     text,
     html
   });

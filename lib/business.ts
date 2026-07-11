@@ -1,4 +1,5 @@
 import { cache } from "react";
+import crypto from "crypto";
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type { Company, ReviewWithReply } from "@/lib/types";
@@ -25,6 +26,64 @@ export type AdminBusinessClaim = {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function hashToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function createBusinessLoginToken(email: string) {
+  noStore();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return null;
+
+  const claims = await getBusinessClaimsByEmail(normalizedEmail);
+  if (!claims.length) return null;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const token = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
+
+  const { error } = await supabase.from("business_login_tokens").insert({
+    contact_email: normalizedEmail,
+    token_hash: tokenHash,
+    expires_at: expiresAt
+  });
+
+  if (error) {
+    console.error("Business login token create failed", error);
+    return null;
+  }
+
+  return { token, expiresAt, companies: claims.map((claim) => claim.companies).filter(Boolean) as Company[] };
+}
+
+export async function getBusinessClaimsByToken(email: string, token: string): Promise<BusinessClaimAccess[]> {
+  noStore();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !token) return [];
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data: tokenRows, error: tokenError } = await supabase
+    .from("business_login_tokens")
+    .select("id")
+    .eq("contact_email", normalizedEmail)
+    .eq("token_hash", hashToken(token))
+    .gt("expires_at", new Date().toISOString())
+    .is("used_at", null)
+    .limit(1);
+
+  if (tokenError || !tokenRows?.length) {
+    if (tokenError) console.error("Business login token lookup failed", tokenError);
+    return [];
+  }
+
+  return getBusinessClaimsByEmail(normalizedEmail);
 }
 
 export const getBusinessClaimsByEmail = cache(async (email: string): Promise<BusinessClaimAccess[]> => {
@@ -64,6 +123,18 @@ export async function getBusinessCompanyByEmail(email: string, slug?: string | n
   return { claims, companies, company };
 }
 
+export async function getBusinessCompanyByToken(email: string, token: string, slug?: string | null) {
+  const claims = await getBusinessClaimsByToken(email, token);
+  const companies = claims.map((claim) => claim.companies).filter(Boolean) as Company[];
+
+  if (!companies.length) {
+    return { claims, companies, company: null };
+  }
+
+  const company = slug ? companies.find((item) => item.slug === slug) ?? companies[0] : companies[0];
+  return { claims, companies, company };
+}
+
 export async function hasBusinessAccess(email: string, companyId: string) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !companyId) return false;
@@ -85,6 +156,11 @@ export async function hasBusinessAccess(email: string, companyId: string) {
   }
 
   return Boolean(data?.length);
+}
+
+export async function hasBusinessTokenAccess(email: string, companyId: string, token: string) {
+  const claims = await getBusinessClaimsByToken(email, token);
+  return claims.some((claim) => claim.company_id === companyId);
 }
 
 export async function getBusinessReviews(companyId: string): Promise<ReviewWithReply[]> {

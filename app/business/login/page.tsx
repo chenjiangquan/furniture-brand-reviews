@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { requestBusinessLoginLink } from "@/lib/actions";
 import { createNoIndexMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createNoIndexMetadata(
@@ -7,7 +8,16 @@ export const metadata: Metadata = createNoIndexMetadata(
   "Log in to Furniture Brand Reviews business tools to manage brand information, review replies and review invitations."
 );
 
-export default function BusinessLoginPage({ searchParams }: { searchParams?: { email?: string } }) {
+export default function BusinessLoginPage({ searchParams }: { searchParams?: { email?: string; sent?: string; error?: string } }) {
+  const errorMessage =
+    searchParams?.error === "no-approved-claim"
+      ? "No approved business claim was found for this email."
+      : searchParams?.error === "email-not-sent"
+        ? "We could not send the login link. Check email settings and try again."
+        : searchParams?.error === "invalid-email"
+          ? "Enter a valid business email address."
+          : "";
+
   return (
     <main className="bg-wash">
       <section className="mx-auto grid min-h-[70vh] max-w-[960px] place-items-center px-4 py-16 sm:px-6 lg:px-10">
@@ -18,7 +28,18 @@ export default function BusinessLoginPage({ searchParams }: { searchParams?: { e
             Enter the email address used for your approved brand claim. This MVP dashboard lets claimed furniture brands manage profile details, reply to reviews and copy review invitation links.
           </p>
 
-          <form action="/business/dashboard" method="get" className="mt-8 grid gap-4">
+          {searchParams?.sent ? (
+            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
+              Secure login link sent. Open the link from your email to access the business dashboard.
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
+
+          <form action={requestBusinessLoginLink} className="mt-8 grid gap-4">
             <label className="grid gap-2">
               <span className="text-sm font-bold text-ink">Business email</span>
               <input
@@ -31,7 +52,7 @@ export default function BusinessLoginPage({ searchParams }: { searchParams?: { e
               />
             </label>
             <button className="rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-              Continue to dashboard
+              Send secure login link
             </button>
           </form>
 

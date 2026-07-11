@@ -19,6 +19,8 @@ export type Company = {
   average_rating: number;
   review_count: number;
   created_at?: string;
+  updated_at?: string | null;
+  last_review_at?: string | null;
 };
 
 export type Review = {

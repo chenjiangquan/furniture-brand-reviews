@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { updateBusinessProfile } from "@/lib/actions";
-import { getBusinessCompanyByEmail, getBusinessReviews } from "@/lib/business";
+import { getBusinessCompanyByToken, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
 import { BusinessReviewsManager } from "@/components/BusinessReviewsManager";
@@ -12,24 +12,25 @@ export const metadata: Metadata = createNoIndexMetadata(
   "Manage claimed brand profiles, review replies and customer review invitation links on Furniture Brand Reviews."
 );
 
-function dashboardUrl(email: string, company?: string) {
-  const params = new URLSearchParams({ email, ...(company ? { company } : {}) });
+function dashboardUrl(email: string, token: string, company?: string) {
+  const params = new URLSearchParams({ email, token, ...(company ? { company } : {}) });
   return `/business/dashboard?${params.toString()}`;
 }
 
 export default async function BusinessDashboardPage({
   searchParams
 }: {
-  searchParams?: { email?: string; company?: string; success?: string; error?: string };
+  searchParams?: { email?: string; token?: string; company?: string; success?: string; error?: string };
 }) {
   const email = String(searchParams?.email ?? "").trim().toLowerCase();
+  const businessToken = String(searchParams?.token ?? "").trim();
 
-  if (!email) {
+  if (!email || !businessToken) {
     return (
       <main className="mx-auto max-w-[960px] px-4 py-16 sm:px-6 lg:px-10">
         <div className="rounded-2xl border border-purple-100 bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-ink">Business dashboard</h1>
-          <p className="mt-3 text-muted">Enter your business email to access claimed brand tools.</p>
+          <p className="mt-3 text-muted">Use a secure login link from your approved business email to access claimed brand tools.</p>
           <Link href="/business/login" className="mt-6 inline-flex rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
             Business login
           </Link>
@@ -38,7 +39,7 @@ export default async function BusinessDashboardPage({
     );
   }
 
-  const { companies, company } = await getBusinessCompanyByEmail(email, searchParams?.company);
+  const { companies, company } = await getBusinessCompanyByToken(email, businessToken, searchParams?.company);
   const reviews = company ? await getBusinessReviews(company.id) : [];
   const unansweredCount = reviews.filter((review) => !review.company_replies?.length).length;
   const reviewPageUrl = company ? `${siteUrl}/review/${company.slug}` : "";
@@ -63,8 +64,8 @@ export default async function BusinessDashboardPage({
             <Link href="/claim-your-profile" className="rounded-full bg-trust px-5 py-3 font-bold text-white hover:bg-trust-dark">
               Claim your profile
             </Link>
-            <Link href="/business/login" className="rounded-full border border-purple-200 px-5 py-3 font-bold text-trust-dark hover:bg-purple-50">
-              Try another email
+            <Link href={`/business/login?email=${encodeURIComponent(email)}`} className="rounded-full border border-purple-200 px-5 py-3 font-bold text-trust-dark hover:bg-purple-50">
+              Request a new login link
             </Link>
           </div>
         </div>
@@ -91,7 +92,7 @@ export default async function BusinessDashboardPage({
                 {companies.map((item) => (
                   <Link
                     key={item.id}
-                    href={dashboardUrl(email, item.slug)}
+                    href={dashboardUrl(email, businessToken, item.slug)}
                     className={`rounded-xl px-3 py-2 text-sm font-bold ${item.slug === company.slug ? "bg-purple-50 text-trust-dark" : "text-slate-700 hover:bg-wash"}`}
                   >
                     {item.name}
@@ -146,6 +147,7 @@ export default async function BusinessDashboardPage({
               email={email}
               companyId={company.id}
               companySlug={company.slug}
+              businessToken={businessToken}
               autoReplyEnabled={Boolean(company.auto_reply_enabled)}
               autoReplyTemplate={company.auto_reply_template ?? ""}
             />
@@ -154,6 +156,7 @@ export default async function BusinessDashboardPage({
               <h2 className="text-2xl font-bold text-ink">Profile details</h2>
               <form action={updateBusinessProfile} className="mt-5 grid gap-4">
                 <input type="hidden" name="email" value={email} />
+                <input type="hidden" name="businessToken" value={businessToken} />
                 <input type="hidden" name="companyId" value={company.id} />
                 <input type="hidden" name="companySlug" value={company.slug} />
                 <div className="grid gap-4 md:grid-cols-2">

@@ -56,7 +56,7 @@ export async function getBrandSitemapEntries(): Promise<SitemapEntry[]> {
     .sort((first, second) => Number(second.review_count || 0) - Number(first.review_count || 0))
     .map((company) => ({
       url: absolute(`/review/${company.slug}`),
-      lastmod: isoDate(company.created_at),
+      lastmod: isoDate(company.last_review_at ?? company.updated_at ?? company.created_at),
       changefreq: "daily",
       priority: "0.8"
     }));
