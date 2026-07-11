@@ -314,7 +314,8 @@ export function ReviewFilters({
             </p>
           ) : (
             <p>
-              Showing latest <span className="font-bold text-ink">{loadedReviewCount}</span> of{" "}
+              Showing <span className="font-bold text-ink">{visibleStart}-{visibleEnd}</span> from the latest{" "}
+              <span className="font-bold text-ink">{loadedReviewCount}</span> of{" "}
               <span className="font-bold text-ink">{totalApprovedReviewCount}</span> approved reviews
             </p>
           )}

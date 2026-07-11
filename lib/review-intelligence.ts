@@ -14,6 +14,7 @@ export type ReviewTopicInsight = {
 
 export type ReviewIntelligence = {
   approvedReviewCount: number;
+  analysisReviewCount: number;
   averageRating: number;
   starDistribution: Array<{ rating: 5 | 4 | 3 | 2 | 1; count: number; percentage: number }>;
   topTopics: ReviewTopicInsight[];
@@ -197,6 +198,7 @@ export function buildReviewIntelligence(reviews: ReviewWithReply[]): ReviewIntel
 
   return {
     approvedReviewCount,
+    analysisReviewCount: approvedReviewCount,
     averageRating,
     starDistribution,
     topTopics,

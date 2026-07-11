@@ -182,6 +182,7 @@ export default async function CompanyReviewPage({ params }: Props) {
   const intelligenceSample = buildReviewIntelligence(reviews);
   const intelligence = {
     ...intelligenceSample,
+    analysisReviewCount: intelligenceSample.approvedReviewCount,
     approvedReviewCount: totalApprovedReviewCount,
     averageRating: averageApprovedRating,
     starDistribution: breakdown.map((item) => ({

@@ -59,7 +59,7 @@ export function createSeoMetadata({
     robots: noindex
       ? {
           index: false,
-          follow: false
+          follow: true
         }
       : undefined
   };

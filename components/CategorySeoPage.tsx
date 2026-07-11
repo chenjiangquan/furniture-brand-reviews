@@ -154,27 +154,31 @@ export async function CategorySeoPage({ config, sort = "highest-rated" }: { conf
 
         <section>
           <h2 className="text-2xl font-bold text-ink">Most reviewed brands in this category</h2>
-          <div className="mt-6 grid gap-3">
-            {mostReviewedCompanies.map((company, index) => (
-              <article key={company.id} className="rounded-2xl border border-line bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-trust-dark">#{index + 1}</p>
-                    <h3 className="text-lg font-bold text-ink">{company.name}</h3>
-                    <p className="text-sm text-muted">{company.category}</p>
+          {mostReviewedCompanies.length > 0 ? (
+            <div className="mt-6 grid gap-3">
+              {mostReviewedCompanies.map((company, index) => (
+                <article key={company.id} className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-trust-dark">#{index + 1}</p>
+                      <h3 className="text-lg font-bold text-ink">{company.name}</h3>
+                      <p className="text-sm text-muted">{company.category}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <RatingStars rating={company.average_rating} size="small" />
+                      <span className="font-bold text-ink">{company.average_rating.toFixed(1)}</span>
+                      <span className="text-sm text-muted">{company.review_count} reviews</span>
+                      <Link href={`/review/${company.slug}`} className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark">
+                        Read reviews
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <RatingStars rating={company.average_rating} size="small" />
-                    <span className="font-bold text-ink">{company.average_rating.toFixed(1)}</span>
-                    <span className="text-sm text-muted">{company.review_count} reviews</span>
-                    <Link href={`/review/${company.slug}`} className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark">
-                      Read reviews
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 rounded-2xl border border-line bg-white p-6 text-muted shadow-sm">Not enough reviewed brands yet.</p>
+          )}
         </section>
 
         <section>

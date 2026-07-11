@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
-import { categoryConfigs } from "@/lib/seo-page-config";
+import { getCompanies } from "@/lib/data";
+import { shouldIndexCategoryPage } from "@/lib/indexing-rules";
+import { categoryConfigs, getCategoryCompanies } from "@/lib/seo-page-config";
 import { createSeoMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createSeoMetadata({
@@ -15,7 +17,12 @@ function getShortTitle(h1: string) {
   return h1.replace("Best ", "").replace(" Reviewed by Customers", "");
 }
 
-export default function CategoryIndexPage() {
+export default async function CategoryIndexPage() {
+  const companies = await getCompanies();
+  const categories = categoryConfigs.filter((category) =>
+    shouldIndexCategoryPage(getCategoryCompanies(companies, category).length)
+  );
+
   return (
     <main className="bg-wash">
       <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10">
@@ -27,8 +34,9 @@ export default function CategoryIndexPage() {
           </p>
         </div>
 
+        {categories.length > 0 ? (
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {categoryConfigs.map((category) => (
+          {categories.map((category) => (
             <Link
               key={category.slug}
               href={`/category/${category.slug}`}
@@ -45,6 +53,11 @@ export default function CategoryIndexPage() {
             </Link>
           ))}
         </div>
+        ) : (
+          <div className="mt-10 rounded-2xl border border-line bg-white p-8 text-muted shadow-sm">
+            There are not enough reviewed categories to show yet.
+          </div>
+        )}
       </section>
     </main>
   );

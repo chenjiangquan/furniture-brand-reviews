@@ -4,12 +4,18 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { formatBlogDate, getPublishedBlogs } from "@/lib/blogs";
 import { createSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Furniture Blog & Reviews | Furniture Brand Reviews",
-  description: "Furniture buying guides, brand comparisons, customer review analysis and home inspiration.",
-  path: "/blog",
-  absoluteTitle: true
-});
+const blogTitle = "Furniture Blog & Reviews | Furniture Brand Reviews";
+const blogDescription = "Furniture buying guides, brand comparisons, customer review analysis and home inspiration.";
+
+export function generateMetadata({ searchParams }: { searchParams: { page?: string } }): Metadata {
+  return createSeoMetadata({
+    title: blogTitle,
+    description: blogDescription,
+    path: "/blog",
+    absoluteTitle: true,
+    noindex: Boolean(searchParams.page)
+  });
+}
 
 const postsPerPage = 9;
 

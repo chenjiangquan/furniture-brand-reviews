@@ -29,6 +29,8 @@ export type ApprovedReviewStats = {
   ratingCounts: Record<1 | 2 | 3 | 4 | 5, number>;
 };
 
+export const approvedReviewListLimit = 1000;
+
 function applyApprovedReviewStats(companies: Company[], approvedReviews: ApprovedReviewRating[]) {
   const stats = new Map<string, { count: number; total: number }>();
 
@@ -192,7 +194,7 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
     .eq("company_id", companyId)
     .eq("status", "approved")
     .order("created_at", { ascending: false })
-    .limit(1000);
+    .limit(approvedReviewListLimit);
 
   if (error) {
     console.error(error);

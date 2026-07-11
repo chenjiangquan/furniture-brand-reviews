@@ -12,10 +12,15 @@ const rankingMinimumReviewCount = 5;
 export type CategorySort = "highest-rated" | "most-reviewed" | "best-delivery" | "fewest-complaints";
 const categoryReviewKeywords: Record<string, string[]> = {
   "sofa-brands": ["sofa", "sofa bed", "sectional", "couch", "armchair", "lounge chair", "living room seating"],
-  "dining-table-brands": ["dining table", "dining set", "table", "dining chair"],
-  "bedroom-furniture-brands": ["bed", "mattress", "wardrobe", "dresser", "bedside", "bedroom"],
+  "sofa-bed-brands": ["sofa bed", "sofabed", "sleeper sofa", "pull out sofa", "guest bed"],
+  "dining-table-brands": ["dining table", "dining set", "dining chair", "kitchen table", "extendable table"],
+  "bedroom-furniture-brands": ["bed", "bed frame", "mattress", "wardrobe", "dresser", "chest of drawers", "bedside", "bedroom"],
+  "bed-and-mattress-brands": ["bed", "bed frame", "mattress", "divan", "headboard", "sleep"],
   "outdoor-furniture-brands": ["outdoor", "garden", "patio", "weatherproof", "rattan"],
-  "home-office-furniture-brands": ["desk", "office chair", "study", "workspace"]
+  "home-office-furniture-brands": ["desk", "office chair", "study desk", "workspace", "home office"],
+  "luxury-furniture-brands": ["luxury", "premium", "designer", "high-end", "bespoke"],
+  "cheap-furniture-brands": ["cheap", "affordable", "budget", "value", "discount"],
+  "uk-furniture-brands": ["uk", "britain", "british", "england", "london", "delivery"]
 };
 
 function normaliseText(value: string | null | undefined) {
@@ -27,6 +32,18 @@ function reviewMatchesCategory(review: Awaited<ReturnType<typeof getLatestApprov
   if (!keywords.length) return true;
 
   const haystack = normaliseText(`${review.product_type ?? ""} ${review.title ?? ""} ${review.content ?? ""}`);
+  if (!haystack) return false;
+
+  return keywords.some((keyword) => haystack.includes(normaliseText(keyword)));
+}
+
+function reviewMatchesRanking(review: Awaited<ReturnType<typeof getLatestApprovedReviewsForCompanies>>[number], config: RankingConfig) {
+  if (!config.keywords?.length) return true;
+
+  const relatedCategoryKeywords = config.relatedCategories.flatMap((slug) => categoryReviewKeywords[slug] ?? []);
+  const keywords = [...config.keywords, ...relatedCategoryKeywords];
+  const haystack = normaliseText(`${review.product_type ?? ""} ${review.title ?? ""} ${review.content ?? ""}`);
+
   if (!haystack) return false;
 
   return keywords.some((keyword) => haystack.includes(normaliseText(keyword)));
@@ -120,10 +137,11 @@ export async function getCategorySeoData(config: SeoCategoryConfig, sort: Catego
 export async function getRankingSeoData(config: RankingConfig) {
   const companies = await getCompanies();
   const rankedCompanies = getRankingCompanies(companies, config, rankingMinimumReviewCount);
-  const latestReviews = await getLatestApprovedReviewsForCompanies(
+  const latestReviewsRaw = await getLatestApprovedReviewsForCompanies(
     rankedCompanies.map((company) => company.id),
-    6
+    50
   );
+  const latestReviews = latestReviewsRaw.filter((review) => reviewMatchesRanking(review, config)).slice(0, 6);
 
   return {
     rankedCompanies,

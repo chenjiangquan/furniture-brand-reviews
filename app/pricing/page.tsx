@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { InfoPage } from "@/components/InfoPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Pricing",
-  description:
-    "Pricing information for future Furniture Brand Reviews business tools for furniture companies and customer review management.",
-  path: "/pricing"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Pricing",
+  "Pricing information for future Furniture Brand Reviews business tools for furniture companies and customer review management."
+);
 
 export default function PricingPage() {
   return (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
-import { featuredComparisons } from "@/lib/comparison-config";
+import { getIndexableFeaturedComparisonLinks } from "@/lib/internal-links";
 import { createSeoMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createSeoMetadata({
@@ -11,15 +11,9 @@ export const metadata: Metadata = createSeoMetadata({
   path: "/compare"
 });
 
-function labelFromSlug(slug: string) {
-  return slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
-    .replace(" Vs ", " vs ");
-}
+export default async function CompareIndexPage() {
+  const comparisons = await getIndexableFeaturedComparisonLinks(30);
 
-export default function CompareIndexPage() {
   return (
     <main className="bg-wash">
       <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
@@ -31,15 +25,16 @@ export default function CompareIndexPage() {
           </p>
         </div>
 
+        {comparisons.length > 0 ? (
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredComparisons.map((comparison) => (
+          {comparisons.map((comparison) => (
             <Link
-              key={comparison.slug}
-              href={`/compare/${comparison.slug}`}
+              key={comparison.href}
+              href={comparison.href}
               className="group rounded-2xl border border-line bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-trust/40 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-xl font-bold text-ink">{labelFromSlug(comparison.slug)}</h2>
+                <h2 className="text-xl font-bold text-ink">{comparison.label}</h2>
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-wash text-trust-dark ring-1 ring-line transition group-hover:bg-trust group-hover:text-white">
                   <ArrowRight size={17} />
                 </span>
@@ -50,6 +45,11 @@ export default function CompareIndexPage() {
             </Link>
           ))}
         </div>
+        ) : (
+          <div className="mt-10 rounded-2xl border border-line bg-white p-8 text-muted shadow-sm">
+            There are not enough reviewed brand comparisons to show yet.
+          </div>
+        )}
       </section>
     </main>
   );

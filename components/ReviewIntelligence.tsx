@@ -19,6 +19,8 @@ function TopicSentiment({ positive, mixed, negative }: { positive: number; mixed
 }
 
 export function ReviewIntelligence({ companyName, intelligence }: { companyName: string; intelligence: ReviewIntelligenceData }) {
+  const usesLatestSample = intelligence.analysisReviewCount < intelligence.approvedReviewCount;
+
   return (
     <section className="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div>
@@ -26,6 +28,9 @@ export function ReviewIntelligence({ companyName, intelligence }: { companyName:
         <h2 className="mt-2 text-2xl font-bold text-ink">What customers mention about {companyName}</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           These insights are generated from approved reviews only. Pending, rejected and deleted reviews are not included.
+          {usesLatestSample
+            ? ` Rating totals use all ${pluralizeReviews(intelligence.approvedReviewCount)}; topic and complaint signals use the latest ${pluralizeReviews(intelligence.analysisReviewCount)}.`
+            : ""}
         </p>
       </div>
 
@@ -44,12 +49,14 @@ export function ReviewIntelligence({ companyName, intelligence }: { companyName:
             <div className="rounded-xl bg-wash p-4">
               <p className="text-sm font-bold text-muted">Approved reviews</p>
               <p className="mt-2 text-3xl font-bold text-ink">{intelligence.approvedReviewCount}</p>
-              <p className="mt-1 text-xs font-semibold text-muted">used for this analysis</p>
+              <p className="mt-1 text-xs font-semibold text-muted">used for rating totals</p>
             </div>
             <div className="rounded-xl bg-wash p-4">
               <p className="text-sm font-bold text-muted">Complaint signals</p>
               <p className="mt-2 text-3xl font-bold text-ink">{intelligence.complaintCount}</p>
-              <p className="mt-1 text-xs font-semibold text-muted">low rating or issue keywords</p>
+              <p className="mt-1 text-xs font-semibold text-muted">
+                low rating or issue keywords{usesLatestSample ? ` in latest ${intelligence.analysisReviewCount}` : ""}
+              </p>
             </div>
           </div>
 
