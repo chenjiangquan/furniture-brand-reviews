@@ -4,9 +4,11 @@ import { BrandCard } from "@/components/BrandCard";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
+import { SeoLongFormSections } from "@/components/SeoLongFormSections";
 import { getPublishedBlogs } from "@/lib/blogs";
 import { getRelatedBlogs, getRelatedComparisons } from "@/lib/internal-links";
 import { buildBreadcrumbSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
+import { getRankingLongFormContent } from "@/lib/seo-long-form-content";
 import { getRankingSeoData } from "@/lib/seo-page-data";
 import { categoryConfigs, type RankingConfig } from "@/lib/seo-page-config";
 import { absoluteUrl } from "@/lib/seo";
@@ -21,6 +23,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
     .flatMap((company) => getRelatedComparisons(company, rankedCompanies, 2))
     .filter((link, index, links) => links.findIndex((item) => item.href === link.href) === index)
     .slice(0, 5);
+  const longFormSections = getRankingLongFormContent(config.slug);
   const pageUrl = absoluteUrl(`/${config.slug}`);
   const now = new Date();
   const itemListSchema = buildItemListSchema(
@@ -83,6 +86,8 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
             </p>
           ) : null}
         </section>
+
+        <SeoLongFormSections sections={longFormSections} />
 
         <section>
           <h2 className="text-2xl font-bold text-ink">Top 10 table</h2>

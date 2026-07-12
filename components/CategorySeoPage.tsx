@@ -4,9 +4,11 @@ import { BrandCard } from "@/components/BrandCard";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
+import { SeoLongFormSections } from "@/components/SeoLongFormSections";
 import { getPublishedBlogs } from "@/lib/blogs";
 import { getCategoryComparisons, getRelatedBlogs, getRelatedRankingPages } from "@/lib/internal-links";
 import { buildBreadcrumbSchema, buildCollectionPageSchema, buildFaqSchema, buildGraph, buildItemListSchema } from "@/lib/jsonLd";
+import { getCategoryLongFormContent } from "@/lib/seo-long-form-content";
 import { getCategorySeoData, type CategorySort } from "@/lib/seo-page-data";
 import { getCategoryConfig, type SeoCategoryConfig } from "@/lib/seo-page-config";
 import { absoluteUrl } from "@/lib/seo";
@@ -24,6 +26,7 @@ export async function CategorySeoPage({ config, sort = "highest-rated" }: { conf
   const relatedComparisons = getCategoryComparisons(config, categoryCompanies, 5);
   const relatedRankings = getRelatedRankingPages(config, 4);
   const relatedBlogs = getRelatedBlogs(config, blogs, 3);
+  const longFormSections = getCategoryLongFormContent(config.slug);
   const pagePath = `/category/${config.slug}`;
   const pageUrl = absoluteUrl(pagePath);
   const itemListSchema = buildItemListSchema(
@@ -86,6 +89,8 @@ export async function CategorySeoPage({ config, sort = "highest-rated" }: { conf
             <p className="mt-6 rounded-2xl border border-line bg-white p-6 text-muted shadow-sm">Not enough reviewed brands yet.</p>
           )}
         </section>
+
+        <SeoLongFormSections sections={longFormSections} />
 
         <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-4">
