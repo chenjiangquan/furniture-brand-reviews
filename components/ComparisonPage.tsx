@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, MessageCircleMore, ShieldCheck } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { ComparisonReviewGuide } from "@/components/ComparisonReviewGuide";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { RatingStars } from "@/components/RatingStars";
@@ -201,6 +202,8 @@ export async function ComparisonPage({ data }: { data: ComparisonPageData }) {
           <BrandSummaryCard brand={brandA} />
           <BrandSummaryCard brand={brandB} />
         </section>
+
+        <ComparisonReviewGuide brandA={brandA} brandB={brandB} />
 
         <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-ink">Summary comparison table</h2>
