@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CheckCircle2, Clock3, ExternalLink, Globe2, Mail, MessageSquareReply } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
+import { BrandReviewGuide } from "@/components/BrandReviewGuide";
 import { BrandShareActions } from "@/components/BrandShareActions";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { JsonLd } from "@/components/JsonLd";
@@ -295,6 +296,16 @@ export default async function CompanyReviewPage({ params }: Props) {
           />
 
           <ReviewIntelligence companyName={company.name} intelligence={intelligence} />
+
+          <BrandReviewGuide
+            brandName={company.name}
+            brandSlug={company.slug}
+            category={company.category}
+            approvedReviewCount={totalApprovedReviewCount}
+            averageRating={averageApprovedRating}
+            relatedCategories={relatedCategories}
+            relatedRankingPages={relatedRankingPages}
+          />
 
           <section className="rounded-xl border border-purple-100 bg-purple-50 p-6">
             <h2 className="text-2xl font-bold text-ink">Share your furniture buying experience</h2>
