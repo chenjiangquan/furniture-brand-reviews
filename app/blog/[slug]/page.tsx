@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { ArrowRight } from "lucide-react";
+import { BlogEditorialGuide } from "@/components/BlogEditorialGuide";
 import { JsonLd } from "@/components/JsonLd";
 import {
   extractFaqFromMarkdown,
@@ -179,6 +180,8 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
             className="mb-10 aspect-[16/9] w-full rounded-2xl border border-line object-cover shadow-sm"
           />
         )}
+
+        <BlogEditorialGuide categoryHref={categoryLink} />
 
         <div className="rounded-2xl border border-line bg-white p-6 leading-8 text-ink shadow-sm md:p-8">
           <ReactMarkdown
