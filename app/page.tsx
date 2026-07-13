@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
@@ -200,18 +201,19 @@ export default async function HomePage() {
               >
                 <Link
                   href={`/blog/${blog.slug}`}
-                  className="block aspect-[16/9] bg-gradient-to-br from-purple-100 via-wash to-trust/25"
-                  style={
-                    blog.cover_image_url
-                      ? {
-                          backgroundImage: `url(${blog.cover_image_url})`,
-                          backgroundPosition: "center",
-                          backgroundSize: "cover"
-                        }
-                      : undefined
-                  }
+                  className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-purple-100 via-wash to-trust/25"
                   aria-label={`Read ${blog.title}`}
-                />
+                >
+                  {blog.cover_image_url ? (
+                    <Image
+                      src={blog.cover_image_url}
+                      alt={blog.cover_image_alt || blog.title}
+                      fill
+                      sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Link>
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted">
                     {blog.category ? <span className="text-trust-dark">{blog.category}</span> : null}
