@@ -118,6 +118,12 @@ function normalizeWebsiteInput(value: string) {
   }
 }
 
+function extractClaimWebsite(message?: string | null) {
+  if (!message) return "";
+  const websiteLine = message.match(/website:\s*([^\s]+)/i);
+  return normalizeWebsiteInput(websiteLine?.[1] ?? "");
+}
+
 function businessRedirect(email: string, companySlug?: string | null, params?: Record<string, string>): never {
   const searchParams = new URLSearchParams({ email, ...(companySlug ? { company: companySlug } : {}), ...(params ?? {}) });
   redirect(`/business/dashboard?${searchParams.toString()}`);
@@ -793,7 +799,7 @@ export async function moderateBusinessClaim(formData: FormData) {
 
   const { data: claim, error: claimError } = await supabase
     .from("business_claims")
-    .select("id, company_id, brand_name, contact_name, contact_email, status, companies(id, name, slug)")
+    .select("id, company_id, brand_name, contact_name, contact_email, message, status, companies(id, name, slug)")
     .eq("id", claimId)
     .single();
 
@@ -805,11 +811,7 @@ export async function moderateBusinessClaim(formData: FormData) {
     businessClaimsAdminRedirect(password, { error: "Unknown claim action." });
   }
 
-  if (action === "approve" && !claim.company_id) {
-    businessClaimsAdminRedirect(password, { error: "Choose a company_id for this claim before approving." });
-  }
-
-  const companyRelation = Array.isArray(claim.companies) ? claim.companies[0] : claim.companies;
+  let companyRelation = Array.isArray(claim.companies) ? claim.companies[0] : claim.companies;
 
   if (action === "reject") {
     const { error: deleteError } = await supabase.from("business_claims").delete().eq("id", claimId);
@@ -822,14 +824,71 @@ export async function moderateBusinessClaim(formData: FormData) {
     businessClaimsAdminRedirect(password, { success: "Claim rejected and removed." });
   }
 
-  const { error: updateError } = await supabase.from("business_claims").update({ status: "approved" }).eq("id", claimId);
+  let approvedCompanyId = claim.company_id;
+  let approvedCompanySlug = companyRelation?.slug ?? "";
+  let approvedCompanyName = companyRelation?.name ?? claim.brand_name;
+
+  if (action === "approve" && !approvedCompanyId) {
+    const generatedSlug = slugifyBrandName(claim.brand_name);
+    const website = extractClaimWebsite(claim.message);
+
+    if (!generatedSlug) {
+      businessClaimsAdminRedirect(password, { error: "Claim brand name is not valid enough to create a profile." });
+    }
+
+    const { data: existingCompany, error: existingCompanyError } = await supabase
+      .from("companies")
+      .select("id, name, slug")
+      .eq("slug", generatedSlug)
+      .maybeSingle();
+
+    if (existingCompanyError) {
+      businessClaimsAdminRedirect(password, { error: formatSupabaseError(existingCompanyError) });
+    }
+
+    if (existingCompany) {
+      approvedCompanyId = existingCompany.id;
+      approvedCompanySlug = existingCompany.slug;
+      approvedCompanyName = existingCompany.name;
+      companyRelation = existingCompany;
+    } else {
+      const { data: createdCompany, error: createCompanyError } = await supabase
+        .from("companies")
+        .insert({
+          name: claim.brand_name,
+          slug: generatedSlug,
+          website,
+          category: "Furniture & Homewares",
+          description: `${claim.brand_name} is listed on Furniture Brand Reviews so customers can share furniture and homeware buying experiences.`,
+          is_claimed: true,
+          average_rating: 0,
+          review_count: 0
+        })
+        .select("id, name, slug")
+        .single();
+
+      if (createCompanyError || !createdCompany) {
+        businessClaimsAdminRedirect(password, { error: createCompanyError ? formatSupabaseError(createCompanyError) : "Company profile could not be created." });
+      }
+
+      approvedCompanyId = createdCompany.id;
+      approvedCompanySlug = createdCompany.slug;
+      approvedCompanyName = createdCompany.name;
+      companyRelation = createdCompany;
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from("business_claims")
+    .update({ status: "approved", company_id: approvedCompanyId })
+    .eq("id", claimId);
 
   if (updateError) {
     businessClaimsAdminRedirect(password, { error: formatSupabaseError(updateError) });
   }
 
-  if (action === "approve" && claim.company_id) {
-    await supabase.from("companies").update({ is_claimed: true }).eq("id", claim.company_id);
+  if (action === "approve" && approvedCompanyId) {
+    await supabase.from("companies").update({ is_claimed: true }).eq("id", approvedCompanyId);
     const loginToken = await createBusinessLoginToken(claim.contact_email);
     const loginUrl = loginToken
       ? `${siteUrl}/business/dashboard?email=${encodeURIComponent(claim.contact_email)}&token=${encodeURIComponent(loginToken.token)}`
@@ -838,12 +897,12 @@ export async function moderateBusinessClaim(formData: FormData) {
     await sendBusinessClaimApprovedEmail({
       to: claim.contact_email,
       contactName: claim.contact_name,
-      brandName: companyRelation?.name ?? claim.brand_name,
+      brandName: approvedCompanyName,
       loginEmail: claim.contact_email,
       loginUrl
     });
 
-    if (companyRelation?.slug) revalidatePath(`/review/${companyRelation.slug}`);
+    if (approvedCompanySlug) revalidatePath(`/review/${approvedCompanySlug}`);
   }
 
   revalidatePath("/admin/business-claims");

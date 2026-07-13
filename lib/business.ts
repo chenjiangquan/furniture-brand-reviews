@@ -32,6 +32,44 @@ function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function getBusinessLoginSecret() {
+  return process.env.BUSINESS_LOGIN_SECRET || process.env.ADMIN_PASSWORD || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+}
+
+function signBusinessTokenPayload(payload: string) {
+  const secret = getBusinessLoginSecret();
+  if (!secret) return "";
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function createSignedBusinessToken(email: string, expiresAt: string) {
+  const payload = Buffer.from(JSON.stringify({ email, expiresAt })).toString("base64url");
+  const signature = signBusinessTokenPayload(payload);
+  return signature ? `v1.${payload}.${signature}` : "";
+}
+
+function verifySignedBusinessToken(email: string, token: string) {
+  const [version, payload, signature] = token.split(".");
+  if (version !== "v1" || !payload || !signature) return false;
+
+  const expectedSignature = signBusinessTokenPayload(payload);
+  if (!expectedSignature) return false;
+
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return false;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { email?: string; expiresAt?: string };
+    if (decoded.email !== email || !decoded.expiresAt) return false;
+    return new Date(decoded.expiresAt).getTime() > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export async function createBusinessLoginToken(email: string) {
   noStore();
   const normalizedEmail = normalizeEmail(email);
@@ -40,23 +78,9 @@ export async function createBusinessLoginToken(email: string) {
   const claims = await getBusinessClaimsByEmail(normalizedEmail);
   if (!claims.length) return null;
 
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return null;
-
-  const token = crypto.randomBytes(32).toString("base64url");
-  const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
-
-  const { error } = await supabase.from("business_login_tokens").insert({
-    contact_email: normalizedEmail,
-    token_hash: tokenHash,
-    expires_at: expiresAt
-  });
-
-  if (error) {
-    console.error("Business login token create failed", error);
-    return null;
-  }
+  const token = createSignedBusinessToken(normalizedEmail, expiresAt);
+  if (!token) return null;
 
   return { token, expiresAt, companies: claims.map((claim) => claim.companies).filter(Boolean) as Company[] };
 }
@@ -65,6 +89,10 @@ export async function getBusinessClaimsByToken(email: string, token: string): Pr
   noStore();
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !token) return [];
+
+  if (verifySignedBusinessToken(normalizedEmail, token)) {
+    return getBusinessClaimsByEmail(normalizedEmail);
+  }
 
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];

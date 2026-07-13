@@ -115,7 +115,7 @@ export default async function AdminBusinessClaimsPage({
                       <input type="hidden" name="claimId" value={claim.id} />
                       <input type="hidden" name="action" value="approve" />
                       <button
-                        disabled={claim.status === "approved" || !claim.company_id}
+                        disabled={claim.status === "approved"}
                         className="rounded-full border border-green-200 px-3 py-2 font-semibold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Approve
@@ -134,7 +134,7 @@ export default async function AdminBusinessClaimsPage({
                     </form>
                   </div>
                   {!claim.company_id ? (
-                    <p className="mt-2 text-xs text-red-700">Set company_id in Supabase before approving this claim.</p>
+                    <p className="mt-2 text-xs text-trust-dark">Approving will create a new company profile, mark it claimed, and send dashboard login details.</p>
                   ) : null}
                 </td>
               </tr>
