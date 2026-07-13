@@ -9,6 +9,7 @@ import {
   sendBusinessClaimApprovedEmail,
   sendBusinessClaimSubmittedEmail,
   sendBusinessLoginLinkEmail,
+  sendBusinessPasswordResetEmail,
   sendAdminNewReviewNotificationEmail,
   sendReviewApprovedEmail,
   sendReviewSubmittedEmail
@@ -16,7 +17,14 @@ import {
 import { slugifyBrandName } from "@/lib/slug";
 import { siteUrl } from "@/lib/seo";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
-import { createBusinessLoginToken, hasBusinessTokenAccess } from "@/lib/business";
+import {
+  createBusinessLoginToken,
+  createBusinessPasswordResetToken,
+  createBusinessSessionForPassword,
+  hasBusinessTokenAccess,
+  setBusinessPassword,
+  verifySignedPasswordResetToken
+} from "@/lib/business";
 import type { Company } from "@/lib/types";
 
 export type ReviewFormState = {
@@ -118,6 +126,44 @@ function normalizeWebsiteInput(value: string) {
   }
 }
 
+function safeStorageFilename(name: string) {
+  const cleaned = name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleaned || `brand-logo-${Date.now()}.jpg`;
+}
+
+async function uploadBusinessLogoFile(file: File, companySlug: string) {
+  if (!file || file.size === 0) return null;
+
+  if (!file.type.startsWith("image/")) {
+    return { error: "Logo upload must be an image file." };
+  }
+
+  if (file.size > 1024 * 1024) {
+    return { error: "Logo image must be under 1MB." };
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { error: "Supabase Storage is not configured." };
+
+  const filename = safeStorageFilename(file.name);
+  const path = `${companySlug || "brand"}-${Date.now()}-${filename}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const { error: uploadError } = await supabase.storage.from("brand-logos").upload(path, buffer, {
+    contentType: file.type || "image/jpeg",
+    upsert: true
+  });
+
+  if (uploadError) return { error: formatSupabaseError(uploadError) };
+
+  const { data } = supabase.storage.from("brand-logos").getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
 function extractClaimWebsite(message?: string | null) {
   if (!message) return "";
   const websiteLine = message.match(/website:\s*([^\s]+)/i);
@@ -180,6 +226,70 @@ export async function requestBusinessLoginLink(formData: FormData) {
   }
 
   redirect(`/business/login?email=${encodeURIComponent(email)}&sent=1`);
+}
+
+export async function loginBusinessWithPassword(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!isValidEmail(email)) {
+    redirect("/business/login?error=invalid-email");
+  }
+
+  const session = await createBusinessSessionForPassword(email, password);
+  if (!session) {
+    redirect(`/business/login?email=${encodeURIComponent(email)}&error=invalid-password`);
+  }
+
+  redirect(`/business/dashboard?email=${encodeURIComponent(email)}&token=${encodeURIComponent(session.token)}`);
+}
+
+export async function requestBusinessPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!isValidEmail(email)) {
+    redirect("/business/reset-password?error=invalid-email");
+  }
+
+  const resetToken = await createBusinessPasswordResetToken(email);
+  if (!resetToken) {
+    redirect(`/business/reset-password?email=${encodeURIComponent(email)}&error=no-approved-claim`);
+  }
+
+  const resetUrl = `${siteUrl}/business/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken.token)}`;
+  const emailSent = await sendBusinessPasswordResetEmail({
+    to: email,
+    resetUrl,
+    expiresAt: resetToken.expiresAt
+  });
+
+  if (!emailSent) {
+    redirect(`/business/reset-password?email=${encodeURIComponent(email)}&error=email-not-sent`);
+  }
+
+  redirect(`/business/reset-password?email=${encodeURIComponent(email)}&sent=1`);
+}
+
+export async function resetBusinessPassword(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const token = String(formData.get("token") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!isValidEmail(email) || !token || !verifySignedPasswordResetToken(email, token)) {
+    redirect("/business/reset-password?error=invalid-token");
+  }
+
+  if (password !== confirmPassword) {
+    redirect(`/business/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}&error=password-mismatch`);
+  }
+
+  const result = await setBusinessPassword(email, password);
+  if (!result.ok) {
+    redirect(`/business/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}&error=${encodeURIComponent(result.message)}`);
+  }
+
+  redirect(`/business/login?email=${encodeURIComponent(email)}&passwordSet=1`);
 }
 
 function validateReviewInput({
@@ -893,13 +1003,18 @@ export async function moderateBusinessClaim(formData: FormData) {
     const loginUrl = loginToken
       ? `${siteUrl}/business/dashboard?email=${encodeURIComponent(claim.contact_email)}&token=${encodeURIComponent(loginToken.token)}`
       : `${siteUrl}/business/login?email=${encodeURIComponent(claim.contact_email)}`;
+    const passwordResetToken = await createBusinessPasswordResetToken(claim.contact_email);
+    const passwordResetUrl = passwordResetToken
+      ? `${siteUrl}/business/reset-password?email=${encodeURIComponent(claim.contact_email)}&token=${encodeURIComponent(passwordResetToken.token)}`
+      : `${siteUrl}/business/reset-password?email=${encodeURIComponent(claim.contact_email)}`;
 
     await sendBusinessClaimApprovedEmail({
       to: claim.contact_email,
       contactName: claim.contact_name,
       brandName: approvedCompanyName,
       loginEmail: claim.contact_email,
-      loginUrl
+      loginUrl,
+      passwordResetUrl
     });
 
     if (approvedCompanySlug) revalidatePath(`/review/${approvedCompanySlug}`);
@@ -944,8 +1059,8 @@ export async function updateBusinessProfile(formData: FormData) {
   const website = normalizeWebsiteInput(String(formData.get("website") ?? ""));
   const category = String(formData.get("category") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
-  const logoUrl = String(formData.get("logoUrl") ?? "").trim() || null;
-  const coverImageUrl = String(formData.get("coverImageUrl") ?? "").trim() || null;
+  const existingLogoUrl = String(formData.get("existingLogoUrl") ?? "").trim() || null;
+  const logoFile = formData.get("logoFile");
 
   if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
     businessRedirect(email, companySlug, { error: "Access denied." });
@@ -958,6 +1073,15 @@ export async function updateBusinessProfile(formData: FormData) {
   const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
 
+  let logoUrl = existingLogoUrl;
+  if (logoFile instanceof File && logoFile.size > 0) {
+    const uploadResult = await uploadBusinessLogoFile(logoFile, companySlug);
+    if (uploadResult?.error) {
+      businessRedirect(email, companySlug, { token: businessToken, error: uploadResult.error });
+    }
+    logoUrl = uploadResult?.url ?? logoUrl;
+  }
+
   const { error } = await supabase
     .from("companies")
     .update({
@@ -965,7 +1089,7 @@ export async function updateBusinessProfile(formData: FormData) {
       category,
       description,
       logo_url: logoUrl,
-      cover_image_url: coverImageUrl,
+      cover_image_url: logoUrl,
       is_claimed: true
     })
     .eq("id", companyId);
@@ -978,6 +1102,30 @@ export async function updateBusinessProfile(formData: FormData) {
   revalidatePath("/brands");
   revalidatePath("/");
   businessRedirect(email, companySlug, { token: businessToken, success: "Profile updated." });
+}
+
+export async function updateBusinessPassword(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (password !== confirmPassword) {
+    businessRedirect(email, companySlug, { token: businessToken, error: "Passwords do not match." });
+  }
+
+  const result = await setBusinessPassword(email, password);
+  if (!result.ok) {
+    businessRedirect(email, companySlug, { token: businessToken, error: result.message });
+  }
+
+  businessRedirect(email, companySlug, { token: businessToken, success: "Password updated." });
 }
 
 export async function addBusinessReply(formData: FormData) {

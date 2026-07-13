@@ -33,12 +33,19 @@ type BusinessClaimEmailInput = {
 type BusinessClaimApprovedEmailInput = BusinessClaimEmailInput & {
   loginEmail: string;
   loginUrl?: string;
+  passwordResetUrl?: string;
 };
 
 type BusinessLoginLinkEmailInput = {
   to: string | null | undefined;
   contactName?: string | null;
   loginUrl: string;
+  expiresAt?: string | null;
+};
+
+type BusinessPasswordResetEmailInput = {
+  to: string | null | undefined;
+  resetUrl: string;
   expiresAt?: string | null;
 };
 
@@ -285,7 +292,7 @@ Independent furniture brand reviews worldwide.`;
   });
 }
 
-export async function sendBusinessClaimApprovedEmail({ to, contactName, brandName, loginEmail, loginUrl: providedLoginUrl }: BusinessClaimApprovedEmailInput) {
+export async function sendBusinessClaimApprovedEmail({ to, contactName, brandName, loginEmail, loginUrl: providedLoginUrl, passwordResetUrl: providedPasswordResetUrl }: BusinessClaimApprovedEmailInput) {
   const displayContactName = safeValue(contactName, "there");
   const displayBrandName = safeValue(brandName, "your brand");
   const displayLoginEmail = safeValue(loginEmail, "your approved business email");
@@ -293,15 +300,20 @@ export async function sendBusinessClaimApprovedEmail({ to, contactName, brandNam
   const safeBrandName = escapeHtml(displayBrandName);
   const safeLoginEmail = escapeHtml(displayLoginEmail);
   const loginUrl = providedLoginUrl || `https://www.furniturebrandreviews.com/business/login?email=${encodeURIComponent(displayLoginEmail)}`;
+  const passwordResetUrl = providedPasswordResetUrl || `https://www.furniturebrandreviews.com/business/reset-password?email=${encodeURIComponent(displayLoginEmail)}`;
   const safeLoginUrl = escapeHtml(loginUrl);
+  const safePasswordResetUrl = escapeHtml(passwordResetUrl);
   const text = `Hi ${displayContactName},
 
 Your business claim for ${displayBrandName} has been approved.
 
-You can log in to the Furniture Brand Reviews business dashboard using:
+Your approved login email is:
 ${displayLoginEmail}
 
-Login here:
+To set your initial password, use the forgot password flow here:
+${passwordResetUrl}
+
+After setting your password, log in here:
 ${loginUrl}
 
 Inside the dashboard you can manage profile information, reply to approved reviews, copy review invitation links and get widget embed codes.
@@ -314,20 +326,52 @@ Independent furniture brand reviews worldwide.`;
 <p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Your business claim for <strong style="color:#111827;">${safeBrandName}</strong> has been approved.</p>
 <div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;">
   <strong>Login email:</strong> ${safeLoginEmail}<br />
-  Use this email on the business login page to access your dashboard.
+  Set your initial password with the forgot password flow before logging in.
 </div>
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
   <tr>
     <td bgcolor="#8b4aa3" style="border-radius:999px;">
-      <a href="${safeLoginUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Open business dashboard</a>
+      <a href="${safePasswordResetUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Set initial password</a>
     </td>
   </tr>
 </table>
+<p style="margin:0 0 14px 0;font-size:15px;line-height:1.7;color:#374151;">After setting your password, you can log in here: <a href="${safeLoginUrl}" style="color:#8b4aa3;font-weight:700;">Business login</a>.</p>
 <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">Inside the dashboard you can manage profile information, reply to approved reviews, copy review invitation links and get widget embed codes.</p>`);
 
   return sendEmail({
     to,
     subject: "Your Furniture Brand Reviews business dashboard is ready",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessPasswordResetEmail({ to, resetUrl, expiresAt }: BusinessPasswordResetEmailInput) {
+  const safeResetUrl = escapeHtml(resetUrl);
+  const expiresText = expiresAt ? new Date(expiresAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "2 hours";
+  const safeExpiresText = escapeHtml(expiresText);
+  const text = `Use this link to set or reset your Furniture Brand Reviews business password:
+${resetUrl}
+
+This link expires at ${expiresText}.
+
+Furniture Brand Reviews
+Independent furniture brand reviews worldwide.`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Set your business password</h1>
+<p style="margin:0 0 24px 0;font-size:16px;line-height:1.7;color:#374151;">Use this secure link to set or reset your Furniture Brand Reviews business dashboard password.</p>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeResetUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Set business password</a>
+    </td>
+  </tr>
+</table>
+<div style="margin:20px 0 0 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;font-weight:700;">This link expires at ${safeExpiresText}.</div>`);
+
+  return sendEmail({
+    to,
+    subject: "Set your Furniture Brand Reviews business password",
     text,
     html
   });

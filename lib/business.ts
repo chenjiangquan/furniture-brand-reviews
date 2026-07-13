@@ -32,6 +32,24 @@ function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function hashPassword(password: string, salt = crypto.randomBytes(16).toString("base64url")) {
+  const hash = crypto.pbkdf2Sync(password, salt, 120000, 32, "sha256").toString("base64url");
+  return `pbkdf2_sha256$120000$${salt}$${hash}`;
+}
+
+function verifyPassword(password: string, storedHash: string | null | undefined) {
+  if (!storedHash) return false;
+  const [algorithm, iterationsText, salt, hash] = storedHash.split("$");
+  if (algorithm !== "pbkdf2_sha256" || !iterationsText || !salt || !hash) return false;
+  const iterations = Number(iterationsText);
+  if (!Number.isFinite(iterations) || iterations < 10000) return false;
+
+  const expected = crypto.pbkdf2Sync(password, salt, iterations, 32, "sha256").toString("base64url");
+  const expectedBuffer = Buffer.from(expected);
+  const hashBuffer = Buffer.from(hash);
+  return expectedBuffer.length === hashBuffer.length && crypto.timingSafeEqual(expectedBuffer, hashBuffer);
+}
+
 function getBusinessLoginSecret() {
   return process.env.BUSINESS_LOGIN_SECRET || process.env.ADMIN_PASSWORD || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 }
@@ -48,7 +66,35 @@ function createSignedBusinessToken(email: string, expiresAt: string) {
   return signature ? `v1.${payload}.${signature}` : "";
 }
 
-function verifySignedBusinessToken(email: string, token: string) {
+function createSignedPasswordResetToken(email: string, expiresAt: string) {
+  const payload = Buffer.from(JSON.stringify({ email, expiresAt, purpose: "business-password-reset" })).toString("base64url");
+  const signature = signBusinessTokenPayload(payload);
+  return signature ? `pw1.${payload}.${signature}` : "";
+}
+
+export function verifySignedPasswordResetToken(email: string, token: string) {
+  const [version, payload, signature] = token.split(".");
+  if (version !== "pw1" || !payload || !signature) return false;
+
+  const expectedSignature = signBusinessTokenPayload(payload);
+  if (!expectedSignature) return false;
+
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return false;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { email?: string; expiresAt?: string; purpose?: string };
+    if (decoded.email !== email || decoded.purpose !== "business-password-reset" || !decoded.expiresAt) return false;
+    return new Date(decoded.expiresAt).getTime() > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+export function verifySignedBusinessToken(email: string, token: string) {
   const [version, payload, signature] = token.split(".");
   if (version !== "v1" || !payload || !signature) return false;
 
@@ -83,6 +129,77 @@ export async function createBusinessLoginToken(email: string) {
   if (!token) return null;
 
   return { token, expiresAt, companies: claims.map((claim) => claim.companies).filter(Boolean) as Company[] };
+}
+
+export async function createBusinessPasswordResetToken(email: string) {
+  noStore();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return null;
+
+  const claims = await getBusinessClaimsByEmail(normalizedEmail);
+  if (!claims.length) return null;
+
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString();
+  const token = createSignedPasswordResetToken(normalizedEmail, expiresAt);
+  if (!token) return null;
+
+  return { token, expiresAt, companies: claims.map((claim) => claim.companies).filter(Boolean) as Company[] };
+}
+
+export async function createBusinessSessionForPassword(email: string, password: string) {
+  noStore();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !password) return null;
+
+  const claims = await getBusinessClaimsByEmail(normalizedEmail);
+  if (!claims.length) return null;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("business_passwords")
+    .select("password_hash")
+    .eq("contact_email", normalizedEmail)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Business password lookup failed", error);
+    return null;
+  }
+
+  if (!verifyPassword(password, data?.password_hash)) return null;
+
+  return createBusinessLoginToken(normalizedEmail);
+}
+
+export async function setBusinessPassword(email: string, password: string) {
+  noStore();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || password.length < 10) return { ok: false, message: "Password must be at least 10 characters." };
+
+  const claims = await getBusinessClaimsByEmail(normalizedEmail);
+  if (!claims.length) return { ok: false, message: "No approved business claim was found for this email." };
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { ok: false, message: "Supabase is not configured." };
+
+  const passwordHash = hashPassword(password);
+  const { error } = await supabase.from("business_passwords").upsert(
+    {
+      contact_email: normalizedEmail,
+      password_hash: passwordHash,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "contact_email" }
+  );
+
+  if (error) {
+    console.error("Business password update failed", error);
+    return { ok: false, message: "Could not update password." };
+  }
+
+  return { ok: true, message: "Password updated." };
 }
 
 export async function getBusinessClaimsByToken(email: string, token: string): Promise<BusinessClaimAccess[]> {

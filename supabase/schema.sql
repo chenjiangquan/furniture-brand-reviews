@@ -303,6 +303,21 @@ drop policy if exists "Public can read review images" on storage.objects;
 create policy "Public can read review images" on storage.objects
   for select using (bucket_id = 'review-images');
 
+insert into storage.buckets (id, name, public)
+values ('brand-logos', 'brand-logos', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public can read brand logos" on storage.objects;
+create policy "Public can read brand logos" on storage.objects
+  for select using (bucket_id = 'brand-logos');
+
+create table if not exists business_passwords (
+  contact_email text primary key,
+  password_hash text not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 create or replace function refresh_company_rating()
 returns trigger as $$
 declare

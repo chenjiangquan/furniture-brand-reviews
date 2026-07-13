@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { updateBusinessProfile } from "@/lib/actions";
+import { updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
 import { getBusinessCompanyByToken, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
@@ -113,7 +113,7 @@ export default async function BusinessDashboardPage({
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="h-fit rounded-2xl border border-purple-100 bg-white p-4 shadow-sm lg:sticky lg:top-6">
             <nav className="grid gap-2 text-sm font-bold">
-              {["Overview", "Reviews", "Profile", "Invite customers", "Widgets"].map((item) => (
+              {["Overview", "Reviews", "Profile", "Password", "Invite customers", "Widgets"].map((item) => (
                 <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="rounded-xl px-4 py-3 text-slate-700 hover:bg-purple-50 hover:text-trust-dark">
                   {item}
                 </a>
@@ -159,6 +159,7 @@ export default async function BusinessDashboardPage({
                 <input type="hidden" name="businessToken" value={businessToken} />
                 <input type="hidden" name="companyId" value={company.id} />
                 <input type="hidden" name="companySlug" value={company.slug} />
+                <input type="hidden" name="existingLogoUrl" value={company.logo_url ?? ""} />
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="grid gap-2">
                     <span className="text-sm font-bold text-ink">Website</span>
@@ -173,17 +174,61 @@ export default async function BusinessDashboardPage({
                   <span className="text-sm font-bold text-ink">Description</span>
                   <textarea name="description" defaultValue={company.description ?? ""} className="min-h-[120px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
                 </label>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-[160px_minmax(0,1fr)] md:items-center">
+                  <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-2xl border border-purple-100 bg-wash">
+                    {company.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={company.logo_url} alt={`${company.name} logo`} className="h-full w-full object-contain p-3" />
+                    ) : (
+                      <span className="text-3xl font-bold text-trust-dark">{company.name.slice(0, 1).toUpperCase()}</span>
+                    )}
+                  </div>
                   <label className="grid gap-2">
-                    <span className="text-sm font-bold text-ink">Logo URL</span>
-                    <input name="logoUrl" defaultValue={company.logo_url ?? ""} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-bold text-ink">Cover image URL</span>
-                    <input name="coverImageUrl" defaultValue={company.cover_image_url ?? ""} className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                    <span className="text-sm font-bold text-ink">Upload logo</span>
+                    <input
+                      name="logoFile"
+                      type="file"
+                      accept="image/*"
+                      className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-purple-50 file:px-4 file:py-2 file:text-sm file:font-bold file:text-trust-dark focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                    <span className="text-xs font-semibold text-muted">Image files only. Maximum 1MB. The cover image uses the same uploaded logo image.</span>
                   </label>
                 </div>
                 <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Save profile</button>
+              </form>
+            </section>
+
+            <section id="password" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Password</h2>
+              <p className="mt-2 text-muted">Update the password used with your approved business email.</p>
+              <form action={updateBusinessPassword} className="mt-5 grid gap-4 md:max-w-xl">
+                <input type="hidden" name="email" value={email} />
+                <input type="hidden" name="businessToken" value={businessToken} />
+                <input type="hidden" name="companyId" value={company.id} />
+                <input type="hidden" name="companySlug" value={company.slug} />
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">New password</span>
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    minLength={10}
+                    placeholder="At least 10 characters"
+                    className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Confirm new password</span>
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    minLength={10}
+                    placeholder="Repeat password"
+                    className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                </label>
+                <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Save password</button>
               </form>
             </section>
 

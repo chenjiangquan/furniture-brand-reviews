@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requestBusinessLoginLink } from "@/lib/actions";
+import { loginBusinessWithPassword, requestBusinessLoginLink } from "@/lib/actions";
 import { createNoIndexMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createNoIndexMetadata(
@@ -8,7 +8,7 @@ export const metadata: Metadata = createNoIndexMetadata(
   "Log in to Furniture Brand Reviews business tools to manage brand information, review replies and review invitations."
 );
 
-export default function BusinessLoginPage({ searchParams }: { searchParams?: { email?: string; sent?: string; error?: string } }) {
+export default function BusinessLoginPage({ searchParams }: { searchParams?: { email?: string; sent?: string; passwordSet?: string; error?: string } }) {
   const errorMessage =
     searchParams?.error === "no-approved-claim"
       ? "No approved business claim was found for this email."
@@ -16,6 +16,8 @@ export default function BusinessLoginPage({ searchParams }: { searchParams?: { e
         ? "We could not send the login link. Check email settings and try again."
         : searchParams?.error === "invalid-email"
           ? "Enter a valid business email address."
+          : searchParams?.error === "invalid-password"
+            ? "Email or password is incorrect, or this business has not set a password yet."
           : "";
 
   return (
@@ -33,13 +35,18 @@ export default function BusinessLoginPage({ searchParams }: { searchParams?: { e
               Secure login link sent. Open the link from your email to access the business dashboard.
             </div>
           ) : null}
+          {searchParams?.passwordSet ? (
+            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
+              Password set. You can now log in with your business email and password.
+            </div>
+          ) : null}
           {errorMessage ? (
             <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
-          <form action={requestBusinessLoginLink} className="mt-8 grid gap-4">
+          <form action={loginBusinessWithPassword} className="mt-8 grid gap-4">
             <label className="grid gap-2">
               <span className="text-sm font-bold text-ink">Business email</span>
               <input
@@ -51,10 +58,51 @@ export default function BusinessLoginPage({ searchParams }: { searchParams?: { e
                 className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
               />
             </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-bold text-ink">Password</span>
+              <input
+                type="password"
+                name="password"
+                required
+                minLength={10}
+                placeholder="Enter your password"
+                className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+              />
+            </label>
             <button className="rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-              Send secure login link
+              Log in
             </button>
           </form>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <Link
+              href={`/business/reset-password${searchParams?.email ? `?email=${encodeURIComponent(searchParams.email)}` : ""}`}
+              className="font-bold text-trust-dark underline underline-offset-4"
+            >
+              Forgot password or set initial password
+            </Link>
+          </div>
+
+          <details className="mt-6 rounded-xl border border-purple-100 bg-purple-50 p-4">
+            <summary className="cursor-pointer text-sm font-bold text-trust-dark">Use secure email link instead</summary>
+            <form action={requestBusinessLoginLink} className="mt-4 grid gap-3">
+              <p className="text-sm leading-6 text-muted">If you do not want to use a password, request a 24-hour secure login link by email.</p>
+              <label className="grid gap-2">
+                <span className="text-sm font-bold text-ink">Business email</span>
+                <input
+                  type="email"
+                  name="email"
+                  defaultValue={searchParams?.email ?? ""}
+                  required
+                  placeholder="you@brand.com"
+                  className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                />
+              </label>
+              <button className="w-fit rounded-full border border-purple-200 bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:bg-white">
+                Send secure login link
+              </button>
+            </form>
+          </details>
 
           <div className="mt-6 rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm leading-6 text-muted">
             No approved claim yet?{" "}
