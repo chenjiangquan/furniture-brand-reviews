@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ImageLightbox } from "@/components/ImageLightbox";
 
 export function ReviewImageGallery({
@@ -19,10 +20,7 @@ export function ReviewImageGallery({
     variant === "summary"
       ? "mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"
       : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4";
-  const imageClass =
-    variant === "summary"
-      ? "h-24 w-full object-cover transition hover:scale-105 sm:h-28"
-      : "h-24 w-full object-cover transition hover:scale-105";
+  const imageWrapperClass = variant === "summary" ? "relative block h-24 w-full sm:h-28" : "relative block h-24 w-full";
 
   if (visibleImages.length === 0) return null;
 
@@ -40,12 +38,15 @@ export function ReviewImageGallery({
             className="block cursor-pointer overflow-hidden rounded-xl border border-line bg-wash text-left"
             aria-label={`Open review photo ${index + 1}`}
           >
-            <img
+            <span className={imageWrapperClass}>
+              <Image
               src={imageUrl}
               alt={`Review photo ${index + 1}`}
-              className={imageClass}
-              loading="lazy"
-            />
+                fill
+                sizes={variant === "summary" ? "(min-width: 1024px) 16vw, 25vw" : "(min-width: 640px) 25vw, 50vw"}
+                className="object-cover transition hover:scale-105"
+              />
+            </span>
           </button>
         ))}
       </div>

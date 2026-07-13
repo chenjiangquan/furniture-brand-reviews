@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useFormState, useFormStatus } from "react-dom";
 import { Download, Image as ImageIcon, Save, Upload } from "lucide-react";
 import {
@@ -321,12 +322,15 @@ function BrandImageManager({ password, companies }: { password: string; companie
                 <td className="max-w-[260px] truncate border-t border-purple-100 px-4 py-3 text-muted">{company.website}</td>
                 <td className="border-t border-purple-100 px-4 py-3">
                   {getCompanyImageUrl(company) ? (
-                    <img
+                    <div className="relative h-16 w-28 overflow-hidden rounded-lg border border-line">
+                      <Image
                       src={getCompanyImageUrl(company) ?? ""}
                       alt={`${company.name} brand image`}
-                      className="h-16 w-28 rounded-lg border border-line object-cover"
-                      loading="lazy"
-                    />
+                        fill
+                        sizes="112px"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
                     <span className="text-sm text-muted">No image</span>
                   )}

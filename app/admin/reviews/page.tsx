@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { moderateReview, moderateReviewFlag } from "@/lib/actions";
 import { getPendingReviewFlags, getPendingReviews } from "@/lib/data";
 import { createNoIndexMetadata } from "@/lib/seo";
@@ -74,12 +75,19 @@ export default async function AdminReviewsPage({
                   {review.review_image_urls && review.review_image_urls.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {review.review_image_urls.slice(0, 4).map((imageUrl, index) => (
-                        <a key={`${imageUrl}-${index}`} href={imageUrl} target="_blank" rel="noreferrer">
-                          <img
+                        <a
+                          key={`${imageUrl}-${index}`}
+                          href={imageUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="relative block h-12 w-12 overflow-hidden rounded-lg border border-line"
+                        >
+                          <Image
                             src={imageUrl}
                             alt={`Review photo ${index + 1}`}
-                            className="h-12 w-12 rounded-lg border border-line object-cover"
-                            loading="lazy"
+                            fill
+                            sizes="48px"
+                            className="object-cover"
                           />
                         </a>
                       ))}

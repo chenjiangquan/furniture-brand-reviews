@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export function ImageLightbox({
@@ -68,12 +69,15 @@ export function ImageLightbox({
         </button>
       )}
 
-      <img
-        src={currentImage}
-        alt="Review photo preview"
-        className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      />
+      <div className="relative h-[85vh] w-[90vw]" onClick={(event) => event.stopPropagation()}>
+        <Image
+          src={currentImage}
+          alt="Review photo preview"
+          fill
+          sizes="90vw"
+          className="rounded-xl object-contain shadow-2xl"
+        />
+      </div>
 
       {hasMultipleImages && (
         <button

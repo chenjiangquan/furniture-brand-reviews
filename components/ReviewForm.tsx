@@ -240,6 +240,7 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {previews.map((preview, index) => (
             <div key={`${preview.name}-${index}`} className="relative overflow-hidden rounded-xl border border-line bg-wash">
+              {/* eslint-disable-next-line @next/next/no-img-element -- Object URL previews are local browser blobs, not remote page assets. */}
               <img src={preview.url} alt={preview.name} className="h-28 w-full object-cover" />
               <button
                 type="button"
