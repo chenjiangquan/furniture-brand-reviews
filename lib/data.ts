@@ -30,6 +30,7 @@ export type ApprovedReviewStats = {
 };
 
 export const approvedReviewListLimit = 1000;
+const approvedReviewStatsPageSize = 1000;
 
 function applyApprovedReviewStats(companies: Company[], approvedReviews: ApprovedReviewRating[]) {
   const stats = new Map<string, { count: number; total: number }>();
@@ -88,6 +89,41 @@ function buildApprovedReviewStats(reviews: Array<{ rating: number | null }>): Ap
   };
 }
 
+async function getAllApprovedReviewRatings(): Promise<ApprovedReviewRating[]> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return sampleReviews
+      .filter((review): review is Review & { company_id: string } => Boolean(review.company_id))
+      .map((review) => ({ company_id: review.company_id, rating: review.rating }));
+  }
+
+  let from = 0;
+  const ratings: ApprovedReviewRating[] = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("company_id, rating")
+      .eq("status", "approved")
+      .range(from, from + approvedReviewStatsPageSize - 1);
+
+    if (error) {
+      console.error(error);
+      break;
+    }
+
+    ratings.push(...((data ?? []).filter((review) => review.company_id) as ApprovedReviewRating[]));
+
+    if (!data || data.length < approvedReviewStatsPageSize) {
+      break;
+    }
+
+    from += approvedReviewStatsPageSize;
+  }
+
+  return ratings;
+}
+
 export const getApprovedReviewStatsForCompany = cache(async (companyId: string): Promise<ApprovedReviewStats> => {
   noStore();
   const supabase = getSupabase();
@@ -142,17 +178,8 @@ export const getCompanies = cache(async (): Promise<Company[]> => {
 
   const companies = (data ?? []).map(normalizeCompany);
 
-  const { data: approvedReviews, error: reviewsError } = await supabase
-    .from("reviews")
-    .select("company_id, rating")
-    .eq("status", "approved");
-
-  if (reviewsError) {
-    console.error(reviewsError);
-    return companies;
-  }
-
-  return applyApprovedReviewStats(companies, approvedReviews ?? []);
+  const approvedReviews = await getAllApprovedReviewRatings();
+  return applyApprovedReviewStats(companies, approvedReviews);
 });
 
 export const getCompanyBySlug = cache(async (slug: string): Promise<Company | null> => {
