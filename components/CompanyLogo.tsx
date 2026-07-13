@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logoUrl?: string | null; size?: "sm" | "md" | "lg" }) {
@@ -12,12 +13,13 @@ export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logo
 
   if (logoUrl && !hasImageError) {
     return (
-      <span className={`${sizes[size]} flex-shrink-0 overflow-hidden rounded-xl border border-line bg-white`}>
-        <img
+      <span className={`${sizes[size]} relative flex-shrink-0 overflow-hidden rounded-xl border border-line bg-white`}>
+        <Image
           src={logoUrl}
           alt={`${name} logo`}
-          className="h-full w-full object-contain"
-          loading="lazy"
+          fill
+          sizes={size === "lg" ? "160px" : size === "md" ? "56px" : "56px"}
+          className="object-contain"
           onError={() => setHasImageError(true)}
         />
       </span>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -174,10 +175,13 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
 
       <div className="mx-auto max-w-[1000px] px-4 py-10 sm:px-6 lg:px-10">
         {blog.cover_image_url && (
-          <img
+          <Image
             src={blog.cover_image_url}
             alt={blog.cover_image_alt || blog.title}
+            width={1200}
+            height={675}
             className="mb-10 aspect-[16/9] w-full rounded-2xl border border-line object-cover shadow-sm"
+            priority
           />
         )}
 
@@ -198,13 +202,16 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
                   {children}
                 </a>
               ),
-              img: ({ alt, src }) => (
-                <img
-                  src={src ?? ""}
-                  alt={alt || blog.title}
-                  className="mb-6 w-full rounded-2xl border border-line object-cover shadow-sm"
-                />
-              ),
+              img: ({ alt, src }) =>
+                src ? (
+                  <Image
+                    src={src}
+                    alt={alt || blog.title}
+                    width={1200}
+                    height={675}
+                    className="mb-6 w-full rounded-2xl border border-line object-cover shadow-sm"
+                  />
+                ) : null,
               blockquote: ({ children }) => <blockquote className="mb-5 rounded-xl border-l-4 border-trust bg-wash p-4 text-muted">{children}</blockquote>
             }}
           >

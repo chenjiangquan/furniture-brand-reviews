@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCardActions } from "@/components/ReviewCardActions";
@@ -68,9 +69,11 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
               className="mt-4 block w-28 overflow-hidden rounded-xl border border-line bg-wash"
               aria-label="Open review photo"
             >
-              <img
+              <Image
                 src={firstImage}
                 alt="Review photo"
+                width={112}
+                height={80}
                 className="h-20 w-28 object-cover"
                 loading="lazy"
               />
