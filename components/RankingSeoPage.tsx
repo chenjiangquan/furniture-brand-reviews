@@ -16,6 +16,21 @@ import { absoluteUrl } from "@/lib/seo";
 export async function RankingSeoPage({ config }: { config: RankingConfig }) {
   const { rankedCompanies, latestReviews, minimumReviewCount } = await getRankingSeoData(config);
   const usesWeightedRanking = config.mode === "best";
+  const rankingSubject = config.h1
+    .replace(/^Best\s+/i, "")
+    .replace(/^Lowest Rated\s+/i, "lowest rated ")
+    .replace(/\s+Based on.*$/i, "")
+    .replace(/\s+Based on Current Approved Reviews$/i, "")
+    .trim();
+  const tableHeading = usesWeightedRanking
+    ? `Top 10 ${rankingSubject.toLowerCase()} by weighted customer rating`
+    : `Top 10 ${rankingSubject.toLowerCase()} by current approved reviews`;
+  const cardSubject = rankingSubject
+    .replace(/^lowest rated\s+/i, "")
+    .replace(/\s+brands$/i, "");
+  const cardsHeading = usesWeightedRanking
+    ? `${cardSubject} brand cards`
+    : `${cardSubject} brand cards`;
   const blogs = await getPublishedBlogs();
   const relatedBlogs = getRelatedBlogs(config.h1, blogs, 3);
   const relatedComparisons = rankedCompanies
@@ -90,7 +105,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
         <SeoLongFormSections sections={longFormSections} />
 
         <section>
-          <h2 className="text-2xl font-bold text-ink">Top 10 table</h2>
+          <h2 className="text-2xl font-bold text-ink">{tableHeading}</h2>
           {rankedCompanies.length > 0 ? (
             <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
               <table className="w-full min-w-[780px] border-collapse text-left text-sm">
@@ -138,7 +153,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
 
         {rankedCompanies.length > 0 ? (
           <section>
-            <h2 className="text-2xl font-bold text-ink">Brand cards</h2>
+            <h2 className="text-2xl font-bold text-ink">{cardsHeading}</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {rankedCompanies.slice(0, 6).map((company) => (
                 <BrandCard key={company.id} company={company} />
