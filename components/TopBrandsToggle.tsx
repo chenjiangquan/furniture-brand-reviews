@@ -53,22 +53,22 @@ export function TopBrandsToggle({ companies }: { companies: Company[] }) {
 
       {visibleCompanies.length > 0 ? (
         <>
-        <div className="-mx-4 mt-6 flex snap-x gap-4 overflow-x-auto px-4 pb-3 lg:hidden">
+        <div className="-mx-4 mt-6 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
           {visibleCompanies.map((company, index) => (
             <Link
               key={company.id}
               href={`/review/${company.slug}`}
-              className="flex min-h-[190px] min-w-[270px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm"
+              className="relative flex min-h-[198px] min-w-[270px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm"
             >
               <div>
-                <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wash text-sm font-bold text-trust-dark ring-1 ring-line">
-                    #{index + 1}
-                  </span>
+                <span className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-wash text-xs font-bold text-trust-dark ring-1 ring-line">
+                  #{index + 1}
+                </span>
+                <div className="flex items-start gap-3 pr-10">
                   <CompanyLogo
                     name={company.name}
                     logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
-                    size="sm"
+                    size="md"
                   />
                 </div>
                 <h3 className="mt-4 line-clamp-2 text-base font-bold leading-snug text-ink">{company.name}</h3>

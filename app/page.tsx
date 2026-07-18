@@ -37,13 +37,13 @@ function HomeBrandMiniCard({ company }: { company: Awaited<ReturnType<typeof get
   return (
     <Link
       href={`/review/${company.slug}`}
-      className="group flex min-h-[180px] min-w-[260px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-trust/40 hover:shadow-md sm:min-w-[300px] lg:min-w-0"
+      className="group flex min-h-[180px] min-w-[260px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm transition hover:border-trust-dark sm:min-w-[300px] lg:min-w-0"
     >
       <div>
         <CompanyLogo
           name={company.name}
           logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
-          size="sm"
+          size="md"
         />
         <h3 className="mt-4 line-clamp-2 text-base font-bold leading-snug text-ink group-hover:text-trust-dark">{company.name}</h3>
         <p className="mt-1 inline-flex items-center gap-1 truncate text-sm text-muted">
@@ -114,7 +114,6 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-        <div className="home-hero-mobile-image md:hidden" aria-hidden="true" />
       </section>
 
       <section className="bg-white">
@@ -141,7 +140,7 @@ export default async function HomePage() {
             View all <ArrowRight size={16} />
           </Link>
         </div>
-        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
           {homepageCompanies.slice(0, 4).map((company) => (
             <HomeBrandMiniCard key={company.id} company={company} />
           ))}
@@ -186,19 +185,18 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
-        <div className="relative overflow-hidden rounded-3xl border border-pink-100 bg-pink-100 px-6 py-8 text-center shadow-sm">
-          <div className="absolute inset-x-8 bottom-0 flex h-16 items-end justify-center gap-5 opacity-50" aria-hidden="true">
-            <span className="h-5 w-24 rounded-t-2xl bg-pink-300" />
-            <span className="h-9 w-24 rounded-t-2xl bg-pink-300" />
-            <span className="h-12 w-24 rounded-t-2xl bg-pink-300" />
-            <span className="h-16 w-24 rounded-t-2xl bg-pink-300" />
-          </div>
-          <div className="relative">
-            <h2 className="text-2xl font-bold text-ink">Looking to grow your furniture business?</h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-6 text-ink/80">
-              Strengthen your reputation with moderated customer reviews, public replies and review invitation tools.
-            </p>
-            <Link href="/claim-your-profile" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+        <div className="relative overflow-hidden rounded-3xl border border-purple-200 bg-purple-100 px-6 py-7 shadow-sm">
+          <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full bg-purple-300/35" aria-hidden="true" />
+          <div className="absolute bottom-4 right-10 hidden h-20 w-20 rounded-3xl border border-white/50 bg-white/30 backdrop-blur sm:block" aria-hidden="true" />
+          <div className="absolute bottom-8 right-32 hidden h-12 w-32 rounded-full border border-white/50 bg-white/35 backdrop-blur md:block" aria-hidden="true" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-ink">Looking to grow your furniture business?</h2>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-ink/80">
+                Strengthen your reputation with moderated customer reviews, public replies and review invitation tools.
+              </p>
+            </div>
+            <Link href="/claim-your-profile" className="inline-flex w-fit rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
               Get started
             </Link>
           </div>
@@ -219,23 +217,68 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1600px] px-4 pt-16 sm:px-6 lg:px-10">
-        <div className="rounded-3xl bg-[#fff0d9] p-8 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">Help furniture buyers make the right choice</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-base font-semibold leading-7 text-ink/80">
-            Share your buying experience so other shoppers can compare delivery, product quality and customer service with more confidence.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/write-review" className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
-              Write a review
-            </Link>
-            <Link href="/brands" className="rounded-full border border-ink/10 bg-white px-5 py-3 text-sm font-bold text-ink hover:border-trust/40">
-              Browse brands
-            </Link>
+        <div className="grid gap-7 rounded-3xl bg-[#fff0d9] p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">
+          <div>
+            <h2 className="text-3xl font-bold leading-tight text-ink">Help furniture buyers make the right choice</h2>
+            <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-ink/80">
+              Share your buying experience so other shoppers can compare delivery, product quality and customer service with more confidence.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/write-review" className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+                Write a review
+              </Link>
+              <Link href="/brands" className="rounded-full border border-ink/10 bg-white px-5 py-3 text-sm font-bold text-ink hover:border-trust/40">
+                Browse brands
+              </Link>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {["left center", "center", "right center"].map((position, index) => (
+              <div
+                key={position}
+                className={`h-44 rounded-3xl bg-cover bg-center shadow-sm md:h-56 ${index === 1 ? "mt-5" : ""}`}
+                style={{ backgroundImage: "url('/hero.jpg')", backgroundPosition: position }}
+                aria-hidden="true"
+              />
+            ))}
           </div>
         </div>
       </section>
 
       <TopBrandsToggle companies={companies} />
+
+      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+        <div className="grid gap-6 rounded-3xl bg-emerald-100 p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">
+          <div>
+            <h2 className="text-3xl font-bold text-ink">We keep furniture reviews transparent</h2>
+            <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-ink/80">
+              Reviews are checked before publishing, companies cannot pay to remove reviews, and every public rating is based on approved customer feedback.
+            </p>
+            <Link href="/trust-and-safety" className="mt-6 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+              What we do
+            </Link>
+          </div>
+          <div className="rounded-3xl bg-emerald-900 p-6 text-white">
+            <div className="mb-5 flex -space-x-3">
+              {["20% center", "55% center", "80% center"].map((position) => (
+                <span
+                  key={position}
+                  className="h-16 w-16 rounded-full border-4 border-emerald-900 bg-cover bg-center"
+                  style={{ backgroundImage: "url('/hero.jpg')", backgroundPosition: position }}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+            <h3 className="text-xl font-bold">Trust signals for furniture shoppers</h3>
+            <p className="mt-3 text-sm font-semibold leading-6 text-white/85">
+              Browse ratings, complaint signals, delivery themes and verified customer labels before choosing a furniture brand.
+            </p>
+            <Link href="/review-guidelines" className="mt-5 inline-flex rounded-full border border-white/60 px-5 py-3 text-sm font-bold text-white hover:bg-white/10">
+              Take a look
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {latestBlogs.length > 0 ? (
         <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
