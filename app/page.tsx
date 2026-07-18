@@ -33,7 +33,17 @@ function getDomain(url?: string | null) {
   }
 }
 
-function HomeBrandMiniCard({ company }: { company: Awaited<ReturnType<typeof getCompanies>>[number] }) {
+type HomeCompany = Awaited<ReturnType<typeof getCompanies>>[number];
+
+function getCompanyVisualUrl(company: HomeCompany) {
+  return [company.logo_url, company.cover_image_url, company.og_image_url, company.website_screenshot_url]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .find(Boolean) ?? null;
+}
+
+function HomeBrandMiniCard({ company }: { company: HomeCompany }) {
+  const visualUrl = getCompanyVisualUrl(company);
+
   return (
     <Link
       href={`/review/${company.slug}`}
@@ -42,8 +52,9 @@ function HomeBrandMiniCard({ company }: { company: Awaited<ReturnType<typeof get
       <div>
         <CompanyLogo
           name={company.name}
-          logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
+          logoUrl={visualUrl}
           size="md"
+          preferScreenshotCrop
         />
         <h3 className="mt-4 line-clamp-2 text-base font-bold leading-snug text-ink group-hover:text-trust-dark">{company.name}</h3>
         <p className="mt-1 inline-flex items-center gap-1 truncate text-sm text-muted">
@@ -61,7 +72,7 @@ function HomeBrandMiniCard({ company }: { company: Awaited<ReturnType<typeof get
 
 export default async function HomePage() {
   const companies = await getCompanies();
-  const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk") && Number(company.review_count || 0) >= 30);
+  const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk") && Number(company.review_count || 0) >= 30 && getCompanyVisualUrl(company));
   const latestReviews = await getLatestApprovedReviews();
   const latestBlogs = await getLatestBlogs(4);
   const featuredComparisons = await getIndexableFeaturedComparisonLinks(3);
@@ -232,15 +243,14 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            {["left center", "center", "right center"].map((position, index) => (
-              <div
-                key={position}
-                className={`h-44 rounded-3xl bg-cover bg-center shadow-sm md:h-56 ${index === 1 ? "mt-5" : ""}`}
-                style={{ backgroundImage: "url('/home-review-choice.jpg')", backgroundPosition: position }}
-                aria-hidden="true"
-              />
-            ))}
+          <div className="relative min-h-[220px] overflow-hidden rounded-3xl shadow-sm md:min-h-[280px]">
+            <Image
+              src="/home-review-choice.jpg"
+              alt="Close-up furniture scene with sofa, marble table and interior styling"
+              fill
+              sizes="(min-width: 1024px) 520px, 100vw"
+              className="object-cover"
+            />
           </div>
         </div>
       </section>
