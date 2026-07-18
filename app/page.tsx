@@ -237,7 +237,7 @@ export default async function HomePage() {
               <div
                 key={position}
                 className={`h-44 rounded-3xl bg-cover bg-center shadow-sm md:h-56 ${index === 1 ? "mt-5" : ""}`}
-                style={{ backgroundImage: "url('/hero.jpg')", backgroundPosition: position }}
+                style={{ backgroundImage: "url('/home-review-choice.jpg')", backgroundPosition: position }}
                 aria-hidden="true"
               />
             ))}
@@ -250,7 +250,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
         <div className="grid gap-6 rounded-3xl bg-emerald-100 p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">
           <div>
-            <h2 className="text-3xl font-bold text-ink">We keep furniture reviews transparent</h2>
+            <h2 className="text-3xl font-bold text-ink">We&apos;re FurnitureBrandReviews</h2>
             <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-ink/80">
               Reviews are checked before publishing, companies cannot pay to remove reviews, and every public rating is based on approved customer feedback.
             </p>
@@ -258,24 +258,14 @@ export default async function HomePage() {
               What we do
             </Link>
           </div>
-          <div className="rounded-3xl bg-emerald-900 p-6 text-white">
-            <div className="mb-5 flex -space-x-3">
-              {["20% center", "55% center", "80% center"].map((position) => (
-                <span
-                  key={position}
-                  className="h-16 w-16 rounded-full border-4 border-emerald-900 bg-cover bg-center"
-                  style={{ backgroundImage: "url('/hero.jpg')", backgroundPosition: position }}
-                  aria-hidden="true"
-                />
-              ))}
-            </div>
-            <h3 className="text-xl font-bold">Trust signals for furniture shoppers</h3>
-            <p className="mt-3 text-sm font-semibold leading-6 text-white/85">
-              Browse ratings, complaint signals, delivery themes and verified customer labels before choosing a furniture brand.
-            </p>
-            <Link href="/review-guidelines" className="mt-5 inline-flex rounded-full border border-white/60 px-5 py-3 text-sm font-bold text-white hover:bg-white/10">
-              Take a look
-            </Link>
+          <div className="relative min-h-[280px] overflow-hidden rounded-3xl shadow-sm md:min-h-[340px]">
+            <Image
+              src="/home-trust-signals.jpg"
+              alt="Styled furniture setting with coffee table and warm interior details"
+              fill
+              sizes="(min-width: 1024px) 520px, 100vw"
+              className="object-cover"
+            />
           </div>
         </div>
       </section>

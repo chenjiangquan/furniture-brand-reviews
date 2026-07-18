@@ -5,21 +5,23 @@ import { useState } from "react";
 
 export function CompanyLogo({ name, logoUrl, size = "md" }: { name: string; logoUrl?: string | null; size?: "sm" | "md" | "lg" }) {
   const [hasImageError, setHasImageError] = useState(false);
+  const cleanLogoUrl = typeof logoUrl === "string" ? logoUrl.trim() : "";
   const sizes = {
     sm: "h-11 w-11 text-base md:h-14 md:w-14 md:text-lg",
     md: "h-14 w-14 text-lg",
     lg: "h-[10rem] w-[10rem] min-h-[10rem] min-w-[10rem] text-2xl md:text-3xl"
   };
 
-  if (logoUrl && !hasImageError) {
+  if (cleanLogoUrl && !hasImageError) {
     return (
       <span className={`${sizes[size]} relative flex-shrink-0 overflow-hidden rounded-xl border border-line bg-white`}>
         <Image
-          src={logoUrl}
+          src={cleanLogoUrl}
           alt={`${name} logo`}
           fill
+          unoptimized
           sizes={size === "lg" ? "160px" : size === "md" ? "56px" : "56px"}
-          className="object-contain"
+          className={size === "lg" ? "object-contain" : "object-contain p-1"}
           onError={() => setHasImageError(true)}
         />
       </span>

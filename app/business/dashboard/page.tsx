@@ -14,11 +14,11 @@ export const metadata: Metadata = createNoIndexMetadata(
 
 const dashboardTabs = [
   { id: "overview", label: "Overview" },
-  { id: "reviews", label: "Reviews" },
   { id: "profile", label: "Profile" },
-  { id: "password", label: "Password" },
+  { id: "reviews", label: "Reviews" },
   { id: "invite", label: "Invite customers" },
-  { id: "widgets", label: "Widgets" }
+  { id: "widgets", label: "Widgets" },
+  { id: "password", label: "Password" }
 ] as const;
 
 type DashboardTab = (typeof dashboardTabs)[number]["id"];

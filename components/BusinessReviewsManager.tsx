@@ -219,7 +219,7 @@ function BusinessReplyForm({
             minLength={10}
             defaultValue={existingReply ?? ""}
             placeholder="Write a helpful, professional public reply..."
-            className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+            className="min-h-[240px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-purple-200"
           />
           <SubmitReplyButton hasExistingReply={Boolean(existingReply)} />
         </form>
@@ -387,10 +387,6 @@ export function BusinessReviewsManager({
               <div className="min-w-0 flex-1">
                 <Rating value={review.rating} size="small" />
                 <h3 className="mt-3 text-lg font-bold text-ink">{review.title}</h3>
-                <p className="mt-2 line-clamp-4 leading-7 text-muted">{review.content}</p>
-                <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted">
-                  {review.reviewer_name} · {formatDate(review.created_at)}
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {review.is_verified ? (
@@ -419,6 +415,10 @@ export function BusinessReviewsManager({
                 </button>
               </div>
             </div>
+            <p className="mt-3 w-full whitespace-pre-line leading-7 text-muted">{review.content}</p>
+            <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted">
+              {review.reviewer_name} · {formatDate(review.created_at)}
+            </p>
 
             {review.company_replies?.[0] ? (
               <div className="mt-4 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-slate-700">
