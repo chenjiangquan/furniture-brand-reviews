@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
+import { sendBusinessReviewInvitation, updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
 import { getBusinessCompanyByToken, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
@@ -234,17 +234,48 @@ export default async function BusinessDashboardPage({
 
             <section id="invite-customers" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Invite customers</h2>
-              <p className="mt-2 text-muted">Use this neutral invitation message. Do not offer rewards or ask only satisfied customers to review.</p>
-              <div className="mt-5 grid gap-4">
-                <label className="grid gap-2">
-                  <span className="text-sm font-bold text-ink">Write review link</span>
-                  <input readOnly value={writeReviewUrl} className="w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm text-muted" />
-                </label>
-                <textarea
-                  readOnly
-                  value={`Hi, thank you for choosing ${company.name}.\n\nIf you have a moment, we would appreciate your honest feedback on Furniture Brand Reviews:\n${writeReviewUrl}\n\nYour review helps other furniture buyers make more informed decisions.`}
-                  className="min-h-[180px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm leading-6 text-muted"
-                />
+              <p className="mt-2 text-muted">
+                Send a verified review invitation to a recent customer, or copy the neutral public invitation text below.
+              </p>
+              <div className="mt-5 grid gap-5">
+                <form action={sendBusinessReviewInvitation} className="grid gap-4 rounded-2xl border border-purple-100 bg-wash p-4">
+                  <input type="hidden" name="email" value={email} />
+                  <input type="hidden" name="businessToken" value={businessToken} />
+                  <input type="hidden" name="companyId" value={company.id} />
+                  <input type="hidden" name="companySlug" value={company.slug} />
+                  <input type="hidden" name="brandName" value={company.name} />
+                  <div>
+                    <h3 className="font-bold text-ink">Send verified invitation</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      Reviews submitted through this secure link are still moderated before publication, but can be labelled as verified after approval.
+                    </p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-ink">Customer name optional</span>
+                      <input name="customerName" placeholder="Jane Smith" className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-ink">Customer email</span>
+                      <input name="customerEmail" type="email" required placeholder="customer@example.com" className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                    </label>
+                  </div>
+                  <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+                    Send verified invitation
+                  </button>
+                </form>
+
+                <div className="grid gap-4">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">Public write review link</span>
+                    <input readOnly value={writeReviewUrl} className="w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm text-muted" />
+                  </label>
+                  <textarea
+                    readOnly
+                    value={`Hi, thank you for choosing ${company.name}.\n\nIf you have a moment, we would appreciate your honest feedback on Furniture Brand Reviews:\n${writeReviewUrl}\n\nYour review helps other furniture buyers make more informed decisions.`}
+                    className="min-h-[180px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm leading-6 text-muted"
+                  />
+                </div>
               </div>
             </section>
 

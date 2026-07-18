@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "blog:auto-draft": "node scripts/blog-auto-draft.mjs"
+    "blog:auto-draft": "node scripts/blog-auto-draft.mjs",
+    "blog:backfill-covers": "node scripts/backfill-blog-covers.mjs",
+    "seo:qa": "node scripts/seo-qa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

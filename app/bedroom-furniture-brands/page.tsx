@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { CategoryPage } from "@/components/CategoryPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Bedroom furniture brands",
-  description:
-    "Compare bedroom furniture brand reviews, customer reviews and ratings for furniture companies selling beds, wardrobes and storage.",
-  path: "/bedroom-furniture-brands"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Bedroom furniture brands",
+  "Compare bedroom furniture brand reviews, customer reviews and ratings for furniture companies selling beds, wardrobes and storage."
+);
 
 export default function BedroomFurnitureBrandsPage() {
   return (

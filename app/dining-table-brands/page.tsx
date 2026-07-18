@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { CategoryPage } from "@/components/CategoryPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Dining table brands",
-  description:
-    "Browse dining table brand reviews and customer reviews for furniture companies selling dining room furniture worldwide.",
-  path: "/dining-table-brands"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Dining table brands",
+  "Browse dining table brand reviews and customer reviews for furniture companies selling dining room furniture worldwide."
+);
 
 export default function DiningTableBrandsPage() {
   return (

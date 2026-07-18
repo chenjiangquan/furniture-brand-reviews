@@ -1,4 +1,13 @@
 import { featuredComparisons } from "@/lib/comparison-config";
+import {
+  autoDraftMinimumWordCount,
+  getBlogQualityStats,
+  minimumAutoDraftExternalLinks,
+  minimumAutoDraftFaqItems,
+  minimumAutoDraftH2Sections,
+  minimumAutoDraftInternalLinks
+} from "@/lib/blog-quality";
+import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import { categoryConfigs } from "@/lib/seo-page-config";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type { BlogPost } from "@/lib/blogs";
@@ -67,33 +76,8 @@ function slugify(value: string) {
     .slice(0, 90);
 }
 
-function wordCount(markdown: string) {
-  return markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
-    .replace(/[#*_>`~\-[\]()]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean).length;
-}
-
-function getH2Count(markdown: string) {
-  return (markdown.match(/^##\s+/gm) ?? []).length;
-}
-
 function getFaqCount(markdown: string, faq: GeneratedBlogDraft["faq"]) {
-  return Math.max(faq.length, (markdown.match(/^###\s+/gm) ?? []).length);
-}
-
-function getValidInternalLinkCount(markdown: string, links: string[]) {
-  const markdownLinks = Array.from(markdown.matchAll(/\]\((\/[^)]+)\)/g)).map((match) => match[1]);
-  return new Set([...markdownLinks, ...links].filter((href) => href.startsWith("/") && !href.startsWith("/admin") && !href.startsWith("/api"))).size;
-}
-
-function getValidExternalLinkCount(markdown: string, links: string[]) {
-  const markdownLinks = Array.from(markdown.matchAll(/\]\((https?:\/\/[^)]+)\)/g)).map((match) => match[1]);
-  return new Set([...markdownLinks, ...links].filter((href) => /^https?:\/\//.test(href) && !href.includes("furniturebrandreviews.com"))).size;
+  return Math.max(faq.length, getBlogQualityStats(markdown).faqCount);
 }
 
 function isRecent(value: string | null | undefined, days: number) {
@@ -283,7 +267,7 @@ async function callOpenAI(context: ReturnType<typeof buildContext>, retryFeedbac
     body: JSON.stringify({
       model,
       temperature: 0.35,
-      max_tokens: 4200,
+      max_tokens: 6000,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -304,7 +288,7 @@ async function callOpenAI(context: ReturnType<typeof buildContext>, retryFeedbac
                 metaDescription: "100-160 characters",
                 excerpt: "string",
                 category: "string",
-                content: "Markdown article, 1000-1200 words, H1-free, 5 H2 sections plus FAQ, neutral tone",
+                content: "Markdown article, 1000-1200 words, H1-free, 5 H2 sections plus FAQ, neutral tone, with visible markdown links in the body",
                 faq: [{ question: "string", answer: "string" }],
                 relatedLinks: ["internal and external URLs used in the article"]
               },
@@ -313,8 +297,8 @@ async function callOpenAI(context: ReturnType<typeof buildContext>, retryFeedbac
                 "Use exactly 5 H2 sections before FAQ.",
                 "Each non-FAQ H2 section must contain 2 paragraphs and at least 140 words.",
                 "Use a FAQ H2 with at least 4 H3 questions and 50-80 word answers.",
-                "Include at least 5 internal markdown links naturally inside the article body.",
-                "Include at least 1 external markdown link from externalReferenceLinks naturally inside the article body."
+                "Include at least 5 internal markdown links naturally inside the article body, not only in relatedLinks.",
+                "Include at least 1 external markdown link from externalReferenceLinks naturally inside the article body, not only in relatedLinks."
               ],
               requiredSections: [
                 "Intro",
@@ -330,11 +314,12 @@ async function callOpenAI(context: ReturnType<typeof buildContext>, retryFeedbac
                 "at least 1 /category/ link",
                 "at least 1 ranking link",
                 "comparison link if supplied",
-                "at least 1 external reference link from externalReferenceLinks"
+                "at least 1 external reference link from externalReferenceLinks",
+                "visible links must use markdown syntax such as [anchor text](/brands)"
               ],
               retryFeedback: retryFeedback ?? null,
               strictQualityGate:
-                "Do not return a draft under 1000 content words. Count the words before returning JSON. If retryFeedback is present, fix every listed issue and expand the article before returning JSON.",
+                "Do not return a draft under 1000 content words. Count the words before returning JSON. Include the required links in the content body itself. If retryFeedback is present, fix every listed issue and expand the article before returning JSON.",
               bannedClaims,
               cta: ["Browse all furniture brands", "Write a furniture review"]
             },
@@ -367,15 +352,16 @@ function validateDraft(draft: GeneratedBlogDraft) {
   const warnings: string[] = [];
   const content = draft.content ?? "";
   const metaLength = draft.metaDescription?.length ?? 0;
+  const stats = getBlogQualityStats(content);
 
   if (!draft.title?.trim()) warnings.push("Title is missing.");
   if (!draft.slug?.trim()) warnings.push("Slug is missing.");
   if (metaLength < 100 || metaLength > 160) warnings.push("Meta description should be 100-160 characters.");
-  if (wordCount(content) < 800) warnings.push("Content is under 800 words.");
-  if (getH2Count(content) < 4) warnings.push("Content has fewer than 4 H2 sections.");
-  if (getFaqCount(content, draft.faq ?? []) < 4) warnings.push("Content has fewer than 4 FAQ items.");
-  if (getValidInternalLinkCount(content, draft.relatedLinks ?? []) < 5) warnings.push("Content has fewer than 5 valid internal links.");
-  if (getValidExternalLinkCount(content, draft.relatedLinks ?? []) < 1) warnings.push("Content has fewer than 1 valid external link.");
+  if (stats.wordCount < autoDraftMinimumWordCount) warnings.push(`Content is under ${autoDraftMinimumWordCount} words.`);
+  if (stats.h2Count < minimumAutoDraftH2Sections) warnings.push(`Content has fewer than ${minimumAutoDraftH2Sections} H2 sections.`);
+  if (getFaqCount(content, draft.faq ?? []) < minimumAutoDraftFaqItems) warnings.push(`Content has fewer than ${minimumAutoDraftFaqItems} FAQ items.`);
+  if (stats.internalLinkCount < minimumAutoDraftInternalLinks) warnings.push(`Content has fewer than ${minimumAutoDraftInternalLinks} visible internal links.`);
+  if (stats.externalLinkCount < minimumAutoDraftExternalLinks) warnings.push(`Content has fewer than ${minimumAutoDraftExternalLinks} visible external link.`);
 
   const plainText = normalise(`${draft.title} ${draft.metaDescription} ${draft.excerpt} ${content}`);
   for (const claim of bannedClaims) {
@@ -397,7 +383,7 @@ async function generateDraftWithRetry(context: ReturnType<typeof buildContext>) 
 
   const retryDraft = await callOpenAI(
     context,
-    `Previous draft failed these quality checks: ${firstBlockingWarnings.join("; ")}. Expand and revise the article so it is 900-1400 words, includes at least 5 valid internal links, at least 1 external reference link, at least 4 H2 sections, and at least 4 FAQ items.`
+    `Previous draft failed these quality checks: ${firstBlockingWarnings.join("; ")}. Expand and revise the article so it is 1000-1400 words, includes at least ${minimumAutoDraftInternalLinks} visible markdown internal links in the article body, at least ${minimumAutoDraftExternalLinks} visible external reference link in the article body, at least ${minimumAutoDraftH2Sections} H2 sections, and at least ${minimumAutoDraftFaqItems} FAQ items.`
   );
   retryDraft.slug = slugify(retryDraft.slug || firstDraft.slug || context.topic.slug);
 
@@ -411,7 +397,7 @@ async function generateDraftWithRetry(context: ReturnType<typeof buildContext>) 
 
 function getBlockingWarnings(warnings: string[]) {
   return warnings.filter((warning) =>
-    /missing|under 800|fewer than 4 H2|fewer than 4 FAQ|fewer than 5 valid internal|fewer than 1 valid external|Banned claim/i.test(warning)
+    /missing|under \d+ words|fewer than \d+ H2|fewer than \d+ FAQ|fewer than \d+ visible internal|fewer than \d+ visible external|Banned claim/i.test(warning)
   );
 }
 
@@ -442,6 +428,7 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
     "seo_description",
     "category",
     "allow_index",
+    "cover_image_url",
     "cover_image_alt",
     "generated_by",
     "generation_topic",
@@ -462,10 +449,18 @@ async function insertDraft(draft: GeneratedBlogDraft, topic: AutoDraftTopic, qua
     seo_title: draft.seoTitle?.trim() || `${draft.title.trim()} | Furniture Brand Reviews`,
     seo_description: draft.metaDescription.trim(),
     category: draft.category?.trim() || topic.category,
+    cover_image_url: getBlogCoverImageForBlog({
+      title: draft.title,
+      slug: draft.slug,
+      category: draft.category || topic.category,
+      categorySlug: topic.categorySlug,
+      comparisonSlug: topic.comparisonSlug,
+      type: topic.type
+    }),
     content: draft.content.trim(),
     status: "draft",
     allow_index: false,
-    cover_image_alt: draft.title.trim(),
+    cover_image_alt: getBlogCoverAlt({ title: draft.title }),
     generated_by: "blog-auto-draft",
     generation_topic: topic.type,
     generation_notes: qualityWarnings.length ? qualityWarnings.join("\n") : "Auto-generated draft. Needs editorial review before publishing.",

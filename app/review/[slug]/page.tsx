@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { CheckCircle2, Clock3, ExternalLink, Globe2, Mail, MessageSquareReply } from "lucide-react";
+import { CheckCircle2, Clock3, ExternalLink, Flag, Globe2, Mail, MessageSquareReply, ShieldCheck } from "lucide-react";
 import { BrandCard } from "@/components/BrandCard";
 import { BrandReviewGuide } from "@/components/BrandReviewGuide";
 import { BrandShareActions } from "@/components/BrandShareActions";
@@ -22,6 +22,7 @@ import {
 import { getRelatedBlogs, getRelatedBrands, getRelatedCategories, getRelatedComparisons, getRelatedRankingPages } from "@/lib/internal-links";
 import { shouldIndexBrandPage } from "@/lib/indexing-rules";
 import { buildReviewIntelligence, getReviewsForIntelligence } from "@/lib/review-intelligence";
+import { formatReviewDate } from "@/lib/format";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import type { ReviewWithReply } from "@/lib/types";
 
@@ -38,6 +39,10 @@ function reviewText(review: ReviewWithReply) {
 
 function countMentions(reviews: ReviewWithReply[], keywords: string[]) {
   return reviews.filter((review) => keywords.some((keyword) => reviewText(review).includes(keyword))).length;
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 function getCustomerThemes(reviews: ReviewWithReply[]) {
@@ -201,6 +206,9 @@ export default async function CompanyReviewPage({ params }: Props) {
   const writeReviewUrl = `${baseUrl}/review/${company.slug}/write`;
   const aboutText =
     company.description || `${company.name} is listed on Furniture Brand Reviews as part of our UK furniture brand review directory.`;
+  const verifiedReviewCount = reviews.filter((review) => review.is_verified).length;
+  const replyCount = reviews.filter((review) => review.company_replies?.length).length;
+  const latestReviewDate = company.last_review_at ?? reviews[0]?.created_at ?? null;
 
   const companyForSchema = {
     ...company,
@@ -297,6 +305,86 @@ export default async function CompanyReviewPage({ params }: Props) {
 
           <ReviewIntelligence companyName={company.name} intelligence={intelligence} />
 
+          <section className="grid gap-5 rounded-xl border border-purple-100 bg-white p-6 shadow-sm">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-trust-dark">Trust and review activity</p>
+              <h2 className="mt-2 text-2xl font-bold text-ink">How Furniture Brand Reviews works for {company.name}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                This brand profile is built from approved customer reviews. Reviews are moderated before publishing, and only approved reviews affect the public rating, review count, structured data and review intelligence on this page.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl bg-wash p-4">
+                <div className="flex items-center gap-2 text-trust-dark">
+                  <ShieldCheck size={18} />
+                  <p className="text-sm font-bold">Moderated reviews</p>
+                </div>
+                <p className="mt-3 text-2xl font-bold text-ink">{totalApprovedReviewCount}</p>
+                <p className="mt-1 text-xs font-semibold text-muted">approved reviews used publicly</p>
+              </div>
+
+              <div className="rounded-xl bg-wash p-4">
+                <div className="flex items-center gap-2 text-trust-dark">
+                  <CheckCircle2 size={18} />
+                  <p className="text-sm font-bold">Verified customers</p>
+                </div>
+                <p className="mt-3 text-2xl font-bold text-ink">{verifiedReviewCount}</p>
+                <p className="mt-1 text-xs font-semibold text-muted">marked verified in the loaded review sample</p>
+              </div>
+
+              <div className="rounded-xl bg-wash p-4">
+                <div className="flex items-center gap-2 text-trust-dark">
+                  <MessageSquareReply size={18} />
+                  <p className="text-sm font-bold">Business replies</p>
+                </div>
+                <p className="mt-3 text-2xl font-bold text-ink">{replyCount}</p>
+                <p className="mt-1 text-xs font-semibold text-muted">public replies shown in the loaded review sample</p>
+              </div>
+
+              <div className="rounded-xl bg-wash p-4">
+                <div className="flex items-center gap-2 text-trust-dark">
+                  <Clock3 size={18} />
+                  <p className="text-sm font-bold">Latest activity</p>
+                </div>
+                <p className="mt-3 text-lg font-bold text-ink">{latestReviewDate ? formatReviewDate(latestReviewDate) : "No reviews yet"}</p>
+                <p className="mt-1 text-xs font-semibold text-muted">latest approved review date</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-line bg-white p-4">
+                <h3 className="font-bold text-ink">Companies cannot pay to remove reviews</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Approved reviews are not removed because a company dislikes the rating. Reviews may be moderated when they break platform rules.
+                </p>
+              </div>
+              <div className="rounded-xl border border-line bg-white p-4">
+                <h3 className="font-bold text-ink">Only approved reviews affect scores</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Pending, rejected, deleted and hidden reviews are not used for public ratings, JSON-LD, review intelligence or ranking pages.
+                </p>
+              </div>
+              <div className="rounded-xl border border-line bg-white p-4">
+                <h3 className="font-bold text-ink">Suspicious reviews can be reported</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Shoppers and business users can flag reviews for manual moderation when content appears suspicious, harmful or unrelated.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm leading-6 text-muted md:flex-row md:items-center md:justify-between">
+              <p>
+                {company.is_claimed
+                  ? `${company.name} is marked as a claimed business and may reply publicly to customer reviews.`
+                  : `${company.name} is currently unclaimed. Brand representatives can request access to manage profile details and reply to reviews.`}
+              </p>
+              <Link href="/claim-your-profile" className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-trust-dark ring-1 ring-purple-100 hover:ring-trust">
+                Claim profile
+              </Link>
+            </div>
+          </section>
+
           <BrandReviewGuide
             brandName={company.name}
             brandSlug={company.slug}
@@ -388,11 +476,15 @@ export default async function CompanyReviewPage({ params }: Props) {
                 <div className="mt-3 grid gap-3 text-muted">
                   <p className="flex items-center gap-2">
                     <MessageSquareReply size={16} />
-                    Replied to negative reviews: Not enough data yet
+                    {pluralize(replyCount, "public reply", "public replies")} in the loaded review sample
                   </p>
                   <p className="flex items-center gap-2">
                     <Clock3 size={16} />
-                    Typical reply time: Not available yet
+                    Latest approved review: {latestReviewDate ? formatReviewDate(latestReviewDate) : "No reviews yet"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Flag size={16} />
+                    Suspicious reviews can be reported for manual checks
                   </p>
                 </div>
               </div>

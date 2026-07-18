@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getBrandImageCandidates } from "@/lib/brand-images";
@@ -10,6 +11,7 @@ import {
   sendBusinessClaimSubmittedEmail,
   sendBusinessLoginLinkEmail,
   sendBusinessPasswordResetEmail,
+  sendBusinessReviewInvitationEmail,
   sendAdminNewReviewNotificationEmail,
   sendReviewApprovedEmail,
   sendReviewSubmittedEmail
@@ -56,6 +58,11 @@ export type BusinessVerifyState = {
 };
 
 export type BusinessAutoReplyState = {
+  ok: boolean;
+  message: string;
+};
+
+export type BusinessInvitationState = {
   ok: boolean;
   message: string;
 };
@@ -111,6 +118,14 @@ function isValidReviewStatus(status: string): status is "pending" | "approved" |
 
 function parseBooleanValue(value: string | undefined) {
   return ["true", "1", "yes", "y"].includes((value || "").toLowerCase());
+}
+
+function normalizeEmailInput(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function hashReviewInvitationToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 function normalizeWebsiteInput(value: string) {
@@ -415,6 +430,57 @@ async function markReviewEmailSent(reviewId: string, field: "submitted_email_sen
   }
 }
 
+async function validateReviewInvitation(companyId: string, reviewerEmail: string, invitationToken: string) {
+  const token = invitationToken.trim();
+  if (!token) return { ok: true as const, isVerified: false, invitationId: null };
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { ok: false as const, message: "Review invitation verification is not configured." };
+  }
+
+  const { data: invitation, error } = await supabase
+    .from("review_invitations")
+    .select("id, company_id, customer_email, status, expires_at, used_at")
+    .eq("token_hash", hashReviewInvitationToken(token))
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Review invitation lookup failed", error);
+    return { ok: false as const, message: "Review invitation could not be verified." };
+  }
+
+  if (!invitation) return { ok: false as const, message: "This review invitation link is not valid." };
+  if (invitation.status !== "pending" || invitation.used_at) return { ok: false as const, message: "This review invitation link has already been used." };
+  if (invitation.expires_at && new Date(invitation.expires_at).getTime() <= Date.now()) {
+    return { ok: false as const, message: "This review invitation link has expired." };
+  }
+
+  if (normalizeEmailInput(invitation.customer_email) !== normalizeEmailInput(reviewerEmail)) {
+    return { ok: false as const, message: "Please submit the review using the email address that received this invitation." };
+  }
+
+  return { ok: true as const, isVerified: true, invitationId: invitation.id as string };
+}
+
+async function markReviewInvitationUsed(invitationId: string | null, reviewId: string | null) {
+  if (!invitationId || !reviewId) return;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from("review_invitations")
+    .update({
+      status: "used",
+      used_at: new Date().toISOString(),
+      review_id: reviewId
+    })
+    .eq("id", invitationId);
+
+  if (error) console.warn("Could not mark review invitation as used.", formatSupabaseError(error));
+}
+
 export async function submitReview(slug: string, _state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
   const rating = Number(formData.get("rating"));
   const title = String(formData.get("title") ?? "").trim();
@@ -428,6 +494,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   const customerServiceExperience = String(formData.get("customerServiceExperience") ?? "").trim() || null;
   const wouldBuyAgain = String(formData.get("wouldBuyAgain") ?? "").trim() || null;
   const confirmedGenuineExperience = formData.get("confirmedGenuineExperience") === "on";
+  const invitationToken = String(formData.get("invitationToken") ?? "").trim();
   const proofImage = formData.get("proofImage");
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
@@ -442,7 +509,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   });
   if (validationMessage) return { ok: false, message: validationMessage };
 
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) {
     return {
       ok: false,
@@ -479,6 +546,9 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     return { ok: false, message: "You have already submitted a review for this brand in the last 24 hours." };
   }
 
+  const invitationResult = await validateReviewInvitation(company.id, reviewerEmail, invitationToken);
+  if (!invitationResult.ok) return { ok: false, message: invitationResult.message };
+
   const reviewImageUpload = await uploadReviewImages(supabase, reviewImages, `${company.slug}/${Date.now()}`);
   if (!reviewImageUpload.ok) {
     return { ok: false, message: reviewImageUpload.message };
@@ -514,11 +584,11 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     proof_image_url: proofImageUrl,
     review_image_urls: reviewImageUpload.urls,
     status: "pending",
-    is_verified: false
+    is_verified: invitationResult.isVerified
   };
   console.log("Inserted review payload review_image_urls:", reviewPayload.review_image_urls);
 
-  const { error } = await supabase.from("reviews").insert(reviewPayload);
+  const { data: insertedReview, error } = await supabase.from("reviews").insert(reviewPayload).select("id").single();
 
   if (error) {
     console.error(
@@ -536,6 +606,8 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     );
     return { ok: false, message: `Review insert failed: ${formatSupabaseError(error)}` };
   }
+
+  await markReviewInvitationUsed(invitationResult.invitationId, insertedReview?.id ?? null);
 
   await sendReviewSubmittedEmail({
     to: reviewerEmail,
@@ -589,7 +661,7 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   });
   if (validationMessage) return { ok: false, message: validationMessage };
 
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) {
     return {
       ok: false,
@@ -1126,6 +1198,59 @@ export async function updateBusinessPassword(formData: FormData) {
   }
 
   businessRedirect(email, companySlug, { token: businessToken, success: "Password updated." });
+}
+
+export async function sendBusinessReviewInvitation(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const brandName = String(formData.get("brandName") ?? "").trim();
+  const customerName = String(formData.get("customerName") ?? "").trim();
+  const customerEmail = normalizeEmailInput(String(formData.get("customerEmail") ?? ""));
+
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (!isValidEmail(customerEmail)) {
+    businessRedirect(email, companySlug, { token: businessToken, error: "Enter a valid customer email address." });
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
+
+  const token = crypto.randomBytes(32).toString("base64url");
+  const invitationUrl = `${siteUrl}/review/${companySlug}/write?invite=${encodeURIComponent(token)}`;
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+
+  const { error } = await supabase.from("review_invitations").insert({
+    company_id: companyId,
+    business_email: email,
+    customer_email: customerEmail,
+    customer_name: customerName || null,
+    token_hash: hashReviewInvitationToken(token),
+    status: "pending",
+    source_type: "business_invitation",
+    expires_at: expiresAt
+  });
+
+  if (error) {
+    businessRedirect(email, companySlug, { token: businessToken, error: `Invitation could not be created: ${formatSupabaseError(error)}` });
+  }
+
+  const emailSent = await sendBusinessReviewInvitationEmail({
+    to: customerEmail,
+    customerName,
+    brandName: brandName || companySlug,
+    invitationUrl
+  });
+
+  if (!emailSent) {
+    businessRedirect(email, companySlug, { token: businessToken, error: "Invitation was created, but the email could not be sent. Check RESEND_API_KEY and EMAIL_FROM." });
+  }
+
+  businessRedirect(email, companySlug, { token: businessToken, success: "Verified review invitation sent." });
 }
 
 export async function addBusinessReply(formData: FormData) {

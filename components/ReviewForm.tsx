@@ -37,7 +37,7 @@ const deliveryOptions = ["On time", "Delayed", "Damaged on arrival", "Not delive
 const serviceOptions = ["Helpful", "Slow response", "No response", "Not contacted", "Not applicable"];
 const buyAgainOptions = ["Yes", "Maybe", "No"];
 
-export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: string }) {
+export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string; brandName?: string; invitationToken?: string }) {
   const [state, action] = useFormState(slug ? submitReview.bind(null, slug) : submitFirstReview, initialState);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageError, setImageError] = useState("");
@@ -99,11 +99,17 @@ export function ReviewForm({ slug, brandName }: { slug?: string; brandName?: str
 
   return (
     <form action={action} encType="multipart/form-data" className="grid gap-5 rounded-2xl border border-line bg-white p-5 shadow-sm">
+      {invitationToken ? <input type="hidden" name="invitationToken" value={invitationToken} /> : null}
       {state.message && (
         <div className={`rounded-xl p-4 text-sm font-semibold ${state.ok ? "bg-purple-50 text-trust-dark" : "bg-red-50 text-red-700"}`}>
           {state.message}
         </div>
       )}
+      {invitationToken ? (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold leading-6 text-green-800">
+          You are using a verified invitation link. Your review will still be checked before publication.
+        </div>
+      ) : null}
       {imageError && <div className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">{imageError}</div>}
       {!slug && (
         <div className="grid gap-5">

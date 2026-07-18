@@ -8,6 +8,7 @@ import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
+import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import { formatBlogDate, getLatestBlogs } from "@/lib/blogs";
 import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
 import { getIndexableFeaturedComparisonLinks } from "@/lib/internal-links";
@@ -194,46 +195,47 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {latestBlogs.map((blog) => (
-              <article
-                key={blog.id}
-                className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm"
-              >
-                <Link
-                  href={`/blog/${blog.slug}`}
-                  className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-purple-100 via-wash to-trust/25"
-                  aria-label={`Read ${blog.title}`}
+            {latestBlogs.map((blog) => {
+              const coverImage = blog.cover_image_url || getBlogCoverImageForBlog(blog);
+              return (
+                <article
+                  key={blog.id}
+                  className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm"
                 >
-                  {blog.cover_image_url ? (
+                  <Link
+                    href={`/blog/${blog.slug}`}
+                    className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-purple-100 via-wash to-trust/25"
+                    aria-label={`Read ${blog.title}`}
+                  >
                     <Image
-                      src={blog.cover_image_url}
-                      alt={blog.cover_image_alt || blog.title}
+                      src={coverImage}
+                      alt={blog.cover_image_alt || getBlogCoverAlt(blog)}
                       fill
                       sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
-                  ) : null}
-                </Link>
-                <div className="flex flex-1 flex-col p-5">
-                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted">
-                    {blog.category ? <span className="text-trust-dark">{blog.category}</span> : null}
-                    <span>{formatBlogDate(blog.published_at ?? blog.created_at)}</span>
-                  </div>
-                  <h3 className="text-lg font-bold leading-tight text-ink">
-                    <Link href={`/blog/${blog.slug}`} className="hover:text-trust-dark">
-                      {blog.title}
-                    </Link>
-                  </h3>
-                  {blog.excerpt ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{blog.excerpt}</p> : null}
-                  <Link
-                    href={`/blog/${blog.slug}`}
-                    className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-bold text-trust-dark"
-                  >
-                    Read article <ArrowRight size={16} />
                   </Link>
-                </div>
-              </article>
-            ))}
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted">
+                      {blog.category ? <span className="text-trust-dark">{blog.category}</span> : null}
+                      <span>{formatBlogDate(blog.published_at ?? blog.created_at)}</span>
+                    </div>
+                    <h3 className="text-lg font-bold leading-tight text-ink">
+                      <Link href={`/blog/${blog.slug}`} className="hover:text-trust-dark">
+                        {blog.title}
+                      </Link>
+                    </h3>
+                    {blog.excerpt ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{blog.excerpt}</p> : null}
+                    <Link
+                      href={`/blog/${blog.slug}`}
+                      className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-bold text-trust-dark"
+                    >
+                      Read article <ArrowRight size={16} />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       ) : null}

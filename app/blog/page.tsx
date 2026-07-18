@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import { formatBlogDate, getPublishedBlogs } from "@/lib/blogs";
 import { createSeoMetadata } from "@/lib/seo";
 
@@ -42,16 +43,16 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
         {visibleBlogs.length > 0 ? (
           <>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {visibleBlogs.map((blog) => (
-                <article key={blog.id} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
-                  {blog.cover_image_url && (
+              {visibleBlogs.map((blog) => {
+                const coverImage = blog.cover_image_url || getBlogCoverImageForBlog(blog);
+                return (
+                  <article key={blog.id} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
                     <Link
                       href={`/blog/${blog.slug}`}
                       className="block aspect-[16/9] bg-wash bg-cover bg-center"
-                      style={{ backgroundImage: `url("${blog.cover_image_url}")` }}
-                      aria-label={blog.cover_image_alt || blog.title}
+                      style={{ backgroundImage: `url("${coverImage}")` }}
+                      aria-label={blog.cover_image_alt || getBlogCoverAlt(blog)}
                     />
-                  )}
                   <div className="p-6">
                     <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wide text-muted">
                       {blog.category && <span className="rounded-full bg-purple-50 px-3 py-1 text-trust-dark">{blog.category}</span>}
@@ -68,7 +69,8 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
                     </Link>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
 
             {totalPages > 1 && (

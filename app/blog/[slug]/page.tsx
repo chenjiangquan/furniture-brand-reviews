@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { ArrowRight } from "lucide-react";
 import { BlogEditorialGuide } from "@/components/BlogEditorialGuide";
 import { JsonLd } from "@/components/JsonLd";
+import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import {
   extractFaqFromMarkdown,
   formatBlogDate,
@@ -28,13 +29,13 @@ import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 const baseUrl = siteUrl;
 
 const categoryLinks: Record<string, string> = {
-  sofa: "/sofa-brands",
-  sofas: "/sofa-brands",
-  dining: "/dining-table-brands",
-  bedroom: "/bedroom-furniture-brands",
-  outdoor: "/outdoor-furniture",
-  garden: "/outdoor-furniture",
-  office: "/home-office-furniture"
+  sofa: "/category/sofa-brands",
+  sofas: "/category/sofa-brands",
+  dining: "/category/dining-table-brands",
+  bedroom: "/category/bedroom-furniture-brands",
+  outdoor: "/category/outdoor-furniture-brands",
+  garden: "/category/outdoor-furniture-brands",
+  office: "/category/home-office-furniture-brands"
 };
 
 function getCategoryLink(category: string | null) {
@@ -54,6 +55,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const description = blog.seo_description || blog.excerpt || `Read ${blog.title} on Furniture Brand Reviews.`;
   const canonical = `${baseUrl}/blog/${blog.slug}`;
   const isIndexable = shouldIndexBlog(blog);
+  const coverImage = blog.cover_image_url || getBlogCoverImageForBlog(blog);
+  const coverAlt = blog.cover_image_alt || getBlogCoverAlt(blog);
+  const absoluteCoverImage = coverImage.startsWith("/") ? `${baseUrl}${coverImage}` : coverImage;
 
   return {
     title,
@@ -66,7 +70,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       url: canonical,
       siteName: "Furniture Brand Reviews",
-      images: blog.cover_image_url ? [{ url: blog.cover_image_url, alt: blog.title }] : [{ url: "/logo.png", alt: "Furniture Brand Reviews" }],
+      images: coverImage ? [{ url: absoluteCoverImage, alt: coverAlt }] : [{ url: "/logo.png", alt: "Furniture Brand Reviews" }],
       type: "article",
       publishedTime: blog.published_at ?? undefined,
       modifiedTime: blog.updated_at
@@ -75,7 +79,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       card: "summary_large_image",
       title,
       description,
-      images: blog.cover_image_url ? [blog.cover_image_url] : ["/logo.png"]
+      images: coverImage ? [absoluteCoverImage] : ["/logo.png"]
     },
     robots: isIndexable ? undefined : { index: false, follow: true }
   };
@@ -86,6 +90,9 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   if (!blog) notFound();
   const canonical = `${baseUrl}/blog/${blog.slug}`;
   const description = blog.seo_description || blog.excerpt || `Read ${blog.title} on Furniture Brand Reviews.`;
+  const coverImage = blog.cover_image_url || getBlogCoverImageForBlog(blog);
+  const coverAlt = blog.cover_image_alt || getBlogCoverAlt(blog);
+  const absoluteCoverImage = coverImage.startsWith("/") ? `${baseUrl}${coverImage}` : coverImage;
   const allBlogs = await getPublishedBlogs();
   const companies = await getCompanies();
   const relatedBrands = getBlogRelatedBrands(blog, companies, 5);
@@ -114,12 +121,12 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
     "@type": "Article",
     headline: blog.seo_title || blog.title,
     description,
-    ...(blog.cover_image_url
+    ...(coverImage
       ? {
           image: {
             "@type": "ImageObject",
-            url: blog.cover_image_url,
-            caption: blog.cover_image_alt || blog.title
+            url: absoluteCoverImage,
+            caption: coverAlt
           }
         }
       : {}),
@@ -174,10 +181,10 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
       </header>
 
       <div className="mx-auto max-w-[1000px] px-4 py-10 sm:px-6 lg:px-10">
-        {blog.cover_image_url && (
+        {coverImage && (
           <Image
-            src={blog.cover_image_url}
-            alt={blog.cover_image_alt || blog.title}
+            src={coverImage}
+            alt={coverAlt}
             width={1200}
             height={675}
             className="mb-10 aspect-[16/9] w-full rounded-2xl border border-line object-cover shadow-sm"

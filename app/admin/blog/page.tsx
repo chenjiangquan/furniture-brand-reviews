@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminBlogManager } from "@/components/AdminBlogManager";
-import { getAdminBlogs } from "@/lib/blogs";
+import { getAdminBlogAutoDraftLogs, getAdminBlogs } from "@/lib/blogs";
 import { createNoIndexMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createNoIndexMetadata(
@@ -34,7 +34,10 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
     );
   }
 
-  const blogs = await getAdminBlogs(password);
+  const [blogs, autoDraftLogs] = await Promise.all([
+    getAdminBlogs(password),
+    getAdminBlogAutoDraftLogs(password)
+  ]);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-8 px-4 py-10 sm:px-6 lg:px-10">
@@ -42,7 +45,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
         <h1 className="text-4xl font-bold tracking-tight text-ink">Blog admin</h1>
         <p className="mt-3 leading-7 text-muted">Create drafts, publish articles and manage Furniture Brand Reviews blog content.</p>
       </div>
-      <AdminBlogManager blogs={blogs} password={password} />
+      <AdminBlogManager blogs={blogs} autoDraftLogs={autoDraftLogs} password={password} />
     </div>
   );
 }

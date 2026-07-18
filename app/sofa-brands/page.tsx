@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { CategoryPage } from "@/components/CategoryPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Sofa brands",
-  description:
-    "Compare sofa brand reviews, customer reviews, delivery experiences and furniture companies selling sofas worldwide.",
-  path: "/sofa-brands"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Sofa brands",
+  "Compare sofa brand reviews, customer reviews, delivery experiences and furniture companies selling sofas worldwide."
+);
 
 export default function SofaBrandsPage() {
   return (

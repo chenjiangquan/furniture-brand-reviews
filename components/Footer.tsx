@@ -38,11 +38,11 @@ const columns = [
   {
     title: "Categories",
     links: [
-      ["Sofa brands", "/sofa-brands"],
-      ["Dining table brands", "/dining-table-brands"],
-      ["Bedroom furniture", "/bedroom-furniture-brands"],
-      ["Outdoor furniture", "/outdoor-furniture"],
-      ["Home office furniture", "/home-office-furniture"]
+      ["Sofa brands", "/category/sofa-brands"],
+      ["Dining table brands", "/category/dining-table-brands"],
+      ["Bedroom furniture", "/category/bedroom-furniture-brands"],
+      ["Outdoor furniture", "/category/outdoor-furniture-brands"],
+      ["Home office furniture", "/category/home-office-furniture-brands"]
     ]
   },
   {

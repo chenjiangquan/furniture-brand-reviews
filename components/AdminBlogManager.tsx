@@ -4,7 +4,15 @@ import { useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Edit3, FileText, Trash2 } from "lucide-react";
 import { deleteBlogPost, saveBlogPost, type BlogActionState } from "@/lib/blog-actions";
-import { formatBlogDate, slugifyBlogTitle, type BlogPost } from "@/lib/blogs";
+import {
+  autoDraftMinimumWordCount,
+  getBlogQualityStats,
+  minimumAutoDraftExternalLinks,
+  minimumAutoDraftFaqItems,
+  minimumAutoDraftH2Sections,
+  minimumAutoDraftInternalLinks
+} from "@/lib/blog-quality";
+import { formatBlogDate, slugifyBlogTitle, type BlogAutoDraftLog, type BlogPost } from "@/lib/blogs";
 
 const initialState: BlogActionState = { ok: false, message: "" };
 const inputClass =
@@ -44,19 +52,108 @@ function ResultBox({ state }: { state: BlogActionState }) {
   );
 }
 
-export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; password: string }) {
+function QualityItem({ label, value, target, ok }: { label: string; value: number; target: string; ok: boolean }) {
+  return (
+    <div className="rounded-xl border border-purple-100 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold text-ink">{label}</span>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${ok ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
+          {ok ? "OK" : "Check"}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-muted">
+        {value} / {target}
+      </p>
+    </div>
+  );
+}
+
+function AutoDraftLogsPanel({ logs }: { logs: BlogAutoDraftLog[] }) {
+  return (
+    <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm lg:col-span-2">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-ink">Auto draft run logs</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">Recent cron attempts for automatic blog drafts, including skipped and failed runs.</p>
+        </div>
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-white">
+        <table className="w-full min-w-[860px] border-collapse text-left text-sm">
+          <thead className="bg-purple-50 text-ink">
+            <tr>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Topic</th>
+              <th className="px-4 py-3">Slug</th>
+              <th className="px-4 py-3">Message</th>
+              <th className="px-4 py-3">Ran</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((log) => (
+              <tr key={log.id} className="border-t border-line align-top">
+                <td className="px-4 py-3">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      log.status === "success"
+                        ? "bg-green-50 text-green-700"
+                        : log.status === "skipped"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {log.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="font-semibold text-ink">{log.topic_title ?? "No topic"}</div>
+                  {log.topic_type && <div className="mt-1 text-xs text-muted">{log.topic_type}</div>}
+                </td>
+                <td className="px-4 py-3 text-muted">{log.slug ?? "-"}</td>
+                <td className="max-w-[420px] px-4 py-3 text-muted">{log.message ?? "-"}</td>
+                <td className="px-4 py-3 text-muted">{formatBlogDate(log.ran_at)}</td>
+              </tr>
+            ))}
+            {logs.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  No auto draft runs logged yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export function AdminBlogManager({ blogs, autoDraftLogs, password }: { blogs: BlogPost[]; autoDraftLogs: BlogAutoDraftLog[]; password: string }) {
   const [saveState, saveAction] = useFormState(saveBlogPost, initialState);
   const [deleteState, deleteAction] = useFormState(deleteBlogPost, initialState);
   const [selectedId, setSelectedId] = useState("");
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
+  const [content, setContent] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const selectedBlog = useMemo(() => blogs.find((blog) => blog.id === selectedId) ?? null, [blogs, selectedId]);
+  const qualityStats = useMemo(() => getBlogQualityStats(content), [content]);
+  const hasEffectiveCoverImage = Boolean(coverImageUrl.trim() || title.trim());
+  const passesAutoDraftQuality =
+    qualityStats.wordCount >= autoDraftMinimumWordCount &&
+    qualityStats.internalLinkCount >= minimumAutoDraftInternalLinks &&
+    qualityStats.externalLinkCount >= minimumAutoDraftExternalLinks &&
+    qualityStats.faqCount >= minimumAutoDraftFaqItems &&
+    qualityStats.h2Count >= minimumAutoDraftH2Sections &&
+    hasEffectiveCoverImage;
 
   function selectBlog(blog: BlogPost) {
     setSelectedId(blog.id);
     setTitle(blog.title);
     setSlug(blog.slug);
+    setContent(blog.content ?? "");
+    setCoverImageUrl(blog.cover_image_url ?? "");
     setSlugEdited(true);
   }
 
@@ -64,6 +161,8 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
     setSelectedId("");
     setTitle("");
     setSlug("");
+    setContent("");
+    setCoverImageUrl("");
     setSlugEdited(false);
   }
 
@@ -154,6 +253,7 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
           <input type="hidden" name="password" value={password} />
           <input type="hidden" name="id" value={selectedBlog?.id ?? ""} />
           <input type="hidden" name="published_at" value={selectedBlog?.published_at ?? ""} />
+          <input type="hidden" name="was_auto_draft" value={selectedBlog?.generated_by === "blog-auto-draft" || selectedBlog?.needs_review ? "true" : "false"} />
 
           {selectedBlog?.generated_by === "blog-auto-draft" && (
             <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-4 text-sm text-slate-700">
@@ -230,7 +330,8 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
 
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Cover Image URL</span>
-            <input name="cover_image_url" type="url" defaultValue={selectedBlog?.cover_image_url ?? ""} className={inputClass} />
+            <input name="cover_image_url" type="url" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} className={inputClass} />
+            <span className="text-xs font-medium text-muted">Auto drafts receive a topic-matched cover image. Leave blank to use the default generated cover.</span>
           </label>
 
           <label className="grid gap-2">
@@ -245,8 +346,31 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
 
           <label className="grid gap-2">
             <span className="font-semibold text-ink">Content</span>
-            <textarea name="content" rows={14} defaultValue={selectedBlog?.content ?? ""} className={`${textareaClass} font-mono`} />
+            <textarea name="content" rows={14} value={content} onChange={(event) => setContent(event.target.value)} className={`${textareaClass} font-mono`} />
           </label>
+
+          <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-ink">Blog quality check</h3>
+                <p className="mt-1 text-xs leading-5 text-muted">Auto drafts should pass these checks before publishing.</p>
+              </div>
+              {selectedBlog?.needs_review && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Needs editorial review</span>}
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <QualityItem label="Words" value={qualityStats.wordCount} target={`${autoDraftMinimumWordCount}+`} ok={qualityStats.wordCount >= autoDraftMinimumWordCount} />
+              <QualityItem label="Internal links" value={qualityStats.internalLinkCount} target={`${minimumAutoDraftInternalLinks}+`} ok={qualityStats.internalLinkCount >= minimumAutoDraftInternalLinks} />
+              <QualityItem label="External links" value={qualityStats.externalLinkCount} target={`${minimumAutoDraftExternalLinks}+`} ok={qualityStats.externalLinkCount >= minimumAutoDraftExternalLinks} />
+              <QualityItem label="FAQ items" value={qualityStats.faqCount} target={`${minimumAutoDraftFaqItems}+`} ok={qualityStats.faqCount >= minimumAutoDraftFaqItems} />
+              <QualityItem label="H2 sections" value={qualityStats.h2Count} target={`${minimumAutoDraftH2Sections}+`} ok={qualityStats.h2Count >= minimumAutoDraftH2Sections} />
+              <QualityItem label="Cover image" value={hasEffectiveCoverImage ? 1 : 0} target="1" ok={hasEffectiveCoverImage} />
+            </div>
+            {!passesAutoDraftQuality && (
+              <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+                This article does not yet meet the recommended auto-draft quality gate. Review links, length, FAQ and headings before publishing.
+              </p>
+            )}
+          </div>
 
           <label className="flex items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/40 p-4 text-sm text-slate-700">
             <input
@@ -308,6 +432,8 @@ export function AdminBlogManager({ blogs, password }: { blogs: BlogPost[]; passw
           <ResultBox state={deleteState} />
         </div>
       </section>
+
+      <AutoDraftLogsPanel logs={autoDraftLogs} />
     </div>
   );
 }

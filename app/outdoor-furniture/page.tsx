@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { CategoryPage } from "@/components/CategoryPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Outdoor furniture",
-  description:
-    "Compare outdoor furniture brand reviews, customer reviews and furniture company ratings for garden furniture and outdoor living products.",
-  path: "/outdoor-furniture"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Outdoor furniture",
+  "Compare outdoor furniture brand reviews, customer reviews and furniture company ratings for garden furniture and outdoor living products."
+);
 
 export default function OutdoorFurniturePage() {
   return (

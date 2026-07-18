@@ -49,6 +49,13 @@ type BusinessPasswordResetEmailInput = {
   expiresAt?: string | null;
 };
 
+type BusinessReviewInvitationEmailInput = {
+  to: string | null | undefined;
+  customerName?: string | null;
+  brandName: string;
+  invitationUrl: string;
+};
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -203,6 +210,45 @@ Independent furniture brand reviews worldwide.`;
   return sendEmail({
     to,
     subject: "Your review has been published",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessReviewInvitationEmail({ to, customerName, brandName, invitationUrl }: BusinessReviewInvitationEmailInput) {
+  const displayCustomerName = safeValue(customerName, "there");
+  const displayBrandName = safeValue(brandName, "the brand");
+  const safeCustomerName = escapeHtml(displayCustomerName);
+  const safeBrandName = escapeHtml(displayBrandName);
+  const safeInvitationUrl = escapeHtml(invitationUrl);
+  const text = `Hi ${displayCustomerName},
+
+Thank you for choosing ${displayBrandName}.
+
+If you have a moment, we would appreciate your honest feedback on Furniture Brand Reviews:
+${invitationUrl}
+
+Your review helps other furniture buyers make more informed decisions. Please only write a review based on your genuine experience.
+
+Furniture Brand Reviews
+Independent furniture brand reviews worldwide.`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Share your furniture buying experience</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Hi ${safeCustomerName},</p>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Thank you for choosing <strong style="color:#111827;">${safeBrandName}</strong>.</p>
+<p style="margin:0 0 24px 0;font-size:16px;line-height:1.7;color:#374151;">If you have a moment, we would appreciate your honest feedback on Furniture Brand Reviews. Your review helps other furniture buyers make more informed decisions.</p>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeInvitationUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Write a review</a>
+    </td>
+  </tr>
+</table>
+<div style="margin:24px 0 0 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#5b2f6d;font-size:15px;line-height:1.6;font-weight:700;">Please only write a review based on your genuine experience. Businesses must not ask only satisfied customers to leave feedback.</div>`);
+
+  return sendEmail({
+    to,
+    subject: `Share your review of ${displayBrandName}`,
     text,
     html
   });

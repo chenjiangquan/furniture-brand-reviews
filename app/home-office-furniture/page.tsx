@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { CategoryPage } from "@/components/CategoryPage";
-import { createSeoMetadata } from "@/lib/seo";
+import { createNoIndexMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createSeoMetadata({
-  title: "Home office furniture",
-  description:
-    "Browse home office furniture brand reviews and customer reviews for desks, office chairs and furniture companies worldwide.",
-  path: "/home-office-furniture"
-});
+export const metadata: Metadata = createNoIndexMetadata(
+  "Home office furniture",
+  "Browse home office furniture brand reviews and customer reviews for desks, office chairs and furniture companies worldwide."
+);
 
 export default function HomeOfficeFurniturePage() {
   return (

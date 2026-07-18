@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { generateExcerpt, slugifyBlogTitle, type BlogStatus } from "@/lib/blogs";
 
@@ -50,6 +51,7 @@ const optionalBlogColumns = [
   "cover_image_alt",
   "category",
   "allow_index",
+  "needs_review",
   "published_at",
   "updated_at"
 ] as const;
@@ -104,10 +106,11 @@ export async function saveBlogPost(_state: BlogActionState, formData: FormData):
     content: readString(formData, "content") || null,
     seo_title: readString(formData, "seo_title") || `${title} | Furniture Brand Reviews`,
     seo_description: getSeoDescription(formData),
-    cover_image_url: readString(formData, "cover_image_url") || null,
-    cover_image_alt: readString(formData, "cover_image_alt") || title,
+    cover_image_url: readString(formData, "cover_image_url") || getBlogCoverImageForBlog({ title, slug, category: readString(formData, "category") }),
+    cover_image_alt: readString(formData, "cover_image_alt") || getBlogCoverAlt({ title }),
     category: readString(formData, "category") || null,
     allow_index: readString(formData, "allow_index") === "on",
+    needs_review: status === "published" ? false : readString(formData, "was_auto_draft") === "true",
     status,
     published_at: status === "published" ? readString(formData, "published_at") || new Date().toISOString() : null,
     updated_at: new Date().toISOString()

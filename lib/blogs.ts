@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { unstable_noStore as noStore } from "next/cache";
+import { getPlainTextFromMarkdown, getWordCount } from "@/lib/blog-quality";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
+
+export { getPlainTextFromMarkdown, getWordCount } from "@/lib/blog-quality";
 
 export type BlogStatus = "draft" | "published";
 
@@ -24,6 +27,16 @@ export type BlogPost = {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type BlogAutoDraftLog = {
+  id: string;
+  ran_at: string;
+  status: "success" | "failed" | "skipped";
+  topic_type: string | null;
+  topic_title: string | null;
+  slug: string | null;
+  message: string | null;
 };
 
 export const blogIndexWordThreshold = 500;
@@ -54,23 +67,6 @@ export function generateExcerpt(content: string, title?: string) {
   }
 
   return title ? `Read our latest furniture review guide: ${title}.` : "";
-}
-
-export function getPlainTextFromMarkdown(content: string | null | undefined) {
-  return (content ?? "")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
-    .replace(/[#*_>`~\-[\]()]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-export function getWordCount(content: string | null | undefined) {
-  const plainText = getPlainTextFromMarkdown(content);
-  if (!plainText) return 0;
-  return plainText.split(/\s+/).filter(Boolean).length;
 }
 
 export function getReadingTime(content: string | null | undefined) {
@@ -203,4 +199,24 @@ export async function getAdminBlogs(password: string): Promise<BlogPost[]> {
   }
 
   return (data ?? []) as BlogPost[];
+}
+
+export async function getAdminBlogAutoDraftLogs(password: string, limit = 20): Promise<BlogAutoDraftLog[]> {
+  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) return [];
+
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("blog_auto_draft_logs")
+    .select("id, ran_at, status, topic_type, topic_title, slug, message")
+    .order("ran_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn("Blog auto draft logs lookup skipped", error.message);
+    return [];
+  }
+
+  return (data ?? []) as BlogAutoDraftLog[];
 }
