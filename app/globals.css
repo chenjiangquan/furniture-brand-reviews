@@ -29,9 +29,9 @@ button {
 }
 
 .home-hero-mobile-image {
-  min-height: 260px;
-  background-image: linear-gradient(to top, rgba(250, 247, 255, 0.12), rgba(255, 255, 255, 0.86)), url("/hero.jpg");
-  background-position: center;
+  min-height: 340px;
+  background-image: linear-gradient(to top, rgba(250, 247, 255, 0.04), rgba(255, 255, 255, 0.34)), url("/hero.jpg");
+  background-position: 62% center;
   background-size: cover;
 }
 

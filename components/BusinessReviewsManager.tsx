@@ -189,21 +189,30 @@ function BusinessReplyForm({
   existingReply?: string;
 }) {
   const [replyState, replyAction] = useFormState(addBusinessReplyInline, { ok: false, message: "" });
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <form action={replyAction} className="mt-4 grid gap-3">
-      <input type="hidden" name="email" value={email} />
-      <input type="hidden" name="businessToken" value={businessToken} />
-      <input type="hidden" name="companyId" value={companyId} />
-      <input type="hidden" name="companySlug" value={companySlug} />
-      <input type="hidden" name="reviewId" value={reviewId} />
+    <div className="mt-4 grid gap-3">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="inline-flex w-fit items-center gap-2 rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+      >
+        <MessageSquareReply size={16} />
+        Reply
+      </button>
       {replyState.message ? (
         <div className={`rounded-xl border p-4 text-sm font-bold ${replyState.ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>
           {replyState.message}
         </div>
       ) : null}
-      {!replyState.ok ? (
-        <>
+      {isOpen && !replyState.ok ? (
+        <form action={replyAction} className="grid gap-3">
+          <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="businessToken" value={businessToken} />
+          <input type="hidden" name="companyId" value={companyId} />
+          <input type="hidden" name="companySlug" value={companySlug} />
+          <input type="hidden" name="reviewId" value={reviewId} />
           <textarea
             name="reply"
             required
@@ -213,9 +222,9 @@ function BusinessReplyForm({
             className="min-h-[96px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
           />
           <SubmitReplyButton hasExistingReply={Boolean(existingReply)} />
-        </>
+        </form>
       ) : null}
-    </form>
+    </div>
   );
 }
 

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { ArrowRight, ShieldCheck } from "lucide-react";
-import { BrandCard } from "@/components/BrandCard";
+import { ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
+import { RatingStars } from "@/components/RatingStars";
 import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
@@ -22,6 +23,41 @@ export const metadata: Metadata = createSeoMetadata({
   path: "/",
   absoluteTitle: true
 });
+
+function getDomain(url?: string | null) {
+  if (!url) return "Website";
+  try {
+    return new URL(url.startsWith("http") ? url : `https://${url}`).hostname.replace(/^www\./, "");
+  } catch {
+    return url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] || "Website";
+  }
+}
+
+function HomeBrandMiniCard({ company }: { company: Awaited<ReturnType<typeof getCompanies>>[number] }) {
+  return (
+    <Link
+      href={`/review/${company.slug}`}
+      className="group flex min-h-[180px] min-w-[260px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-trust/40 hover:shadow-md sm:min-w-[300px] lg:min-w-0"
+    >
+      <div>
+        <CompanyLogo
+          name={company.name}
+          logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
+          size="sm"
+        />
+        <h3 className="mt-4 line-clamp-2 text-base font-bold leading-snug text-ink group-hover:text-trust-dark">{company.name}</h3>
+        <p className="mt-1 inline-flex items-center gap-1 truncate text-sm text-muted">
+          {getDomain(company.website)} <ExternalLink size={13} />
+        </p>
+      </div>
+      <div className="mt-4 flex items-center gap-2">
+        <RatingStars rating={company.average_rating} size="small" />
+        <span className="text-sm font-bold text-ink">{company.average_rating.toFixed(1)}</span>
+        <span className="text-sm text-muted">({company.review_count})</span>
+      </div>
+    </Link>
+  );
+}
 
 export default async function HomePage() {
   const companies = await getCompanies();
@@ -105,9 +141,9 @@ export default async function HomePage() {
             View all <ArrowRight size={16} />
           </Link>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {homepageCompanies.slice(0, 3).map((company) => (
-            <BrandCard key={company.id} company={company} />
+        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+          {homepageCompanies.slice(0, 4).map((company) => (
+            <HomeBrandMiniCard key={company.id} company={company} />
           ))}
         </div>
       </section>
@@ -149,6 +185,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+        <div className="relative overflow-hidden rounded-3xl border border-pink-100 bg-pink-100 px-6 py-8 text-center shadow-sm">
+          <div className="absolute inset-x-8 bottom-0 flex h-16 items-end justify-center gap-5 opacity-50" aria-hidden="true">
+            <span className="h-5 w-24 rounded-t-2xl bg-pink-300" />
+            <span className="h-9 w-24 rounded-t-2xl bg-pink-300" />
+            <span className="h-12 w-24 rounded-t-2xl bg-pink-300" />
+            <span className="h-16 w-24 rounded-t-2xl bg-pink-300" />
+          </div>
+          <div className="relative">
+            <h2 className="text-2xl font-bold text-ink">Looking to grow your furniture business?</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-6 text-ink/80">
+              Strengthen your reputation with moderated customer reviews, public replies and review invitation tools.
+            </p>
+            <Link href="/claim-your-profile" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+              Get started
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-wash">
         <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
           <h2 className="text-2xl font-bold text-ink">Latest reviews</h2>
@@ -159,6 +215,23 @@ export default async function HomePage() {
               ))}
             </LatestReviewsCarousel>
           ) : null}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1600px] px-4 pt-16 sm:px-6 lg:px-10">
+        <div className="rounded-3xl bg-[#fff0d9] p-8 text-center shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Help furniture buyers make the right choice</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-base font-semibold leading-7 text-ink/80">
+            Share your buying experience so other shoppers can compare delivery, product quality and customer service with more confidence.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link href="/write-review" className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+              Write a review
+            </Link>
+            <Link href="/brands" className="rounded-full border border-ink/10 bg-white px-5 py-3 text-sm font-bold text-ink hover:border-trust/40">
+              Browse brands
+            </Link>
+          </div>
         </div>
       </section>
 

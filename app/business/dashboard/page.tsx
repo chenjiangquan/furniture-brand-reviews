@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { sendBusinessReviewInvitation, updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
+import { sendBulkBusinessReviewInvitations, sendBusinessReviewInvitation, updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
 import { getBusinessCompanyByToken, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
@@ -12,18 +12,34 @@ export const metadata: Metadata = createNoIndexMetadata(
   "Manage claimed brand profiles, review replies and customer review invitation links on Furniture Brand Reviews."
 );
 
-function dashboardUrl(email: string, token: string, company?: string) {
-  const params = new URLSearchParams({ email, token, ...(company ? { company } : {}) });
+const dashboardTabs = [
+  { id: "overview", label: "Overview" },
+  { id: "reviews", label: "Reviews" },
+  { id: "profile", label: "Profile" },
+  { id: "password", label: "Password" },
+  { id: "invite", label: "Invite customers" },
+  { id: "widgets", label: "Widgets" }
+] as const;
+
+type DashboardTab = (typeof dashboardTabs)[number]["id"];
+
+function getActiveTab(value?: string): DashboardTab {
+  return dashboardTabs.some((tab) => tab.id === value) ? (value as DashboardTab) : "overview";
+}
+
+function dashboardUrl(email: string, token: string, company?: string, tab: DashboardTab = "overview") {
+  const params = new URLSearchParams({ email, token, tab, ...(company ? { company } : {}) });
   return `/business/dashboard?${params.toString()}`;
 }
 
 export default async function BusinessDashboardPage({
   searchParams
 }: {
-  searchParams?: { email?: string; token?: string; company?: string; success?: string; error?: string };
+  searchParams?: { email?: string; token?: string; company?: string; tab?: string; success?: string; error?: string };
 }) {
   const email = String(searchParams?.email ?? "").trim().toLowerCase();
   const businessToken = String(searchParams?.token ?? "").trim();
+  const activeTab = getActiveTab(searchParams?.tab);
 
   if (!email || !businessToken) {
     return (
@@ -92,7 +108,7 @@ export default async function BusinessDashboardPage({
                 {companies.map((item) => (
                   <Link
                     key={item.id}
-                    href={dashboardUrl(email, businessToken, item.slug)}
+                    href={dashboardUrl(email, businessToken, item.slug, activeTab)}
                     className={`rounded-xl px-3 py-2 text-sm font-bold ${item.slug === company.slug ? "bg-purple-50 text-trust-dark" : "text-slate-700 hover:bg-wash"}`}
                   >
                     {item.name}
@@ -113,16 +129,24 @@ export default async function BusinessDashboardPage({
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="h-fit rounded-2xl border border-purple-100 bg-white p-4 shadow-sm lg:sticky lg:top-6">
             <nav className="grid gap-2 text-sm font-bold">
-              {["Overview", "Reviews", "Profile", "Password", "Invite customers", "Widgets"].map((item) => (
-                <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="rounded-xl px-4 py-3 text-slate-700 hover:bg-purple-50 hover:text-trust-dark">
-                  {item}
-                </a>
+              {dashboardTabs.map((item) => (
+                <Link
+                  key={item.id}
+                  href={dashboardUrl(email, businessToken, company.slug, item.id)}
+                  className={`rounded-xl px-4 py-3 transition ${
+                    activeTab === item.id ? "bg-purple-50 text-trust-dark ring-1 ring-purple-100" : "text-slate-700 hover:bg-purple-50 hover:text-trust-dark"
+                  }`}
+                  aria-current={activeTab === item.id ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
               ))}
             </nav>
           </aside>
 
           <div className="grid gap-6">
-            <section id="overview" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+            {activeTab === "overview" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Overview</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl bg-wash p-5">
@@ -141,7 +165,9 @@ export default async function BusinessDashboardPage({
                 </div>
               </div>
             </section>
+            ) : null}
 
+            {activeTab === "reviews" ? (
             <BusinessReviewsManager
               reviews={reviews}
               email={email}
@@ -151,8 +177,10 @@ export default async function BusinessDashboardPage({
               autoReplyEnabled={Boolean(company.auto_reply_enabled)}
               autoReplyTemplate={company.auto_reply_template ?? ""}
             />
+            ) : null}
 
-            <section id="profile" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+            {activeTab === "profile" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Profile details</h2>
               <form action={updateBusinessProfile} className="mt-5 grid gap-4">
                 <input type="hidden" name="email" value={email} />
@@ -197,8 +225,10 @@ export default async function BusinessDashboardPage({
                 <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Save profile</button>
               </form>
             </section>
+            ) : null}
 
-            <section id="password" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+            {activeTab === "password" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Password</h2>
               <p className="mt-2 text-muted">Update the password used with your approved business email.</p>
               <form action={updateBusinessPassword} className="mt-5 grid gap-4 md:max-w-xl">
@@ -231,8 +261,10 @@ export default async function BusinessDashboardPage({
                 <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Save password</button>
               </form>
             </section>
+            ) : null}
 
-            <section id="invite-customers" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+            {activeTab === "invite" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Invite customers</h2>
               <p className="mt-2 text-muted">
                 Send a verified review invitation to a recent customer, or copy the neutral public invitation text below.
@@ -265,6 +297,33 @@ export default async function BusinessDashboardPage({
                   </button>
                 </form>
 
+                <form action={sendBulkBusinessReviewInvitations} className="grid gap-4 rounded-2xl border border-purple-100 bg-white p-4">
+                  <input type="hidden" name="email" value={email} />
+                  <input type="hidden" name="businessToken" value={businessToken} />
+                  <input type="hidden" name="companyId" value={company.id} />
+                  <input type="hidden" name="companySlug" value={company.slug} />
+                  <input type="hidden" name="brandName" value={company.name} />
+                  <div>
+                    <h3 className="font-bold text-ink">Bulk invite by CSV</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      Upload a CSV with an <strong>email</strong> column and optional <strong>name</strong> column. The first 100 valid rows will receive verified invitation links.
+                    </p>
+                  </div>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-ink">CSV file</span>
+                    <input
+                      name="customerCsv"
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-purple-50 file:px-4 file:py-2 file:text-sm file:font-bold file:text-trust-dark focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                    <span className="text-xs font-semibold text-muted">Maximum 1MB. Use columns: email, name.</span>
+                  </label>
+                  <button className="w-fit rounded-full border border-purple-200 px-5 py-3 text-sm font-bold text-trust-dark hover:bg-purple-50">
+                    Upload CSV and send invites
+                  </button>
+                </form>
+
                 <div className="grid gap-4">
                   <label className="grid gap-2">
                     <span className="text-sm font-bold text-ink">Public write review link</span>
@@ -278,8 +337,10 @@ export default async function BusinessDashboardPage({
                 </div>
               </div>
             </section>
+            ) : null}
 
-            <section id="widgets" className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+            {activeTab === "widgets" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-ink">Embed widgets</h2>
               <p className="mt-2 text-muted">Copy these snippets into your website to show Furniture Brand Reviews ratings and reviews.</p>
               <div className="mt-5 grid gap-4">
@@ -297,6 +358,7 @@ export default async function BusinessDashboardPage({
                 </label>
               </div>
             </section>
+            ) : null}
           </div>
         </div>
       </section>

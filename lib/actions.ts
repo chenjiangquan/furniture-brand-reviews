@@ -1143,13 +1143,13 @@ export async function updateBusinessProfile(formData: FormData) {
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
-  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, tab: "profile", error: "Supabase is not configured." });
 
   let logoUrl = existingLogoUrl;
   if (logoFile instanceof File && logoFile.size > 0) {
     const uploadResult = await uploadBusinessLogoFile(logoFile, companySlug);
     if (uploadResult?.error) {
-      businessRedirect(email, companySlug, { token: businessToken, error: uploadResult.error });
+      businessRedirect(email, companySlug, { token: businessToken, tab: "profile", error: uploadResult.error });
     }
     logoUrl = uploadResult?.url ?? logoUrl;
   }
@@ -1167,13 +1167,13 @@ export async function updateBusinessProfile(formData: FormData) {
     .eq("id", companyId);
 
   if (error) {
-    businessRedirect(email, companySlug, { token: businessToken, error: formatSupabaseError(error) });
+    businessRedirect(email, companySlug, { token: businessToken, tab: "profile", error: formatSupabaseError(error) });
   }
 
   revalidatePath(`/review/${companySlug}`);
   revalidatePath("/brands");
   revalidatePath("/");
-  businessRedirect(email, companySlug, { token: businessToken, success: "Profile updated." });
+  businessRedirect(email, companySlug, { token: businessToken, tab: "profile", success: "Profile updated." });
 }
 
 export async function updateBusinessPassword(formData: FormData) {
@@ -1189,15 +1189,15 @@ export async function updateBusinessPassword(formData: FormData) {
   }
 
   if (password !== confirmPassword) {
-    businessRedirect(email, companySlug, { token: businessToken, error: "Passwords do not match." });
+    businessRedirect(email, companySlug, { token: businessToken, tab: "password", error: "Passwords do not match." });
   }
 
   const result = await setBusinessPassword(email, password);
   if (!result.ok) {
-    businessRedirect(email, companySlug, { token: businessToken, error: result.message });
+    businessRedirect(email, companySlug, { token: businessToken, tab: "password", error: result.message });
   }
 
-  businessRedirect(email, companySlug, { token: businessToken, success: "Password updated." });
+  businessRedirect(email, companySlug, { token: businessToken, tab: "password", success: "Password updated." });
 }
 
 export async function sendBusinessReviewInvitation(formData: FormData) {
@@ -1214,19 +1214,53 @@ export async function sendBusinessReviewInvitation(formData: FormData) {
   }
 
   if (!isValidEmail(customerEmail)) {
-    businessRedirect(email, companySlug, { token: businessToken, error: "Enter a valid customer email address." });
+    businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "Enter a valid customer email address." });
   }
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, error: "Supabase is not configured." });
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "Supabase is not configured." });
 
+  const result = await createBusinessReviewInvitation({
+    supabase,
+    companyId,
+    companySlug,
+    businessEmail: email,
+    customerEmail,
+    customerName,
+    brandName: brandName || companySlug
+  });
+
+  if (!result.ok) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: result.message });
+  }
+
+  businessRedirect(email, companySlug, { token: businessToken, tab: "invite", success: "Verified review invitation sent." });
+}
+
+async function createBusinessReviewInvitation({
+  supabase,
+  companyId,
+  companySlug,
+  businessEmail,
+  customerEmail,
+  customerName,
+  brandName
+}: {
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+  companyId: string;
+  companySlug: string;
+  businessEmail: string;
+  customerEmail: string;
+  customerName: string;
+  brandName: string;
+}) {
   const token = crypto.randomBytes(32).toString("base64url");
   const invitationUrl = `${siteUrl}/review/${companySlug}/write?invite=${encodeURIComponent(token)}`;
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
 
   const { error } = await supabase.from("review_invitations").insert({
     company_id: companyId,
-    business_email: email,
+    business_email: businessEmail,
     customer_email: customerEmail,
     customer_name: customerName || null,
     token_hash: hashReviewInvitationToken(token),
@@ -1236,21 +1270,99 @@ export async function sendBusinessReviewInvitation(formData: FormData) {
   });
 
   if (error) {
-    businessRedirect(email, companySlug, { token: businessToken, error: `Invitation could not be created: ${formatSupabaseError(error)}` });
+    return { ok: false, message: `Invitation could not be created: ${formatSupabaseError(error)}` };
   }
 
   const emailSent = await sendBusinessReviewInvitationEmail({
     to: customerEmail,
     customerName,
-    brandName: brandName || companySlug,
+    brandName,
     invitationUrl
   });
 
   if (!emailSent) {
-    businessRedirect(email, companySlug, { token: businessToken, error: "Invitation was created, but the email could not be sent. Check RESEND_API_KEY and EMAIL_FROM." });
+    return { ok: false, message: "Invitation was created, but the email could not be sent. Check RESEND_API_KEY and EMAIL_FROM." };
   }
 
-  businessRedirect(email, companySlug, { token: businessToken, success: "Verified review invitation sent." });
+  return { ok: true, message: "Verified review invitation sent." };
+}
+
+export async function sendBulkBusinessReviewInvitations(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const businessToken = getBusinessToken(formData);
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const brandName = String(formData.get("brandName") ?? "").trim() || companySlug;
+  const csvFile = formData.get("customerCsv");
+
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (!(csvFile instanceof File) || csvFile.size === 0) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "Upload a CSV file with customer emails." });
+  }
+
+  if (csvFile.size > 1024 * 1024) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "CSV file must be under 1MB." });
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "Supabase is not configured." });
+
+  const csvText = await csvFile.text();
+  const rows = parseCsv(csvText).slice(0, 100);
+  if (!rows.length) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "invite", error: "CSV file did not contain any invitation rows." });
+  }
+
+  let successCount = 0;
+  const errors: string[] = [];
+  const seenEmails = new Set<string>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const customerEmail = normalizeEmailInput(row.email || row.customer_email || row["customer email"] || row.Email || "");
+    const customerName = String(row.name || row.customer_name || row["customer name"] || row.Name || "").trim();
+
+    if (!isValidEmail(customerEmail)) {
+      errors.push(`Row ${index + 2}: invalid email`);
+      continue;
+    }
+
+    if (seenEmails.has(customerEmail)) {
+      errors.push(`Row ${index + 2}: duplicate email skipped`);
+      continue;
+    }
+
+    seenEmails.add(customerEmail);
+    const result = await createBusinessReviewInvitation({
+      supabase,
+      companyId,
+      companySlug,
+      businessEmail: email,
+      customerEmail,
+      customerName,
+      brandName
+    });
+
+    if (result.ok) {
+      successCount += 1;
+    } else {
+      errors.push(`Row ${index + 2}: ${result.message}`);
+    }
+  }
+
+  const message =
+    successCount > 0
+      ? `Sent ${successCount} verified invitation${successCount === 1 ? "" : "s"}${errors.length ? `; ${errors.length} row${errors.length === 1 ? "" : "s"} skipped.` : "."}`
+      : "No invitations were sent.";
+
+  businessRedirect(email, companySlug, {
+    token: businessToken,
+    tab: "invite",
+    ...(successCount > 0 ? { success: message } : { error: errors[0] || message })
+  });
 }
 
 export async function addBusinessReply(formData: FormData) {

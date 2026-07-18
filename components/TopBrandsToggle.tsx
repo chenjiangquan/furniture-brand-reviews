@@ -52,7 +52,39 @@ export function TopBrandsToggle({ companies }: { companies: Company[] }) {
       </div>
 
       {visibleCompanies.length > 0 ? (
-        <div className="mt-6 grid gap-3">
+        <>
+        <div className="-mx-4 mt-6 flex snap-x gap-4 overflow-x-auto px-4 pb-3 lg:hidden">
+          {visibleCompanies.map((company, index) => (
+            <Link
+              key={company.id}
+              href={`/review/${company.slug}`}
+              className="flex min-h-[190px] min-w-[270px] snap-start flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-sm"
+            >
+              <div>
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-wash text-sm font-bold text-trust-dark ring-1 ring-line">
+                    #{index + 1}
+                  </span>
+                  <CompanyLogo
+                    name={company.name}
+                    logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url}
+                    size="sm"
+                  />
+                </div>
+                <h3 className="mt-4 line-clamp-2 text-base font-bold leading-snug text-ink">{company.name}</h3>
+                <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted">
+                  Website <ExternalLink size={13} />
+                </p>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <RatingStars rating={company.average_rating} size="small" />
+                <span className="text-sm font-bold text-ink">{company.average_rating.toFixed(1)}</span>
+                <span className="text-sm text-muted">({company.review_count})</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className="mt-6 hidden gap-3 lg:grid">
           {visibleCompanies.map((company, index) => (
             <article key={company.id} className="rounded-2xl border border-line bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -94,6 +126,7 @@ export function TopBrandsToggle({ companies }: { companies: Company[] }) {
             </article>
           ))}
         </div>
+        </>
       ) : (
         <div className="mt-6 rounded-2xl border border-line bg-white p-8 text-center shadow-sm">
           <p className="font-bold text-ink">Not enough reviewed brands yet.</p>
