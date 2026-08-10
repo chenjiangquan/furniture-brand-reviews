@@ -84,14 +84,14 @@ export default async function HomePage() {
     <div>
       <JsonLd data={buildGraph([buildWebsiteSchema(), buildPlatformOrganizationSchema()])} />
 
-      <section className="home-hero bg-wash md:flex md:items-center">
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 lg:px-10 md:py-20">
-          <div className="max-w-[600px]">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-trust-dark shadow-sm">
+      <section className="home-hero relative overflow-hidden bg-wash md:flex md:items-center md:bg-white">
+        <div className="mx-auto grid w-full max-w-[1600px] items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:py-16 lg:px-10">
+          <div className="relative z-10 max-w-[640px]">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur md:border-line md:bg-white md:text-trust-dark">
               <ShieldCheck size={17} />
               The world&apos;s most authoritative furniture brand review platform
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl md:text-ink">
               Discover real customer reviews of furniture brands worldwide
             </h1>
             <ul className="mt-6 grid gap-3 text-left">
@@ -102,9 +102,9 @@ export default async function HomePage() {
               ].map((feature) => (
                 <li
                   key={feature}
-                  className="flex items-start gap-3 rounded-2xl border border-line bg-white/90 px-4 py-3 text-sm font-semibold leading-6 text-ink shadow-sm backdrop-blur"
+                  className="flex items-start gap-3 rounded-2xl border border-white/25 bg-white/15 px-4 py-3 text-sm font-semibold leading-6 text-white shadow-sm backdrop-blur md:border-line md:bg-white/90 md:text-ink"
                 >
-                  <ShieldCheck className="mt-1 shrink-0 text-trust" size={16} />
+                  <ShieldCheck className="mt-1 shrink-0 text-white md:text-trust" size={16} />
                   <span>{feature}</span>
                 </li>
               ))}
@@ -113,16 +113,27 @@ export default async function HomePage() {
               <SearchBar companies={companies} />
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/brands" className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">
+              <Link href="/brands" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-ink hover:bg-purple-50 md:bg-ink md:text-white md:hover:bg-trust-dark">
                 Browse furniture brands
               </Link>
-              <Link href="/compare" className="rounded-full border border-line bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:border-trust">
+              <Link href="/compare" className="rounded-full border border-white/40 bg-white/15 px-5 py-3 text-sm font-bold text-white backdrop-blur hover:bg-white/25 md:border-line md:bg-white md:text-trust-dark md:hover:border-trust">
                 Compare furniture brands
               </Link>
-              <Link href="/best-furniture-brands" className="rounded-full border border-line bg-white px-5 py-3 text-sm font-bold text-trust-dark hover:border-trust">
+              <Link href="/best-furniture-brands" className="rounded-full border border-white/40 bg-white/15 px-5 py-3 text-sm font-bold text-white backdrop-blur hover:bg-white/25 md:border-line md:bg-white md:text-trust-dark md:hover:border-trust">
                 Best furniture brands
               </Link>
             </div>
+          </div>
+          <div className="relative hidden md:block">
+            <div className="absolute -inset-6 rounded-[2.5rem] bg-purple-100/70 blur-2xl" aria-hidden="true" />
+            <Image
+              src="/home-hero-dining-table.jpg"
+              alt="Modern dining table and chairs in a bright furniture showroom"
+              width={900}
+              height={900}
+              priority
+              className="relative aspect-[1.16/1] w-full rounded-[2rem] object-cover shadow-sm ring-1 ring-purple-100"
+            />
           </div>
         </div>
       </section>

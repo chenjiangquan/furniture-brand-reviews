@@ -24,6 +24,16 @@ type AdminReviewNotificationInput = {
   adminUrl?: string;
 };
 
+type AdminBusinessClaimNotificationInput = {
+  brandName: string;
+  contactName: string;
+  contactEmail: string;
+  website?: string | null;
+  message?: string | null;
+  companyId?: string | null;
+  adminUrl?: string;
+};
+
 type BusinessClaimEmailInput = {
   to: string | null | undefined;
   contactName: string;
@@ -303,6 +313,72 @@ ${adminUrl}`;
   return sendEmail({
     to,
     subject: `New review submitted for ${displayBrandName}`,
+    text,
+    html
+  });
+}
+
+export async function sendAdminBusinessClaimNotificationEmail({
+  brandName,
+  contactName,
+  contactEmail,
+  website,
+  message,
+  companyId,
+  adminUrl = "https://www.furniturebrandreviews.com/admin/business-claims"
+}: AdminBusinessClaimNotificationInput) {
+  const to = process.env.REVIEW_ADMIN_EMAIL || "chenjiangquan123@gmail.com";
+  const displayBrandName = safeValue(brandName, "Unknown brand");
+  const displayContactName = safeValue(contactName, "Unknown contact");
+  const displayContactEmail = safeValue(contactEmail, "No email provided");
+  const displayWebsite = safeValue(website, "No website provided");
+  const displayMessage = safeValue(message, "No message provided");
+  const displayMatchedProfile = companyId ? "Matched existing profile" : "No matched profile selected";
+  const safeBrandName = escapeHtml(displayBrandName);
+  const safeContactName = escapeHtml(displayContactName);
+  const safeContactEmail = escapeHtml(displayContactEmail);
+  const safeWebsite = escapeHtml(displayWebsite);
+  const safeMessage = escapeHtml(displayMessage).replace(/\n/g, "<br />");
+  const safeMatchedProfile = escapeHtml(displayMatchedProfile);
+  const safeAdminUrl = escapeHtml(adminUrl);
+  const text = `A new business claim is waiting for admin review.
+
+Brand: ${displayBrandName}
+Website: ${displayWebsite}
+Contact: ${displayContactName}
+Email: ${displayContactEmail}
+Profile match: ${displayMatchedProfile}
+
+Message:
+${displayMessage}
+
+Open business claims:
+${adminUrl}`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">New business claim waiting for review</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">A business has submitted a claim request and is waiting for admin review.</p>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#374151;font-size:15px;line-height:1.7;">
+  <strong>Brand:</strong> ${safeBrandName}<br />
+  <strong>Website:</strong> ${safeWebsite}<br />
+  <strong>Contact:</strong> ${safeContactName}<br />
+  <strong>Email:</strong> ${safeContactEmail}<br />
+  <strong>Profile match:</strong> ${safeMatchedProfile}
+</div>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#ffffff;border:1px solid #eadff2;color:#374151;font-size:15px;line-height:1.7;">
+  <strong>Message:</strong><br />
+  ${safeMessage}
+</div>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px 0;">
+  <tr>
+    <td bgcolor="#8b4aa3" style="border-radius:999px;">
+      <a href="${safeAdminUrl}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#8b4aa3;color:#ffffff;font-size:15px;line-height:1;font-weight:700;text-decoration:none;">Open business claims</a>
+    </td>
+  </tr>
+</table>`);
+
+  return sendEmail({
+    to,
+    subject: `New business claim submitted for ${displayBrandName}`,
     text,
     html
   });

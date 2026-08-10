@@ -7,6 +7,7 @@ import { getBrandImageCandidates } from "@/lib/brand-images";
 import { createAutoReplyForReview } from "@/lib/auto-reply";
 import { parseCsv } from "@/lib/csv";
 import {
+  sendAdminBusinessClaimNotificationEmail,
   sendBusinessClaimApprovedEmail,
   sendBusinessClaimSubmittedEmail,
   sendBusinessLoginLinkEmail,
@@ -960,6 +961,15 @@ export async function submitBusinessClaim(formData: FormData) {
     to: contactEmail,
     contactName,
     brandName
+  });
+
+  await sendAdminBusinessClaimNotificationEmail({
+    brandName,
+    contactName,
+    contactEmail,
+    website,
+    message: messageInput || null,
+    companyId
   });
 
   revalidatePath("/admin/tools");
