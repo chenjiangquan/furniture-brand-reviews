@@ -24,7 +24,7 @@ export default async function BrandsPage() {
   const comparisonLinks = await getIndexableFeaturedComparisonLinks(4);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-bold tracking-tight text-ink">Furniture Brand Reviews</h1>
       <div className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold text-ink">Browse by category</h2>

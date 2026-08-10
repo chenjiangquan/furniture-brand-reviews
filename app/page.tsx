@@ -85,7 +85,7 @@ export default async function HomePage() {
       <JsonLd data={buildGraph([buildWebsiteSchema(), buildPlatformOrganizationSchema()])} />
 
       <section className="home-hero relative overflow-hidden bg-wash md:flex md:items-center md:bg-white">
-        <div className="mx-auto grid w-full max-w-[1600px] items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:py-16 lg:px-10">
+        <div className="mx-auto grid w-full max-w-[1280px] items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[0.9fr_1.1fr] md:py-16 lg:px-8">
           <div className="relative z-10 max-w-[640px]">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur md:border-line md:bg-white md:text-trust-dark">
               <ShieldCheck size={17} />
@@ -139,7 +139,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line" aria-hidden="true" />
             <Link
@@ -155,7 +155,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-ink">Popular furniture brands</h2>
           <Link href="/brands" className="inline-flex items-center gap-1 text-sm font-bold text-trust-dark">
@@ -169,7 +169,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -206,7 +206,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl border border-purple-200 bg-purple-100 px-6 py-7 shadow-sm">
           <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full bg-purple-300/35" aria-hidden="true" />
           <div className="absolute bottom-4 right-10 hidden h-20 w-20 rounded-3xl border border-white/50 bg-white/30 backdrop-blur sm:block" aria-hidden="true" />
@@ -226,7 +226,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-wash">
-        <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-ink">Latest reviews</h2>
           {latestReviews.length > 0 ? (
             <LatestReviewsCarousel count={latestReviews.length}>
@@ -238,7 +238,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 pt-16 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pt-16 sm:px-6 lg:px-8">
         <div className="grid gap-7 rounded-3xl bg-[#fff0d9] p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">
           <div>
             <h2 className="text-3xl font-bold leading-tight text-ink">Help furniture buyers make the right choice</h2>
@@ -268,7 +268,7 @@ export default async function HomePage() {
 
       <TopBrandsToggle companies={companies} />
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
         <div className="grid gap-6 rounded-3xl bg-emerald-100 p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">
           <div>
             <h2 className="text-3xl font-bold text-ink">We&apos;re FurnitureBrandReviews</h2>
@@ -292,7 +292,7 @@ export default async function HomePage() {
       </section>
 
       {latestBlogs.length > 0 ? (
-        <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+        <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-8 rounded-2xl border border-line bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -368,7 +368,7 @@ export default async function HomePage() {
       ) : null}
 
       <section className="border-y border-line bg-ink">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 py-12 text-white sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
             <h2 className="text-2xl font-bold">Own a furniture brand? Claim your profile</h2>
             <p className="mt-2 text-white/75">Help customers understand your service, replies and delivery standards.</p>

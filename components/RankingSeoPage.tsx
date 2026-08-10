@@ -65,7 +65,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
       />
 
       <section className="border-b border-line bg-wash">
-        <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
+        <div className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
           <nav className="text-sm font-semibold text-muted" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-trust-dark">Home</Link>
             <span className="mx-2">/</span>
@@ -79,7 +79,7 @@ export async function RankingSeoPage({ config }: { config: RankingConfig }) {
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-[1400px] gap-12 px-4 py-12 sm:px-6 lg:px-10">
+      <main className="mx-auto grid max-w-[1280px] gap-12 px-4 py-12 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-ink">Ranking methodology</h2>
           <ul className="mt-4 grid gap-2 text-sm leading-6 text-muted md:grid-cols-2">

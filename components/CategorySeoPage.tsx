@@ -55,7 +55,7 @@ export async function CategorySeoPage({ config, sort = "highest-rated" }: { conf
       />
 
       <section className="border-b border-line bg-wash">
-        <div className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
+        <div className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
           <nav className="text-sm font-semibold text-muted" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-trust-dark">Home</Link>
             <span className="mx-2">/</span>
@@ -68,7 +68,7 @@ export async function CategorySeoPage({ config, sort = "highest-rated" }: { conf
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-[1400px] gap-12 px-4 py-12 sm:px-6 lg:px-10">
+      <main className="mx-auto grid max-w-[1280px] gap-12 px-4 py-12 sm:px-6 lg:px-8">
         <section>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>

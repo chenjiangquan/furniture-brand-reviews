@@ -67,7 +67,7 @@ const socialLinks: Array<[string, LucideIcon, string]> = [
 export function Footer() {
   return (
     <footer className="bg-[#171744] text-white">
-      <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-9 lg:grid-cols-[1.35fr_3fr]">
           <div>
             <Link href="/" aria-label="Furniture Brand Reviews" className="inline-block rounded-lg bg-white p-2">

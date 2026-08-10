@@ -16,7 +16,7 @@ export default async function CompareIndexPage() {
 
   return (
     <main className="bg-wash">
-      <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
+      <section className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
         <div className="max-w-3xl">
           <p className="text-sm font-bold uppercase tracking-[0.24em] text-trust-dark">Brand comparisons</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink sm:text-5xl">Compare furniture brands</h1>

@@ -9,7 +9,7 @@ export async function Header() {
 
   return (
     <header className="relative z-40 border-b border-line bg-white">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:flex-nowrap lg:px-10">
+      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:flex-nowrap lg:px-8">
         <Link href="/" aria-label="Furniture Brand Reviews" className="block">
           <Image
             src="/logo.png"

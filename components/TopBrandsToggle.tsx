@@ -27,7 +27,7 @@ export function TopBrandsToggle({ companies }: { companies: Company[] }) {
   const visibleCompanies = useMemo(() => sortCompanies(companies, mode), [companies, mode]);
 
   return (
-    <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 lg:px-10">
+    <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-ink">
           {mode === "best" ? "Top 10 best furniture brands" : "Top 10 lowest rated furniture brands"}

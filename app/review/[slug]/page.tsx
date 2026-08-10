@@ -229,7 +229,7 @@ export default async function CompanyReviewPage({ params }: Props) {
       <JsonLd data={buildGraph([brandOrganizationSchema, reviewSchema, faqSchema, breadcrumbSchema])} />
 
       <div className="border-b border-gray-200 bg-wash">
-        <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:py-10 lg:px-10">
+        <section className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 md:py-10 lg:px-8">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex flex-col items-center gap-5 text-center md:flex-row md:items-start md:text-left">
@@ -290,7 +290,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </section>
       </div>
 
-      <div className="mx-auto grid max-w-[1600px] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-10">
+      <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
         <main className="grid gap-8">
           <ReviewSummaryWithFilters
             companyName={company.name}
@@ -497,7 +497,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </aside>
       </div>
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pb-10 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-gray-200 bg-wash p-6">
           <h2 className="text-2xl font-bold text-ink">FAQ</h2>
           <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -511,7 +511,7 @@ export default async function CompanyReviewPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1600px] px-4 pb-10 sm:px-6 lg:px-10">
+      <section className="mx-auto max-w-[1280px] px-4 pb-10 sm:px-6 lg:px-8">
         {relatedComparisons.length > 0 ? (
           <div className="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold text-ink">Compare with similar brands</h2>
