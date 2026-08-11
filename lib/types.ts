@@ -46,7 +46,7 @@ export type Review = {
   is_verified: boolean;
   useful_count?: number | null;
   created_at: string;
-  companies?: Pick<Company, "name" | "slug"> | null;
+  companies?: Pick<Company, "name" | "slug" | "website" | "logo_url"> | null;
 };
 
 export type CompanyReply = {

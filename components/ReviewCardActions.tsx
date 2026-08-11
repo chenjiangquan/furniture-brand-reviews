@@ -26,10 +26,10 @@ export function ReviewCardActions({
   const reviewPath = `/review/${brandSlug}#review-${reviewId}`;
   const isLatest = variant === "latest";
   const rowClassName = isLatest
-    ? "mt-5 flex flex-nowrap items-center gap-5 overflow-hidden whitespace-nowrap border-t border-gray-100 pt-4"
+    ? "mt-3 flex flex-nowrap items-center gap-4 overflow-hidden whitespace-nowrap border-t border-gray-100 pt-3"
     : "mt-5 flex flex-nowrap items-center gap-2 border-t border-gray-100 pt-4";
   const buttonClassName = isLatest
-    ? "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full py-2 text-sm font-bold transition"
+    ? "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full py-1.5 text-xs font-bold transition"
     : "inline-flex min-w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold transition sm:px-4";
 
   const reviewUrl = useMemo(() => {

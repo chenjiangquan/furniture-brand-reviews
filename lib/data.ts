@@ -255,7 +255,7 @@ export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, companies(name, slug)")
+    .select("*, companies(name, slug, website, logo_url)")
     .eq("status", "approved")
     .order("created_at", { ascending: false })
     .limit(24);
@@ -282,7 +282,7 @@ export const getLatestApprovedReviewsForCompanies = cache(async (companyIds: str
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, companies(name, slug)")
+    .select("*, companies(name, slug, website, logo_url)")
     .eq("status", "approved")
     .in("company_id", filteredCompanyIds)
     .order("created_at", { ascending: false })
