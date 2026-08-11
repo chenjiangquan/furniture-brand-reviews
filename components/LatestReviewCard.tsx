@@ -2,7 +2,6 @@ import { Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/RatingStars";
-import { ReviewCardActions } from "@/components/ReviewCardActions";
 import { formatReviewDate } from "@/lib/format";
 import type { ReviewWithReply } from "@/lib/types";
 
@@ -63,20 +62,8 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
           </div>
         </div>
 
-        <h3 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-ink">{review.title}</h3>
+        <h3 className="mt-3 truncate text-base font-bold leading-snug text-ink">{review.title}</h3>
         <p className="mt-2 line-clamp-4 overflow-hidden text-sm leading-5 text-slate-700">{review.content}</p>
-
-        {brandSlug ? (
-          <div className="mt-auto">
-            <ReviewCardActions
-              reviewId={review.id}
-              brandSlug={brandSlug}
-              reviewTitle={review.title}
-              initialUsefulCount={review.useful_count}
-              variant="latest"
-            />
-          </div>
-        ) : null}
       </div>
 
       {brandSlug && brandName ? (
