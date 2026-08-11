@@ -34,7 +34,7 @@ export function LatestReviewCard({ review }: { review: ReviewWithReply }) {
   return (
     <article
       id={`review-${review.id}`}
-      className="flex h-[330px] scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition-colors hover:border-purple-300"
+      className="flex h-[300px] scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition-colors hover:border-purple-300"
     >
       <div className="flex min-h-0 flex-1 flex-col p-4">
         <div className="flex items-start gap-3">
