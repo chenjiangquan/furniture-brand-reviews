@@ -100,6 +100,10 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
   return (
     <form action={action} encType="multipart/form-data" className="grid gap-5 rounded-2xl border border-line bg-white p-5 shadow-sm">
       {invitationToken ? <input type="hidden" name="invitationToken" value={invitationToken} /> : null}
+      <label className="hidden" aria-hidden="true">
+        <span>Review website</span>
+        <input name="reviewWebsite" tabIndex={-1} autoComplete="off" />
+      </label>
       {state.message && (
         <div className={`rounded-xl p-4 text-sm font-semibold ${state.ok ? "bg-purple-50 text-trust-dark" : "bg-red-50 text-red-700"}`}>
           {state.message}

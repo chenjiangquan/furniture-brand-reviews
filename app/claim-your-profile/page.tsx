@@ -46,6 +46,10 @@ export default async function ClaimYourProfilePage({ searchParams }: { searchPar
                 Approved claims can access the business dashboard using the contact email below.
               </p>
               <form action={submitBusinessClaim} className="grid gap-4">
+                <label className="hidden" aria-hidden="true">
+                  <span>Company website confirmation</span>
+                  <input name="companyWebsite" tabIndex={-1} autoComplete="off" />
+                </label>
                 <ClaimBrandSearchSelect
                   companies={companies.map((company) => ({
                     id: company.id,

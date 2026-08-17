@@ -218,6 +218,191 @@ function hasSpamPattern(value: string) {
   return repeatedCharacter || repeatedWords || spamKeywords.some((keyword) => lower.includes(keyword));
 }
 
+function getHostnameFromWebsite(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function isValidBusinessClaimWebsite(value: string) {
+  const hostname = getHostnameFromWebsite(value);
+  return Boolean(hostname && hostname.includes(".") && !/\s/.test(hostname));
+}
+
+function looksLikeRandomToken(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 10 || /\s/.test(trimmed)) return false;
+
+  const letters = trimmed.replace(/[^a-z]/gi, "");
+  if (letters.length < 10) return false;
+
+  const upperCount = (letters.match(/[A-Z]/g) || []).length;
+  const lowerCount = (letters.match(/[a-z]/g) || []).length;
+  const vowelCount = (letters.match(/[aeiou]/gi) || []).length;
+  const vowelRatio = vowelCount / letters.length;
+  const caseTransitions = (letters.match(/[a-z][A-Z]|[A-Z][a-z]/g) || []).length;
+  const mixedCaseLooksGenerated = upperCount >= 3 && lowerCount >= 3 && (caseTransitions >= 4 || vowelRatio < 0.32);
+  const consonantHeavyLooksGenerated = letters.length >= 12 && vowelRatio < 0.2;
+
+  return mixedCaseLooksGenerated || consonantHeavyLooksGenerated;
+}
+
+function looksLikeGeneratedIdentifier(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 10 || /\s/.test(trimmed)) return false;
+
+  const compact = trimmed.replace(/[^a-z0-9]/gi, "");
+  if (compact.length < 10) return false;
+
+  const letters = compact.replace(/[^a-z]/gi, "");
+  if (letters.length < 10) return false;
+
+  const upperCount = (letters.match(/[A-Z]/g) || []).length;
+  const lowerCount = (letters.match(/[a-z]/g) || []).length;
+  const caseTransitions = (letters.match(/[a-z][A-Z]|[A-Z][a-z]/g) || []).length;
+  const vowelCount = (letters.match(/[aeiou]/gi) || []).length;
+  const vowelRatio = vowelCount / letters.length;
+
+  return upperCount >= 2 && lowerCount >= 4 && (caseTransitions >= 3 || vowelRatio < 0.24);
+}
+
+function looksLikeRandomDomainLabel(value: string) {
+  const label = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+  if (label.length < 6 || label.length > 20) return false;
+
+  const furnitureWords = /(furn|sofa|bed|home|decor|interior|table|chair|living|design|wood|mattress|garden|office|kitchen|wardrobe|lighting)/;
+  if (furnitureWords.test(label)) return false;
+
+  const letters = label.replace(/[^a-z]/g, "");
+  if (letters.length < 6) return false;
+
+  const vowelCount = (letters.match(/[aeiou]/g) || []).length;
+  const vowelRatio = vowelCount / letters.length;
+  const longConsonantCluster = /[bcdfghjklmnpqrstvwxyz]{5,}/.test(letters);
+
+  return vowelRatio < 0.24 || longConsonantCluster;
+}
+
+function scoreBusinessClaimSpam(input: {
+  brandName: string;
+  companyId: string | null;
+  website: string;
+  contactName: string;
+  contactEmail: string;
+  message: string;
+  honeypot: string;
+}) {
+  const reasons: string[] = [];
+  const hostname = getHostnameFromWebsite(input.website);
+  const domainLabel = hostname.split(".")[0] ?? "";
+  const emailLocalPart = input.contactEmail.split("@")[0] ?? "";
+  const emailDomain = input.contactEmail.split("@")[1] ?? "";
+
+  if (input.honeypot.trim()) reasons.push("honeypot");
+  if (!isValidBusinessClaimWebsite(input.website)) reasons.push("invalid website");
+  if (looksLikeRandomToken(input.brandName) || looksLikeGeneratedIdentifier(input.brandName)) reasons.push("random brand name");
+  if (looksLikeRandomToken(input.contactName) || looksLikeGeneratedIdentifier(input.contactName)) reasons.push("random contact name");
+  if (looksLikeRandomToken(input.message) || looksLikeGeneratedIdentifier(input.message)) reasons.push("random message");
+  if (looksLikeRandomToken(emailLocalPart.replace(/[._-]/g, "")) || looksLikeGeneratedIdentifier(emailLocalPart.replace(/[._-]/g, ""))) {
+    reasons.push("random email local part");
+  }
+  if (looksLikeRandomDomainLabel(domainLabel) || looksLikeRandomToken(domainLabel) || looksLikeGeneratedIdentifier(domainLabel)) {
+    reasons.push("random website domain");
+  }
+  if (hasSpamPattern(`${input.brandName} ${input.contactName} ${input.message}`)) reasons.push("known spam pattern");
+
+  const freeEmailDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "aol.com", "proton.me", "protonmail.com"];
+  if (freeEmailDomains.includes(emailDomain) && (looksLikeRandomDomainLabel(domainLabel) || looksLikeRandomToken(domainLabel) || looksLikeGeneratedIdentifier(domainLabel))) {
+    reasons.push("free email with random website");
+  }
+
+  const randomReasonCount = reasons.filter((reason) => reason.includes("random")).length;
+  const unmatchedProfile = !input.companyId;
+
+  return {
+    isSpam:
+      reasons.includes("honeypot") ||
+      randomReasonCount >= 2 ||
+      (unmatchedProfile && randomReasonCount >= 1 && reasons.includes("random website domain")) ||
+      reasons.length >= 3,
+    reasons
+  };
+}
+
+function scoreReviewSpam(input: {
+  brandName?: string;
+  brandWebsite?: string;
+  title: string;
+  content: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  honeypot: string;
+}) {
+  const reasons: string[] = [];
+  const emailLocalPart = input.reviewerEmail.split("@")[0] ?? "";
+  const text = `${input.brandName ?? ""} ${input.title} ${input.content} ${input.reviewerName}`;
+
+  if (input.honeypot.trim()) reasons.push("honeypot");
+  if (input.brandWebsite && !isValidBusinessClaimWebsite(input.brandWebsite)) reasons.push("invalid brand website");
+  if (input.brandName && (looksLikeRandomToken(input.brandName) || looksLikeGeneratedIdentifier(input.brandName))) reasons.push("random brand name");
+  if (looksLikeRandomToken(input.title) || looksLikeGeneratedIdentifier(input.title)) reasons.push("random title");
+  if (looksLikeRandomToken(input.reviewerName) || looksLikeGeneratedIdentifier(input.reviewerName)) reasons.push("random reviewer name");
+  if (looksLikeRandomToken(emailLocalPart.replace(/[._-]/g, "")) || looksLikeGeneratedIdentifier(emailLocalPart.replace(/[._-]/g, ""))) {
+    reasons.push("random email local part");
+  }
+  if (hasSpamPattern(text)) reasons.push("known spam pattern");
+
+  const compactContent = input.content.replace(/\s+/g, "");
+  if (compactContent.length >= 40 && (looksLikeRandomToken(compactContent.slice(0, 40)) || looksLikeGeneratedIdentifier(compactContent.slice(0, 40)))) {
+    reasons.push("random review content");
+  }
+
+  const randomReasonCount = reasons.filter((reason) => reason.includes("random")).length;
+
+  return {
+    isSpam:
+      reasons.includes("honeypot") ||
+      reasons.includes("random brand name") ||
+      reasons.includes("random title") ||
+      reasons.includes("random review content") ||
+      randomReasonCount >= 2 ||
+      reasons.length >= 3,
+    reasons
+  };
+}
+
+async function hasRecentBusinessClaimDuplicate(input: {
+  contactEmail: string;
+  brandName: string;
+  website: string;
+}) {
+  const supabase = getSupabaseAdmin() ?? getSupabase();
+  if (!supabase) return false;
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const hostname = getHostnameFromWebsite(input.website);
+
+  const { data, error } = await supabase
+    .from("business_claims")
+    .select("brand_name, message, created_at")
+    .eq("contact_email", input.contactEmail)
+    .gte("created_at", since)
+    .limit(20);
+
+  if (error) {
+    console.warn("Business claim duplicate check failed", formatSupabaseError(error));
+    return false;
+  }
+
+  return (data ?? []).some((claim) => {
+    const claimBrandName = String(claim.brand_name ?? "").trim().toLowerCase();
+    const claimWebsite = extractClaimWebsite(String(claim.message ?? ""));
+    return claimBrandName === input.brandName.toLowerCase() || getHostnameFromWebsite(claimWebsite) === hostname;
+  });
+}
+
 export async function requestBusinessLoginLink(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
@@ -496,6 +681,7 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
   const wouldBuyAgain = String(formData.get("wouldBuyAgain") ?? "").trim() || null;
   const confirmedGenuineExperience = formData.get("confirmedGenuineExperience") === "on";
   const invitationToken = String(formData.get("invitationToken") ?? "").trim();
+  const honeypot = String(formData.get("reviewWebsite") ?? "").trim();
   const proofImage = formData.get("proofImage");
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
@@ -509,6 +695,21 @@ export async function submitReview(slug: string, _state: ReviewFormState, formDa
     confirmed: confirmedGenuineExperience
   });
   if (validationMessage) return { ok: false, message: validationMessage };
+
+  const spamCheck = scoreReviewSpam({
+    title,
+    content,
+    reviewerName,
+    reviewerEmail,
+    honeypot
+  });
+  if (spamCheck.isSpam) {
+    console.warn("Blocked spam review submission", { slug, reviewerEmail, reasons: spamCheck.reasons });
+    return {
+      ok: true,
+      message: "Thanks for your review. It will be checked before publication."
+    };
+  }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) {
@@ -647,10 +848,13 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
   const customerServiceExperience = String(formData.get("customerServiceExperience") ?? "").trim() || null;
   const wouldBuyAgain = String(formData.get("wouldBuyAgain") ?? "").trim() || null;
   const confirmedGenuineExperience = formData.get("confirmedGenuineExperience") === "on";
+  const honeypot = String(formData.get("reviewWebsite") ?? "").trim();
   const reviewImages = getReviewImages(formData);
   console.log("Selected review images:", reviewImages.length);
 
-  if (!brandName || !brandWebsite || !pendingBrandSlug) return { ok: false, message: "Please complete all required brand fields before submitting." };
+  if (!brandName || !brandWebsite || !pendingBrandSlug || !isValidBusinessClaimWebsite(brandWebsite)) {
+    return { ok: false, message: "Please complete all required brand fields before submitting." };
+  }
 
   const validationMessage = validateReviewInput({
     rating,
@@ -661,6 +865,23 @@ export async function submitFirstReview(_state: ReviewFormState, formData: FormD
     confirmed: confirmedGenuineExperience
   });
   if (validationMessage) return { ok: false, message: validationMessage };
+
+  const spamCheck = scoreReviewSpam({
+    brandName,
+    brandWebsite,
+    title,
+    content,
+    reviewerName,
+    reviewerEmail,
+    honeypot
+  });
+  if (spamCheck.isSpam) {
+    console.warn("Blocked spam first review submission", { brandName, reviewerEmail, reasons: spamCheck.reasons });
+    return {
+      ok: true,
+      message: "Thanks for your review. It will be checked before publication."
+    };
+  }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) {
@@ -934,14 +1155,36 @@ export async function submitBusinessClaim(formData: FormData) {
   const contactName = String(formData.get("contactName") ?? "").trim();
   const contactEmail = String(formData.get("contactEmail") ?? "").trim().toLowerCase();
   const messageInput = String(formData.get("message") ?? "").trim();
+  const honeypot = String(formData.get("companyWebsite") ?? "").trim();
   const message = [website ? `Website: ${website}` : null, messageInput || null].filter(Boolean).join("\n\n") || null;
 
-  if (!brandName || !website || !contactName || !isValidEmail(contactEmail)) {
+  if (!brandName || !website || !contactName || !isValidEmail(contactEmail) || !isValidBusinessClaimWebsite(website)) {
     redirect("/claim-your-profile?error=missing");
+  }
+
+  const spamCheck = scoreBusinessClaimSpam({
+    brandName,
+    companyId,
+    website,
+    contactName,
+    contactEmail,
+    message: messageInput,
+    honeypot
+  });
+
+  if (spamCheck.isSpam) {
+    console.warn("Blocked spam business claim", { brandName, contactEmail, website, reasons: spamCheck.reasons });
+    redirect("/claim-your-profile?submitted=1");
   }
 
   const supabase = getSupabaseAdmin() ?? getSupabase();
   if (!supabase) redirect("/claim-your-profile?error=supabase");
+
+  const isDuplicate = await hasRecentBusinessClaimDuplicate({ contactEmail, brandName, website });
+  if (isDuplicate) {
+    console.warn("Skipped duplicate business claim", { brandName, contactEmail, website });
+    redirect("/claim-your-profile?submitted=1");
+  }
 
   const { error } = await supabase.from("business_claims").insert({
     company_id: companyId,
