@@ -46,8 +46,8 @@ export function ReviewCard({ review, brandSlug }: { review: ReviewWithReply; bra
         <RatingStars rating={review.rating} size="small" />
       </div>
 
-      <h3 className="mt-4 text-[19px] font-bold leading-snug text-black sm:text-[17px]">{review.title}</h3>
-      <p className="mt-3 text-[15px] leading-6 text-black">{review.content}</p>
+      <h3 className="mt-4 text-[17px] font-bold leading-snug text-black">{review.title}</h3>
+      <p className="mt-3 text-[14px] leading-[1.55] text-black">{review.content}</p>
 
       {review.review_image_urls && review.review_image_urls.length > 0 && (
         <ReviewImageGallery images={review.review_image_urls} maxImages={4} />

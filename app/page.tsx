@@ -132,6 +132,7 @@ export default async function HomePage() {
               width={900}
               height={900}
               priority
+              sizes="(min-width: 1280px) 704px, (min-width: 768px) 58vw, 100vw"
               className="relative aspect-[1.16/1] w-full rounded-[2rem] object-cover shadow-sm ring-1 ring-purple-100"
             />
           </div>

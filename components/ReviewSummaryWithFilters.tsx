@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
-import { RatingStars, getRatingColour } from "@/components/RatingStars";
+import { RatingStars, getRatingColour, getTrustScoreLabel } from "@/components/RatingStars";
 import { ReviewFilters, type RatingFilter, type RatingValue } from "@/components/ReviewFilters";
 import { ReviewImageGallery } from "@/components/ReviewImageGallery";
 import type { ReviewWithReply } from "@/lib/types";
@@ -59,6 +59,7 @@ export function ReviewSummaryWithFilters({
             <div className="mt-3">
               <RatingStars rating={averageRating || 0} size="large" />
             </div>
+            <p className="mt-2 text-lg font-bold text-ink">{getTrustScoreLabel(averageRating)}</p>
             <p className="mt-2 text-base text-ink underline underline-offset-4">{totalReviewCount} total reviews</p>
           </div>
           <div className="grid gap-1">

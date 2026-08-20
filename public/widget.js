@@ -21,7 +21,7 @@
     style.textContent =
       ".fbrw-root{box-sizing:border-box;width:100%;max-width:1600px;margin:0 auto;font-family:inherit;color:#171744}" +
       ".fbrw-root *{box-sizing:border-box}" +
-      ".fbrw-shell{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;border:1px solid #e3dff0;border-radius:20px;background:#fff;padding:20px;box-shadow:0 10px 30px rgba(23,23,68,.08)}" +
+      ".fbrw-shell{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;border:0;border-radius:20px;background:#fff;padding:20px;box-shadow:none}" +
       ".fbrw-summary{border-radius:16px;background:#faf7ff;padding:30px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}" +
       ".fbrw-logo{display:flex;flex-direction:column;align-items:flex-start;gap:12px;font-weight:850;font-size:18px;line-height:1.2;color:#171744;max-width:220px}" +
       ".fbrw-logo-img{display:block;width:100%;height:auto;max-width:200px;object-fit:contain}" +
@@ -30,6 +30,7 @@
       ".fbrw-heading{margin:10px 0 0;font-size:24px;line-height:1.16;font-weight:900;color:#171744}" +
       ".fbrw-rating-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}" +
       ".fbrw-score{font-size:36px;line-height:1;font-weight:950;color:#171744;letter-spacing:-.03em}" +
+      ".fbrw-score-label{font-size:15px;font-weight:850;color:#171744;margin:0}" +
       ".fbrw-count{font-size:14px;color:#66657b;margin:0}" +
       ".fbrw-summary .fbrw-count{text-decoration:underline}" +
       ".fbrw-stars{display:inline-flex;align-items:center;gap:2px;flex-wrap:nowrap}" +
@@ -89,10 +90,27 @@
     return colours[ratingBand] || colours[5];
   }
 
+  function trustScoreLabel(rating) {
+    var numericRating = Number(rating);
+    if (!Number.isFinite(numericRating) || numericRating <= 0) return "No rating yet";
+    if (numericRating >= 4.3) return "Excellent";
+    if (numericRating >= 3.8) return "Great";
+    if (numericRating >= 2.8) return "Average";
+    if (numericRating >= 1.8) return "Poor";
+    return "Bad";
+  }
+
+  function visualStarScore(rating) {
+    var numericRating = Number(rating);
+    if (!Number.isFinite(numericRating)) numericRating = 0;
+    return Math.round(Math.max(0, Math.min(5, numericRating)) * 2) / 2;
+  }
+
   function renderStars(rating, size) {
     var numericRating = Number(rating);
     if (!Number.isFinite(numericRating)) numericRating = 0;
     var safeRating = Math.max(0, Math.min(5, numericRating));
+    var visualRating = visualStarScore(safeRating);
     var activeColour = ratingColour(safeRating);
     var wrapper = document.createElement("span");
     wrapper.className = "fbrw-stars";
@@ -100,7 +118,7 @@
 
     for (var index = 1; index <= 5; index += 1) {
       var box = document.createElement("span");
-      var fillPercent = Math.max(0, Math.min(100, (safeRating - (index - 1)) * 100));
+      var fillPercent = Math.max(0, Math.min(100, (visualRating - (index - 1)) * 100));
       var fill = document.createElement("span");
       var fillInner = document.createElement("span");
       var bg = document.createElement("span");
@@ -233,6 +251,7 @@
     ratingLine.appendChild(textElement("span", "fbrw-score", Number(data.rating || 0).toFixed(1)));
     ratingLine.appendChild(renderStars(data.rating || 0, "medium"));
     summaryTop.appendChild(ratingLine);
+    summaryTop.appendChild(textElement("p", "fbrw-score-label", trustScoreLabel(data.rating || 0)));
     summaryTop.appendChild(textElement("p", "fbrw-count", "Based on " + Number(data.reviewCount || 0).toLocaleString() + " reviews"));
     summaryTop.appendChild(textElement("p", "fbrw-brand", data.brandName || "Furniture brand"));
 
@@ -365,7 +384,8 @@
     var score = document.createElement("span");
     score.className = "fbrw-micro-score";
     score.innerHTML =
-      "TrustScore <strong>" +
+      trustScoreLabel(data.rating || 0) +
+      " · TrustScore <strong>" +
       Number(data.rating || 0).toFixed(1) +
       "</strong> | " +
       Number(data.reviewCount || 0).toLocaleString() +

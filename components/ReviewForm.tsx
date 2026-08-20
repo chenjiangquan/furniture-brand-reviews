@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { submitFirstReview, submitReview, type ReviewFormState } from "@/lib/actions";
 
@@ -36,6 +36,14 @@ const productTypes = [
 const deliveryOptions = ["On time", "Delayed", "Damaged on arrival", "Not delivered yet", "Not applicable"];
 const serviceOptions = ["Helpful", "Slow response", "No response", "Not contacted", "Not applicable"];
 const buyAgainOptions = ["Yes", "Maybe", "No"];
+
+function RequiredLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="font-semibold">
+      {children} <span className="text-red-500" aria-label="required">*</span>
+    </span>
+  );
+}
 
 export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string; brandName?: string; invitationToken?: string }) {
   const [state, action] = useFormState(slug ? submitReview.bind(null, slug) : submitFirstReview, initialState);
@@ -118,11 +126,11 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
       {!slug && (
         <div className="grid gap-5">
           <label className="grid gap-2">
-            <span className="font-semibold">Brand name</span>
+            <RequiredLabel>Brand name</RequiredLabel>
             <input name="brandName" required defaultValue={brandName} className="rounded-xl border border-line px-4 py-3" />
           </label>
           <label className="grid gap-2">
-            <span className="font-semibold">Brand website</span>
+            <RequiredLabel>Brand website</RequiredLabel>
             <input
               name="brandWebsite"
               type="text"
@@ -135,7 +143,7 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
         </div>
       )}
       <label className="grid gap-2">
-        <span className="font-semibold">Overall rating</span>
+        <RequiredLabel>Overall rating</RequiredLabel>
         <select name="rating" required className="rounded-xl border border-line px-4 py-3">
           <option value="">Choose a rating</option>
           {[5, 4, 3, 2, 1].map((rating) => (
@@ -146,7 +154,7 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
         </select>
       </label>
       <label className="grid gap-2">
-        <span className="font-semibold">Review title</span>
+        <RequiredLabel>Review title</RequiredLabel>
         <input
           name="title"
           required
@@ -156,7 +164,7 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
         />
       </label>
       <label className="grid gap-2">
-        <span className="font-semibold">Review content</span>
+        <RequiredLabel>Review content</RequiredLabel>
         <textarea
           name="content"
           required
@@ -169,12 +177,12 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
       </label>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <label className="grid min-w-0 gap-2">
-          <span className="font-semibold">Display name</span>
+          <RequiredLabel>Display name</RequiredLabel>
           <input name="name" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
           <span className="text-xs text-muted">Shown publicly with your review.</span>
         </label>
         <label className="grid min-w-0 gap-2">
-          <span className="font-semibold">Email</span>
+          <RequiredLabel>Email</RequiredLabel>
           <input name="email" type="email" required className="w-full max-w-full rounded-xl border border-line px-4 py-3" />
           <span className="text-xs text-muted">Used for moderation and spam prevention. Your email is not shown publicly.</span>
         </label>
@@ -270,7 +278,7 @@ export function ReviewForm({ slug, brandName, invitationToken }: { slug?: string
           required
           className="mt-1 h-4 w-4 rounded border-line text-trust focus:ring-2 focus:ring-purple-200"
         />
-        <span>I confirm this review is based on my genuine experience.</span>
+        <span>I confirm this review is based on my genuine experience. <span className="text-red-500" aria-label="required">*</span></span>
       </label>
       <SubmitButton />
     </form>

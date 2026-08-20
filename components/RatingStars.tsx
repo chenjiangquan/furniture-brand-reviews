@@ -15,6 +15,21 @@ export function getRatingColour(rating: number) {
   return ratingColours[band];
 }
 
+export function getTrustScoreLabel(rating: number) {
+  const safeRating = Number.isFinite(rating) ? rating : 0;
+  if (safeRating >= 4.3) return "Excellent";
+  if (safeRating >= 3.8) return "Great";
+  if (safeRating >= 2.8) return "Average";
+  if (safeRating >= 1.8) return "Poor";
+  if (safeRating > 0) return "Bad";
+  return "No rating yet";
+}
+
+export function getVisualStarScore(rating: number) {
+  const safeRating = Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : 0;
+  return Math.round(safeRating * 2) / 2;
+}
+
 const sizeStyles = {
   small: {
     box: "h-[19px] w-[19px]",
@@ -43,6 +58,7 @@ export function RatingStars({
   showValue?: boolean;
 }) {
   const safeRating = Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : 0;
+  const visualRating = getVisualStarScore(safeRating);
   const colour = getRatingColour(rating);
   const styles = sizeStyles[size];
 
@@ -50,7 +66,7 @@ export function RatingStars({
     <span className="inline-flex max-w-full flex-wrap items-center gap-2" aria-label={`${safeRating.toFixed(1)} out of 5 stars`}>
       <span className="inline-flex shrink-0 items-center gap-[2px]">
         {[1, 2, 3, 4, 5].map((star) => {
-          const fillPercent = Math.max(0, Math.min(100, (safeRating - (star - 1)) * 100));
+          const fillPercent = Math.max(0, Math.min(100, (visualRating - (star - 1)) * 100));
 
           return (
             <span
