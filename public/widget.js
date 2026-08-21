@@ -56,13 +56,14 @@
       ".fbrw-button{appearance:none!important;-webkit-appearance:none!important;display:grid!important;place-items:center!important;width:39px!important;height:39px!important;min-width:39px!important;max-width:39px!important;min-height:39px!important;max-height:39px!important;aspect-ratio:1/1!important;padding:0!important;border-radius:50%!important;border:1px solid #e3dff0;background:#fff;color:#171744;cursor:pointer;font:inherit;line-height:1!important;text-align:center!important;transition:.15s ease}" +
       ".fbrw-button:disabled{cursor:not-allowed;opacity:.45}" +
       ".fbrw-button:hover{border-color:#8b5b91;background:#faf7ff;color:#5d3469}" +
-      ".fbrw-micro{box-sizing:border-box;display:inline-flex;max-width:320px;align-items:center;justify-content:center;flex-direction:column;gap:12px;border:1px solid #eeeaf7;border-radius:7px;background:#fff;padding:18px 20px;color:#171744;text-decoration:none;font-family:inherit;box-shadow:0 6px 18px rgba(23,23,68,.05);cursor:pointer;transition:.15s ease}" +
+      ".fbrw-micro{box-sizing:border-box;display:inline-flex;max-width:320px;align-items:center;justify-content:center;flex-direction:column;gap:10px;border:1px solid #eeeaf7;border-radius:4px;background:#fff;padding:18px 20px;color:#171744;text-decoration:none;font-family:inherit;box-shadow:0 3px 10px rgba(23,23,68,.035);cursor:pointer;transition:none}" +
       ".fbrw-micro *{box-sizing:border-box}" +
-      ".fbrw-micro:hover{border-color:#8b5b91;background:#faf7ff}" +
+      ".fbrw-micro:hover{border-color:#eeeaf7;background:#fff}" +
       ".fbrw-micro-logo{display:flex;width:216px;max-width:100%;align-items:center;justify-content:center;min-width:0;font-size:14px;font-weight:900;color:#171744;text-align:center}" +
       ".fbrw-micro-logo-img{display:block;width:100%;height:60px;max-width:216px;object-fit:contain}" +
       ".fbrw-micro-logo-text{display:none}" +
       ".fbrw-micro-brand{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:15px;font-weight:900;color:#171744}" +
+      ".fbrw-micro-label{margin-top:-4px;font-size:14px;font-weight:850;color:#171744;text-align:center}" +
       ".fbrw-micro-stars{display:flex;align-items:center;justify-content:center;gap:4px;line-height:1}" +
       ".fbrw-micro .fbrw-star-box-small{width:39px;height:39px;min-width:39px;border-radius:0;font-size:21px}" +
       ".fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:39px;height:39px}" +
@@ -407,11 +408,11 @@
     stars.className = "fbrw-micro-stars";
     stars.appendChild(renderStars(data.rating || 0, "small"));
     var brandName = textElement("span", "fbrw-micro-brand", data.brandName || "Furniture brand");
+    var ratingLabel = textElement("span", "fbrw-micro-label", trustScoreLabel(data.rating || 0));
     var score = document.createElement("span");
     score.className = "fbrw-micro-score";
     score.innerHTML =
-      trustScoreLabel(data.rating || 0) +
-      " · TrustScore <strong>" +
+      "TrustScore <strong>" +
       Number(data.rating || 0).toFixed(1) +
       "</strong> | " +
       Number(data.reviewCount || 0).toLocaleString() +
@@ -419,6 +420,7 @@
 
     link.appendChild(logo);
     link.appendChild(brandName);
+    link.appendChild(ratingLabel);
     link.appendChild(stars);
     link.appendChild(score);
 
