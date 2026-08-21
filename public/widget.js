@@ -56,7 +56,7 @@
       ".fbrw-button{appearance:none!important;-webkit-appearance:none!important;display:grid!important;place-items:center!important;width:39px!important;height:39px!important;min-width:39px!important;max-width:39px!important;min-height:39px!important;max-height:39px!important;aspect-ratio:1/1!important;padding:0!important;border-radius:50%!important;border:1px solid #e3dff0;background:#fff;color:#171744;cursor:pointer;font:inherit;line-height:1!important;text-align:center!important;transition:.15s ease}" +
       ".fbrw-button:disabled{cursor:not-allowed;opacity:.45}" +
       ".fbrw-button:hover{border-color:#8b5b91;background:#faf7ff;color:#5d3469}" +
-      ".fbrw-micro{box-sizing:border-box;display:inline-flex;max-width:320px;align-items:center;justify-content:center;flex-direction:column;gap:12px;border:1px solid #eeeaf7;border-radius:14px;background:#fff;padding:18px 20px;color:#171744;text-decoration:none;font-family:inherit;box-shadow:0 6px 18px rgba(23,23,68,.05);cursor:pointer;transition:.15s ease}" +
+      ".fbrw-micro{box-sizing:border-box;display:inline-flex;max-width:320px;align-items:center;justify-content:center;flex-direction:column;gap:12px;border:1px solid #eeeaf7;border-radius:7px;background:#fff;padding:18px 20px;color:#171744;text-decoration:none;font-family:inherit;box-shadow:0 6px 18px rgba(23,23,68,.05);cursor:pointer;transition:.15s ease}" +
       ".fbrw-micro *{box-sizing:border-box}" +
       ".fbrw-micro:hover{border-color:#8b5b91;background:#faf7ff}" +
       ".fbrw-micro-logo{display:flex;width:216px;max-width:100%;align-items:center;justify-content:center;min-width:0;font-size:14px;font-weight:900;color:#171744;text-align:center}" +
