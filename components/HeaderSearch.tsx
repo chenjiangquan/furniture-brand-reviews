@@ -3,9 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import type { Company } from "@/lib/types";
 
-function getDomain(website: string) {
+export type HeaderSearchCompany = {
+  id: string;
+  name: string;
+  slug: string;
+  website?: string | null;
+  category?: string | null;
+  average_rating: number;
+  review_count: number;
+};
+
+function getDomain(website?: string | null) {
+  if (!website) return "Website";
   try {
     return new URL(website).hostname.replace(/^www\./, "");
   } catch {
@@ -13,7 +23,7 @@ function getDomain(website: string) {
   }
 }
 
-export function HeaderSearch({ companies }: { companies: Company[] }) {
+export function HeaderSearch({ companies }: { companies: HeaderSearchCompany[] }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -62,7 +72,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
 
   if (!isBrandProfilePage) return null;
 
-  function goToCompany(company?: Company) {
+  function goToCompany(company?: HeaderSearchCompany) {
     if (!company) return;
     setIsOpen(false);
     setQuery("");
@@ -120,7 +130,7 @@ export function HeaderSearch({ companies }: { companies: Company[] }) {
                   activeIndex === index ? "bg-wash" : "bg-white hover:bg-wash"
                 }`}
               >
-                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="sm" />
+                <CompanyLogo name={company.name} logoUrl={null} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-bold text-ink">{company.name}</span>
                   <span className="block truncate text-xs text-muted">{getDomain(company.website)}</span>

@@ -1,11 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { HeaderSearch } from "@/components/HeaderSearch";
-import { getCompanies } from "@/lib/data";
+import { HeaderSearch, type HeaderSearchCompany } from "@/components/HeaderSearch";
+import { getHomepageCompanies } from "@/lib/data";
 
 export async function Header() {
-  const companies = await getCompanies();
+  const companies = await getHomepageCompanies();
+  const searchCompanies: HeaderSearchCompany[] = companies.map((company) => ({
+    id: company.id,
+    name: company.name,
+    slug: company.slug,
+    website: company.website,
+    category: company.category,
+    average_rating: company.average_rating,
+    review_count: company.review_count
+  }));
 
   return (
     <header className="relative z-40 border-b border-line bg-white">
@@ -21,7 +30,7 @@ export async function Header() {
           />
         </Link>
 
-        <HeaderSearch companies={companies} />
+        <HeaderSearch companies={searchCompanies} />
 
         <nav className="hidden shrink-0 items-center gap-6 text-sm font-medium text-muted sm:flex">
           <Link href="/brands">Brands</Link>

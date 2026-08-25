@@ -7,12 +7,12 @@ import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
 import { RatingStars } from "@/components/RatingStars";
-import { SearchBar } from "@/components/SearchBar";
+import { SearchBar, type SearchCompany } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
-import { formatBlogDate, getLatestBlogs } from "@/lib/blogs";
-import { getCompanies, getLatestApprovedReviews } from "@/lib/data";
-import { getIndexableFeaturedComparisonLinks } from "@/lib/internal-links";
+import { formatBlogDate, getHomepageLatestBlogs } from "@/lib/blogs";
+import { featuredComparisons as featuredComparisonConfigs } from "@/lib/comparison-config";
+import { getHomepageCompanies, getHomepageLatestApprovedReviews } from "@/lib/data";
 import { buildGraph, buildPlatformOrganizationSchema, buildWebsiteSchema } from "@/lib/jsonLd";
 import { categoryConfigs } from "@/lib/seo-page-config";
 import { createSeoMetadata } from "@/lib/seo";
@@ -24,6 +24,8 @@ export const metadata: Metadata = createSeoMetadata({
   absoluteTitle: true
 });
 
+export const revalidate = 300;
+
 function getDomain(url?: string | null) {
   if (!url) return "Website";
   try {
@@ -33,7 +35,7 @@ function getDomain(url?: string | null) {
   }
 }
 
-type HomeCompany = Awaited<ReturnType<typeof getCompanies>>[number];
+type HomeCompany = Awaited<ReturnType<typeof getHomepageCompanies>>[number];
 
 function getCompanyVisualUrl(company: HomeCompany) {
   return [company.logo_url, company.cover_image_url, company.og_image_url, company.website_screenshot_url]
@@ -70,12 +72,48 @@ function HomeBrandMiniCard({ company }: { company: HomeCompany }) {
   );
 }
 
+function getTopBrands(companies: HomeCompany[], mode: "best" | "worst") {
+  return [...companies]
+    .filter((company) => Number(company.review_count || 0) >= 10 && Number(company.average_rating || 0) > 0)
+    .sort((first, second) => {
+      const ratingSort =
+        mode === "best"
+          ? Number(second.average_rating || 0) - Number(first.average_rating || 0)
+          : Number(first.average_rating || 0) - Number(second.average_rating || 0);
+      return ratingSort || Number(second.review_count || 0) - Number(first.review_count || 0);
+    })
+    .slice(0, 10);
+}
+
 export default async function HomePage() {
-  const companies = await getCompanies();
+  const [companies, latestReviews, latestBlogs] = await Promise.all([
+    getHomepageCompanies(),
+    getHomepageLatestApprovedReviews(),
+    getHomepageLatestBlogs()
+  ]);
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk") && Number(company.review_count || 0) >= 30 && getCompanyVisualUrl(company));
-  const latestReviews = await getLatestApprovedReviews();
-  const latestBlogs = await getLatestBlogs(4);
-  const featuredComparisons = await getIndexableFeaturedComparisonLinks(3);
+  const searchCompanies: SearchCompany[] = companies.map((company) => ({
+    id: company.id,
+    name: company.name,
+    slug: company.slug,
+    category: company.category
+  }));
+  const bestCompanies = getTopBrands(companies, "best");
+  const worstCompanies = getTopBrands(companies, "worst");
+  const companyBySlug = new Map(companies.map((company) => [company.slug, company]));
+  const featuredComparisons = featuredComparisonConfigs
+    .map((comparison) => {
+      const brandA = companyBySlug.get(comparison.brandASlug);
+      const brandB = companyBySlug.get(comparison.brandBSlug);
+      if (!brandA || !brandB) return null;
+      if (Number(brandA.review_count || 0) < 3 && Number(brandB.review_count || 0) < 3) return null;
+      return {
+        href: `/compare/${comparison.slug}`,
+        label: `${brandA.name} vs ${brandB.name}`
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 3) as Array<{ href: string; label: string }>;
   const featuredCategories = categoryConfigs.filter((category) =>
     ["sofa-brands", "bedroom-furniture-brands", "dining-table-brands", "outdoor-furniture-brands"].includes(category.slug)
   );
@@ -110,7 +148,7 @@ export default async function HomePage() {
               ))}
             </ul>
             <div className="mt-9">
-              <SearchBar companies={companies} />
+              <SearchBar companies={searchCompanies} />
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/brands" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-ink hover:bg-purple-50 md:bg-ink md:text-white md:hover:bg-trust-dark">
@@ -267,7 +305,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <TopBrandsToggle companies={companies} />
+      <TopBrandsToggle bestCompanies={bestCompanies} worstCompanies={worstCompanies} />
 
       <section className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
         <div className="grid gap-6 rounded-3xl bg-emerald-100 p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_520px] md:items-center md:p-10">

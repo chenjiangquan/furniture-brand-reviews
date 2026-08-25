@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { getPlainTextFromMarkdown, getWordCount } from "@/lib/blog-quality";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
 
@@ -141,8 +141,7 @@ export const getIndexablePublishedBlogs = cache(async (): Promise<BlogPost[]> =>
   return blogs.filter((blog) => blog.slug && blog.content && shouldIndexBlog(blog));
 });
 
-export const getLatestBlogs = cache(async (limit = 4): Promise<BlogPost[]> => {
-  noStore();
+async function fetchLatestBlogs(limit = 4): Promise<BlogPost[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -160,6 +159,21 @@ export const getLatestBlogs = cache(async (limit = 4): Promise<BlogPost[]> => {
   }
 
   return (data ?? []) as BlogPost[];
+}
+
+export const getLatestBlogs = cache(async (limit = 4): Promise<BlogPost[]> => {
+  noStore();
+  return fetchLatestBlogs(limit);
+});
+
+const getCachedHomepageLatestBlogs = unstable_cache(
+  async () => fetchLatestBlogs(4),
+  ["homepage-latest-blogs-v1"],
+  { revalidate: 300 }
+);
+
+export const getHomepageLatestBlogs = cache(async (): Promise<BlogPost[]> => {
+  return getCachedHomepageLatestBlogs();
 });
 
 export const getPublishedBlogBySlug = cache(async (slug: string): Promise<BlogPost | null> => {

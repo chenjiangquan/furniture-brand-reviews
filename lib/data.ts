@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { sampleCompanies, sampleReviews } from "@/lib/sample-data";
 import { getSupabase, getSupabaseAdmin } from "@/lib/supabase";
 import type { Company, Review, ReviewFlag, ReviewWithReply } from "@/lib/types";
@@ -23,6 +23,22 @@ type ApprovedReviewRating = {
   rating: number;
 };
 
+export type HomepageCompany = Pick<
+  Company,
+  | "id"
+  | "name"
+  | "slug"
+  | "status"
+  | "website"
+  | "category"
+  | "logo_url"
+  | "og_image_url"
+  | "cover_image_url"
+  | "website_screenshot_url"
+  | "average_rating"
+  | "review_count"
+>;
+
 export type ApprovedReviewStats = {
   count: number;
   averageRating: number;
@@ -32,7 +48,10 @@ export type ApprovedReviewStats = {
 export const approvedReviewListLimit = 1000;
 const approvedReviewStatsPageSize = 1000;
 
-function applyApprovedReviewStats(companies: Company[], approvedReviews: ApprovedReviewRating[]) {
+function applyApprovedReviewStats<T extends { id: string; average_rating: number; review_count: number }>(
+  companies: T[],
+  approvedReviews: ApprovedReviewRating[]
+): T[] {
   const stats = new Map<string, { count: number; total: number }>();
 
   for (const review of approvedReviews) {
@@ -182,6 +201,52 @@ export const getCompanies = cache(async (): Promise<Company[]> => {
   return applyApprovedReviewStats(companies, approvedReviews);
 });
 
+function toHomepageCompany(company: Company): HomepageCompany {
+  return {
+    id: company.id,
+    name: company.name,
+    slug: company.slug,
+    status: company.status,
+    website: company.website,
+    category: company.category,
+    logo_url: company.logo_url,
+    og_image_url: company.og_image_url,
+    cover_image_url: company.cover_image_url,
+    website_screenshot_url: company.website_screenshot_url,
+    average_rating: company.average_rating,
+    review_count: company.review_count
+  };
+}
+
+async function fetchCompaniesWithApprovedStats(): Promise<HomepageCompany[]> {
+  const supabase = getSupabase();
+  if (!supabase) return sampleCompanies.map(normalizeCompany).map(toHomepageCompany);
+
+  const { data, error } = await supabase
+    .from("companies")
+    .select("id, name, slug, status, website, category, logo_url, og_image_url, cover_image_url, website_screenshot_url, average_rating, review_count")
+    .order("average_rating", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return sampleCompanies.map(normalizeCompany).map(toHomepageCompany);
+  }
+
+  const companies = (data ?? []) as HomepageCompany[];
+  const approvedReviews = await getAllApprovedReviewRatings();
+  return applyApprovedReviewStats(companies, approvedReviews);
+}
+
+const getCachedCompaniesWithApprovedStats = unstable_cache(
+  fetchCompaniesWithApprovedStats,
+  ["companies-with-approved-stats-v1"],
+  { revalidate: 300 }
+);
+
+export const getHomepageCompanies = cache(async (): Promise<HomepageCompany[]> => {
+  return getCachedCompaniesWithApprovedStats();
+});
+
 export const getCompanyBySlug = cache(async (slug: string): Promise<Company | null> => {
   noStore();
   const sampleCompany = sampleCompanies.find((company) => company.slug === slug) ?? null;
@@ -248,14 +313,13 @@ export const getApprovedReviewsForCompany = cache(async (companyId: string): Pro
   })) as ReviewWithReply[];
 });
 
-export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[]> => {
-  noStore();
+async function fetchLatestApprovedReviews(): Promise<ReviewWithReply[]> {
   const supabase = getSupabase();
   if (!supabase) return sampleReviews.filter((review) => !review.review_image_urls?.length).slice(0, 8);
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, companies(name, slug, website, logo_url)")
+    .select("id, company_id, pending_brand_name, pending_brand_slug, rating, title, content, reviewer_name, reviewer_email, order_number, proof_image_url, review_image_urls, status, is_verified, useful_count, created_at, companies(name, slug, website, logo_url)")
     .eq("status", "approved")
     .order("created_at", { ascending: false })
     .limit(24);
@@ -265,7 +329,27 @@ export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[
     return sampleReviews;
   }
 
-  return (data ?? []).filter((review) => !review.review_image_urls?.length).slice(0, 8);
+  const reviews = (data ?? []).map((review) => ({
+    ...review,
+    companies: Array.isArray(review.companies) ? review.companies[0] : review.companies
+  })) as unknown as ReviewWithReply[];
+
+  return reviews.filter((review) => !review.review_image_urls?.length).slice(0, 8);
+}
+
+export const getLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[]> => {
+  noStore();
+  return fetchLatestApprovedReviews();
+});
+
+const getCachedLatestApprovedReviews = unstable_cache(
+  fetchLatestApprovedReviews,
+  ["homepage-latest-approved-reviews-v1"],
+  { revalidate: 300 }
+);
+
+export const getHomepageLatestApprovedReviews = cache(async (): Promise<ReviewWithReply[]> => {
+  return getCachedLatestApprovedReviews();
 });
 
 export const getLatestApprovedReviewsForCompanies = cache(async (companyIds: string[], limit = 6): Promise<ReviewWithReply[]> => {

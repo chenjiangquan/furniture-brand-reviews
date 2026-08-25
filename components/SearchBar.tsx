@@ -3,9 +3,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import type { Company } from "@/lib/types";
 
-export function SearchBar({ companies }: { companies: Company[] }) {
+export type SearchCompany = {
+  id: string;
+  name: string;
+  slug: string;
+  category?: string | null;
+};
+
+export function SearchBar({ companies }: { companies: SearchCompany[] }) {
   const [query, setQuery] = useState("");
   const matches = useMemo(() => {
     const trimmed = query.trim().toLowerCase();

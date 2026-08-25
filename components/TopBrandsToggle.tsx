@@ -5,26 +5,22 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { RatingStars } from "@/components/RatingStars";
-import type { Company } from "@/lib/types";
+import type { HomepageCompany } from "@/lib/data";
 
 type Mode = "best" | "worst";
 
-function sortCompanies(companies: Company[], mode: Mode) {
-  return [...companies]
-    .filter((company) => Number(company.review_count || 0) >= 10 && Number(company.average_rating || 0) > 0)
-    .sort((first, second) => {
-      const ratingSort =
-        mode === "best"
-          ? Number(second.average_rating || 0) - Number(first.average_rating || 0)
-          : Number(first.average_rating || 0) - Number(second.average_rating || 0);
-      return ratingSort || Number(second.review_count || 0) - Number(first.review_count || 0);
-    })
-    .slice(0, 10);
-}
-
-export function TopBrandsToggle({ companies }: { companies: Company[] }) {
+export function TopBrandsToggle({
+  bestCompanies,
+  worstCompanies
+}: {
+  bestCompanies: HomepageCompany[];
+  worstCompanies: HomepageCompany[];
+}) {
   const [mode, setMode] = useState<Mode>("best");
-  const visibleCompanies = useMemo(() => sortCompanies(companies, mode), [companies, mode]);
+  const visibleCompanies = useMemo(
+    () => (mode === "best" ? bestCompanies : worstCompanies),
+    [bestCompanies, mode, worstCompanies]
+  );
 
   return (
     <section className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 lg:px-8">
