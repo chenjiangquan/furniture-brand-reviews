@@ -13,6 +13,9 @@ const carouselEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" d
 const microEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="micro"></div>
 <script async src="/widget.js"></script>`;
 
+const inlineEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="inline"></div>
+<script async src="/widget.js"></script>`;
+
 export default function WidgetTestPage() {
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12 text-slate-900 sm:px-6 lg:px-8">
@@ -45,6 +48,18 @@ export default function WidgetTestPage() {
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
           <h2 className="mb-4 text-lg font-bold">Rendered micro widget</h2>
           <div className="fbr-widget" data-brand="weilai-concept" data-layout="micro" />
+        </section>
+
+        <section className="mt-8">
+          <h2 className="text-lg font-bold">Inline embed code</h2>
+          <pre className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-800">
+            <code>{inlineEmbedCode}</code>
+          </pre>
+        </section>
+
+        <section className="mt-8 rounded-xl border border-slate-800 bg-slate-950 p-6 text-white">
+          <h2 className="mb-4 text-lg font-bold">Rendered inline widget on a dark background</h2>
+          <div className="fbr-widget" data-brand="weilai-concept" data-layout="inline" />
         </section>
       </div>
 

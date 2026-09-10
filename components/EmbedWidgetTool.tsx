@@ -49,6 +49,7 @@ export function EmbedWidgetTool({ companies }: { companies: Company[] }) {
           >
             <option value="carousel">Carousel Widget</option>
             <option value="micro">Micro Widget</option>
+            <option value="inline">Inline Widget</option>
           </select>
         </label>
       </div>

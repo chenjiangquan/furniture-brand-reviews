@@ -66,6 +66,9 @@ export default async function BusinessDashboardPage({
   const microWidgetCode = company
     ? `<div class="fbr-widget" data-brand="${company.slug}" data-layout="micro"></div>\n<script async src="${siteUrl}/widget.js"></script>`
     : "";
+  const inlineWidgetCode = company
+    ? `<div class="fbr-widget" data-brand="${company.slug}" data-layout="inline"></div>\n<script async src="${siteUrl}/widget.js"></script>`
+    : "";
 
   if (!company) {
     return (
@@ -351,6 +354,10 @@ export default async function BusinessDashboardPage({
                 <label className="grid gap-2">
                   <span className="text-sm font-bold text-ink">Micro widget</span>
                   <textarea readOnly value={microWidgetCode} className="min-h-[92px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 font-mono text-xs text-muted" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Inline widget</span>
+                  <textarea readOnly value={inlineWidgetCode} className="min-h-[92px] w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 font-mono text-xs text-muted" />
                 </label>
                 <label className="grid gap-2">
                   <span className="text-sm font-bold text-ink">Public review page</span>

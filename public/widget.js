@@ -69,9 +69,18 @@
       ".fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:39px;height:39px}" +
       ".fbrw-micro-score{font-size:14px;font-weight:800;color:#171744;text-align:center;white-space:nowrap}" +
       ".fbrw-micro-score strong{font-weight:950}" +
+      ".fbrw-inline{box-sizing:border-box;display:inline-flex;max-width:100%;align-items:center;gap:14px;background:transparent;color:inherit;text-decoration:none;font-family:inherit;line-height:1.2}" +
+      ".fbrw-inline *{box-sizing:border-box}" +
+      ".fbrw-inline-label{flex:0 0 auto;border-bottom:2px solid currentColor;font-size:24px;font-weight:850;color:inherit;white-space:nowrap}" +
+      ".fbrw-inline-stars{display:flex;flex:0 0 auto;align-items:center;line-height:1}" +
+      ".fbrw-inline .fbrw-stars{gap:3px}" +
+      ".fbrw-inline .fbrw-star-box-small{width:38px;height:38px;min-width:38px;font-size:21px}" +
+      ".fbrw-inline .fbrw-star-box-small .fbrw-star-fill-inner{width:38px;height:38px}" +
+      ".fbrw-inline-brand{display:inline-flex;min-width:0;align-items:center;gap:7px;color:inherit;font-size:20px;font-weight:850;white-space:nowrap}" +
+      ".fbrw-inline-mark{color:#7C3AED;font-size:31px;line-height:1}" +
       ".fbrw-empty{border:1px solid #e3dff0;border-radius:7px;background:#fff;padding:22px;color:#66657b}" +
       ".fbrw-error{border:1px solid #e3dff0;border-radius:7px;background:#faf7ff;padding:18px;color:#66657b;font-size:14px}" +
-      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:230px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:60px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:37px;height:37px;min-width:37px;font-size:20px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:37px;height:37px}.fbrw-micro-score{white-space:normal}}";
+      "@media(max-width:760px){.fbrw-shell{grid-template-columns:1fr;padding:14px;gap:14px}.fbrw-summary{padding:18px}.fbrw-logo{max-width:150px}.fbrw-logo-img{max-width:140px}.fbrw-heading{font-size:20px}.fbrw-track{gap:14px}.fbrw-card{flex-basis:100%;min-height:230px}.fbrw-micro{max-width:100%;padding:16px}.fbrw-micro-logo{width:206px}.fbrw-micro-logo-img{height:60px;max-width:206px}.fbrw-micro .fbrw-star-box-small{width:37px;height:37px;min-width:37px;font-size:20px}.fbrw-micro .fbrw-star-box-small .fbrw-star-fill-inner{width:37px;height:37px}.fbrw-micro-score{white-space:normal}.fbrw-inline{flex-wrap:wrap;gap:10px}.fbrw-inline-label{font-size:20px}.fbrw-inline .fbrw-star-box-small{width:31px;height:31px;min-width:31px;font-size:18px}.fbrw-inline .fbrw-star-box-small .fbrw-star-fill-inner{width:31px;height:31px}.fbrw-inline-brand{font-size:17px}.fbrw-inline-mark{font-size:25px}}";
 
     document.head.appendChild(style);
   }
@@ -429,6 +438,33 @@
     return true;
   }
 
+  function renderInlineWidget(target, data) {
+    var link = document.createElement("a");
+    link.className = "fbrw-inline";
+    link.href = brandReviewUrl(data.brandSlug || "");
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", "Read " + (data.brandName || "brand") + " reviews on Furniture Brand Reviews");
+
+    var ratingLabel = textElement("span", "fbrw-inline-label", trustScoreLabel(data.rating || 0));
+    var stars = document.createElement("span");
+    stars.className = "fbrw-inline-stars";
+    stars.appendChild(renderStars(data.rating || 0, "small"));
+
+    var brand = document.createElement("span");
+    brand.className = "fbrw-inline-brand";
+    brand.appendChild(textElement("span", "fbrw-inline-mark", "★"));
+    brand.appendChild(textElement("span", "", "Furniture Brand Reviews"));
+
+    link.appendChild(ratingLabel);
+    link.appendChild(stars);
+    link.appendChild(brand);
+
+    target.textContent = "";
+    target.appendChild(link);
+    return true;
+  }
+
   function renderError(target) {
     target.textContent = "";
     var error = document.createElement("div");
@@ -458,7 +494,12 @@
         return response.json();
       })
       .then(function (data) {
-        var didRender = layout === "micro" ? renderMicroWidget(target, data) : renderWidget(target, data);
+        var didRender =
+          layout === "micro"
+            ? renderMicroWidget(target, data)
+            : layout === "inline"
+              ? renderInlineWidget(target, data)
+              : renderWidget(target, data);
         if (didRender && window.console && typeof window.console.debug === "function") {
           window.console.debug("FBR widget rendered for:", brand);
         }
