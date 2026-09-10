@@ -7,14 +7,16 @@ export const metadata: Metadata = createNoIndexMetadata(
   "Local test page for the Furniture Brand Reviews embeddable carousel widget."
 );
 
+const widgetOrigin = "https://www.furniturebrandreviews.com";
+
 const carouselEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="carousel"></div>
-<script async src="/widget.js"></script>`;
+<script async src="${widgetOrigin}/widget.js"></script>`;
 
 const microEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="micro"></div>
-<script async src="/widget.js"></script>`;
+<script async src="${widgetOrigin}/widget.js"></script>`;
 
 const inlineEmbedCode = `<div class="fbr-widget" data-brand="weilai-concept" data-layout="inline"></div>
-<script async src="/widget.js"></script>`;
+<script async src="${widgetOrigin}/widget.js"></script>`;
 
 export default function WidgetTestPage() {
   return (
@@ -57,8 +59,8 @@ export default function WidgetTestPage() {
           </pre>
         </section>
 
-        <section className="mt-8 rounded-xl border border-slate-800 bg-slate-950 p-6 text-white">
-          <h2 className="mb-4 text-lg font-bold">Rendered inline widget on a dark background</h2>
+        <section className="mt-8 rounded-xl border border-slate-200 bg-slate-100 p-6 text-black">
+          <h2 className="mb-4 text-lg font-bold">Rendered inline widget</h2>
           <div className="fbr-widget" data-brand="weilai-concept" data-layout="inline" />
         </section>
       </div>
