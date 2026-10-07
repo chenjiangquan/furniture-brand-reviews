@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { sendBulkBusinessReviewInvitations, sendBusinessReviewInvitation, updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
+import { sendBulkBusinessReviewInvitations, sendBusinessReviewInvitation, sendBusinessSupportRequest, updateBusinessPassword, updateBusinessProfile } from "@/lib/actions";
 import { getBusinessCompanyByToken, getBusinessReviews } from "@/lib/business";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
 import { Rating } from "@/components/Rating";
@@ -18,6 +18,7 @@ const dashboardTabs = [
   { id: "reviews", label: "Reviews" },
   { id: "invite", label: "Invite customers" },
   { id: "widgets", label: "Widgets" },
+  { id: "help", label: "Help" },
   { id: "password", label: "Password" }
 ] as const;
 
@@ -364,6 +365,43 @@ export default async function BusinessDashboardPage({
                   <input readOnly value={reviewPageUrl} className="w-full rounded-xl border border-purple-100 bg-wash px-4 py-3 text-sm text-muted" />
                 </label>
               </div>
+            </section>
+            ) : null}
+
+            {activeTab === "help" ? (
+            <section className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold text-ink">Help</h2>
+              <p className="mt-2 text-muted">Send us a question about your business profile, reviews or dashboard. We will reply to {email}.</p>
+              <form action={sendBusinessSupportRequest} className="mt-5 grid gap-4 md:max-w-3xl">
+                <input type="hidden" name="email" value={email} />
+                <input type="hidden" name="businessToken" value={businessToken} />
+                <input type="hidden" name="companyId" value={company.id} />
+                <input type="hidden" name="companySlug" value={company.slug} />
+                <input type="hidden" name="brandName" value={company.name} />
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Subject</span>
+                  <input
+                    name="subject"
+                    required
+                    minLength={3}
+                    maxLength={120}
+                    placeholder="What can we help you with?"
+                    className="w-full rounded-xl border border-purple-100 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-ink">Message</span>
+                  <textarea
+                    name="message"
+                    required
+                    minLength={10}
+                    maxLength={5000}
+                    placeholder="Describe your question or issue"
+                    className="min-h-[220px] w-full rounded-xl border border-purple-100 px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                </label>
+                <button className="w-fit rounded-full bg-trust px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark">Send message</button>
+              </form>
             </section>
             ) : null}
           </div>

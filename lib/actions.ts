@@ -13,6 +13,7 @@ import {
   sendBusinessLoginLinkEmail,
   sendBusinessPasswordResetEmail,
   sendBusinessReviewInvitationEmail,
+  sendBusinessSupportRequestEmail,
   sendAdminNewReviewNotificationEmail,
   sendReviewApprovedEmail,
   sendReviewSubmittedEmail
@@ -1451,6 +1452,41 @@ export async function updateBusinessPassword(formData: FormData) {
   }
 
   businessRedirect(email, companySlug, { token: businessToken, tab: "password", success: "Password updated." });
+}
+
+export async function sendBusinessSupportRequest(formData: FormData) {
+  const email = normalizeEmailInput(String(formData.get("email") ?? ""));
+  const businessToken = getBusinessToken(formData);
+  const companyId = String(formData.get("companyId") ?? "").trim();
+  const companySlug = String(formData.get("companySlug") ?? "").trim();
+  const brandName = String(formData.get("brandName") ?? "").trim();
+  const subject = String(formData.get("subject") ?? "").trim();
+  const message = String(formData.get("message") ?? "").trim();
+
+  if (!(await hasBusinessFormAccess(email, companyId, businessToken))) {
+    businessRedirect(email, companySlug, { error: "Access denied." });
+  }
+
+  if (subject.length < 3 || subject.length > 120) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "help", error: "Subject must be between 3 and 120 characters." });
+  }
+
+  if (message.length < 10 || message.length > 5000) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "help", error: "Message must be between 10 and 5,000 characters." });
+  }
+
+  const emailSent = await sendBusinessSupportRequestEmail({
+    brandName: brandName || companySlug,
+    businessEmail: email,
+    subject,
+    message
+  });
+
+  if (!emailSent) {
+    businessRedirect(email, companySlug, { token: businessToken, tab: "help", error: "Your message could not be sent. Please try again later." });
+  }
+
+  businessRedirect(email, companySlug, { token: businessToken, tab: "help", success: "Your message has been sent. We will reply by email." });
 }
 
 export async function sendBusinessReviewInvitation(formData: FormData) {

@@ -1,5 +1,6 @@
 type SendEmailInput = {
   to: string | null | undefined;
+  replyTo?: string | null;
   subject: string;
   text: string;
   html: string;
@@ -66,6 +67,13 @@ type BusinessReviewInvitationEmailInput = {
   invitationUrl: string;
 };
 
+type BusinessSupportRequestEmailInput = {
+  brandName: string;
+  businessEmail: string;
+  subject: string;
+  message: string;
+};
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -117,7 +125,7 @@ function renderEmailLayout(content: string) {
 </html>`;
 }
 
-async function sendEmail({ to, subject, text, html }: SendEmailInput) {
+async function sendEmail({ to, replyTo, subject, text, html }: SendEmailInput) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
 
@@ -141,6 +149,7 @@ async function sendEmail({ to, subject, text, html }: SendEmailInput) {
       body: JSON.stringify({
         from,
         to,
+        reply_to: replyTo || undefined,
         subject,
         text,
         html
@@ -157,6 +166,51 @@ async function sendEmail({ to, subject, text, html }: SendEmailInput) {
     console.warn("Resend email notification failed.", error);
     return false;
   }
+}
+
+export async function sendBusinessSupportRequestEmail({
+  brandName,
+  businessEmail,
+  subject,
+  message
+}: BusinessSupportRequestEmailInput) {
+  const to = process.env.REVIEW_ADMIN_EMAIL || "chenjiangquan123@gmail.com";
+  const displayBrandName = safeValue(brandName, "Unknown brand");
+  const displayBusinessEmail = safeValue(businessEmail, "No email provided");
+  const displaySubject = safeValue(subject, "Business dashboard support request");
+  const displayMessage = safeValue(message, "No message provided");
+  const safeBrandName = escapeHtml(displayBrandName);
+  const safeBusinessEmail = escapeHtml(displayBusinessEmail);
+  const safeSubject = escapeHtml(displaySubject);
+  const safeMessage = escapeHtml(displayMessage).replace(/\n/g, "<br />");
+  const text = `A business has requested help from the dashboard.
+
+Brand: ${displayBrandName}
+Business email: ${displayBusinessEmail}
+Subject: ${displaySubject}
+
+Message:
+${displayMessage}`;
+
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:28px;line-height:1.2;color:#111827;font-weight:800;">Business support request</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">A claimed business has sent a message from its dashboard.</p>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#f7f3fb;border:1px solid #eadff2;color:#374151;font-size:15px;line-height:1.7;">
+  <strong>Brand:</strong> ${safeBrandName}<br />
+  <strong>Business email:</strong> ${safeBusinessEmail}<br />
+  <strong>Subject:</strong> ${safeSubject}
+</div>
+<div style="margin:20px 0;padding:16px 18px;border-radius:14px;background:#ffffff;border:1px solid #eadff2;color:#374151;font-size:15px;line-height:1.7;">
+  <strong>Message:</strong><br />
+  ${safeMessage}
+</div>`);
+
+  return sendEmail({
+    to,
+    replyTo: displayBusinessEmail,
+    subject: `Business support: ${displayBrandName} - ${displaySubject}`,
+    text,
+    html
+  });
 }
 
 export async function sendReviewSubmittedEmail({ to, reviewerName, brandName }: ReviewSubmittedEmailInput) {
