@@ -233,7 +233,20 @@ export default async function CompanyReviewPage({ params }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex flex-col items-center gap-5 text-center md:flex-row md:items-start md:text-left">
-                <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="lg" />
+                {company.website ? (
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Visit ${company.name} website`}
+                    title={`Visit ${company.name} website`}
+                    className="shrink-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trust"
+                  >
+                    <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="lg" />
+                  </a>
+                ) : (
+                  <CompanyLogo name={company.name} logoUrl={company.logo_url ?? company.cover_image_url ?? company.og_image_url ?? company.website_screenshot_url} size="lg" />
+                )}
                 <div>
                   <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
                     <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${company.is_claimed ? "bg-purple-50 text-trust-dark ring-purple-200" : "bg-white text-muted ring-line"}`}>
