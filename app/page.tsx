@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { LatestReviewCard } from "@/components/LatestReviewCard";
 import { LatestReviewsCarousel } from "@/components/LatestReviewsCarousel";
 import { RatingStars } from "@/components/RatingStars";
-import { SearchBar, type SearchCompany } from "@/components/SearchBar";
+import { SearchBar } from "@/components/SearchBar";
 import { TopBrandsToggle } from "@/components/TopBrandsToggle";
 import { getBlogCoverAlt, getBlogCoverImageForBlog } from "@/lib/blog-covers";
 import { formatBlogDate, getHomepageLatestBlogs } from "@/lib/blogs";
@@ -92,12 +92,6 @@ export default async function HomePage() {
     getHomepageLatestBlogs()
   ]);
   const homepageCompanies = companies.filter((company) => !company.name.toLowerCase().includes(" uk") && Number(company.review_count || 0) >= 30 && getCompanyVisualUrl(company));
-  const searchCompanies: SearchCompany[] = companies.map((company) => ({
-    id: company.id,
-    name: company.name,
-    slug: company.slug,
-    category: company.category
-  }));
   const bestCompanies = getTopBrands(companies, "best");
   const worstCompanies = getTopBrands(companies, "worst");
   const companyBySlug = new Map(companies.map((company) => [company.slug, company]));
@@ -148,7 +142,7 @@ export default async function HomePage() {
               ))}
             </ul>
             <div className="mt-9">
-              <SearchBar companies={searchCompanies} />
+              <SearchBar />
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/brands" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-ink hover:bg-purple-50 md:bg-ink md:text-white md:hover:bg-trust-dark">

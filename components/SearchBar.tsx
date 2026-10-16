@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 
@@ -11,15 +11,50 @@ export type SearchCompany = {
   category?: string | null;
 };
 
-export function SearchBar({ companies }: { companies: SearchCompany[] }) {
+export function SearchBar() {
   const [query, setQuery] = useState("");
-  const matches = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return [];
-    return companies
-      .filter((company) => `${company.name} ${company.category}`.toLowerCase().includes(trimmed))
-      .slice(0, 5);
-  }, [companies, query]);
+  const [matches, setMatches] = useState<SearchCompany[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setMatches([]);
+      setIsSearching(false);
+      setSearchFailed(false);
+      return;
+    }
+
+    setMatches([]);
+    setIsSearching(true);
+    setSearchFailed(false);
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/companies/search?q=${encodeURIComponent(trimmed)}`, {
+          signal: controller.signal,
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("Company search failed");
+        const result = (await response.json()) as { companies: SearchCompany[] };
+        setMatches(result.companies);
+        setSearchFailed(false);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setMatches([]);
+          setSearchFailed(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
 
   return (
     <div className="relative z-30 mx-auto max-w-2xl">
@@ -46,21 +81,27 @@ export function SearchBar({ companies }: { companies: SearchCompany[] }) {
           ))}
         </div>
       )}
-      {query.trim() && matches.length === 0 && (
+      {query.trim() && !isSearching && matches.length === 0 && (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 rounded-2xl border border-line bg-white shadow-card">
           <div className="grid gap-3 px-5 py-5 text-left">
             <div>
-              <p className="font-bold text-ink">No reviews for “{query.trim()}” yet</p>
+              <p className="font-bold text-ink">
+                {searchFailed ? "Search is temporarily unavailable" : `“${query.trim()}” isn’t listed yet`}
+              </p>
               <p className="mt-1 text-sm leading-6 text-muted">
-                Be the first to review {query.trim()} and help other furniture shoppers compare brands before they buy.
+                {searchFailed
+                  ? "Please try again in a moment."
+                  : `Add a review for ${query.trim()} and help other furniture shoppers compare brands before they buy.`}
               </p>
             </div>
-            <Link
-              href={`/write-review?brand=${encodeURIComponent(query.trim())}`}
-              className="inline-flex w-fit rounded-full bg-trust px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark"
-            >
-              Write the first review
-            </Link>
+            {!searchFailed && (
+              <Link
+                href={`/write-review?brand=${encodeURIComponent(query.trim())}`}
+                className="inline-flex w-fit rounded-full bg-trust px-4 py-2 text-sm font-bold text-white hover:bg-trust-dark"
+              >
+                Write the first review
+              </Link>
+            )}
           </div>
         </div>
       )}
