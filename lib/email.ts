@@ -1,6 +1,8 @@
 type SendEmailInput = {
   to: string | null | undefined;
+  from?: string | null;
   replyTo?: string | null;
+  idempotencyKey?: string | null;
   subject: string;
   text: string;
   html: string;
@@ -125,9 +127,9 @@ function renderEmailLayout(content: string) {
 </html>`;
 }
 
-async function sendEmail({ to, replyTo, subject, text, html }: SendEmailInput) {
+async function sendEmail({ to, from: requestedFrom, replyTo, idempotencyKey, subject, text, html }: SendEmailInput) {
   const resendApiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const from = requestedFrom || process.env.EMAIL_FROM;
 
   if (!to) {
     console.warn("Email recipient missing, skipped email notification.");
@@ -140,12 +142,15 @@ async function sendEmail({ to, replyTo, subject, text, html }: SendEmailInput) {
   }
 
   try {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json"
+    };
+    if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify({
         from,
         to,
@@ -517,6 +522,37 @@ Independent furniture brand reviews worldwide.`;
   return sendEmail({
     to,
     subject: "Your Furniture Brand Reviews business dashboard is ready",
+    text,
+    html
+  });
+}
+
+export async function sendBusinessWidgetFollowUpEmail({ to, contactName, brandName, claimId }: BusinessClaimEmailInput & { claimId: string }) {
+  const displayContactName = safeValue(contactName, "there");
+  const displayBrandName = safeValue(brandName, "your brand");
+  const safeContactName = escapeHtml(displayContactName);
+  const safeBrandName = escapeHtml(displayBrandName);
+  const supportEmail = "support@furniturebrandreviews.com";
+  const text = `Hi ${displayContactName},
+
+It has been a day since your business profile for ${displayBrandName} was approved. We can help you add our review widget to your website for free, or guide you through embedding it yourself.
+
+If you would like help, simply reply to this email and let us know. We will be happy to assist.
+
+Best regards,
+Furniture Brand Reviews Support`;
+  const html = renderEmailLayout(`<h1 style="margin:0 0 18px 0;font-size:26px;line-height:1.25;color:#111827;font-weight:800;">Need a hand with your review widget?</h1>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">Hi ${safeContactName},</p>
+<p style="margin:0 0 14px 0;font-size:16px;line-height:1.7;color:#374151;">It has been a day since your business profile for <strong style="color:#111827;">${safeBrandName}</strong> was approved. We can help you add our review widget to your website for free, or guide you through embedding it yourself.</p>
+<p style="margin:0;font-size:16px;line-height:1.7;color:#374151;">If you would like help, simply reply to this email and let us know. We will be happy to assist.</p>
+<p style="margin:22px 0 0 0;font-size:15px;line-height:1.7;color:#374151;">Best regards,<br /><strong>Furniture Brand Reviews Support</strong></p>`);
+
+  return sendEmail({
+    to,
+    from: `Furniture Brand Reviews <${supportEmail}>`,
+    replyTo: supportEmail,
+    idempotencyKey: `business-widget-followup/${claimId}`,
+    subject: `Free help adding the review widget to ${displayBrandName}'s website`,
     text,
     html
   });

@@ -108,8 +108,48 @@ create table if not exists business_claims (
   contact_email text not null,
   message text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  approved_at timestamptz,
+  widget_followup_status text check (widget_followup_status in ('pending', 'sending', 'sent', 'failed')),
+  widget_followup_claimed_at timestamptz,
+  widget_followup_sent_at timestamptz
 );
+
+create or replace function claim_due_business_widget_followups(p_limit integer default 25)
+returns table (id uuid, brand_name text, contact_name text, contact_email text)
+language sql
+security definer
+set search_path = public
+as $$
+  with candidates as (
+    select claims.id
+    from business_claims as claims
+    where claims.status = 'approved'
+      and claims.approved_at <= now() - interval '24 hours'
+      and (
+        claims.widget_followup_status in ('pending', 'failed')
+        or (
+          claims.widget_followup_status = 'sending'
+          and claims.widget_followup_claimed_at < now() - interval '2 hours'
+        )
+      )
+    order by claims.approved_at
+    limit least(greatest(coalesce(p_limit, 25), 1), 100)
+    for update skip locked
+  ), claimed as (
+    update business_claims as claims
+    set widget_followup_status = 'sending',
+        widget_followup_claimed_at = now()
+    from candidates
+    where claims.id = candidates.id
+    returning claims.id, claims.brand_name, claims.contact_name, claims.contact_email
+  )
+  select claimed.id, claimed.brand_name, claimed.contact_name, claimed.contact_email
+  from claimed;
+$$;
+
+revoke all on function claim_due_business_widget_followups(integer) from public, anon, authenticated;
+grant execute on function claim_due_business_widget_followups(integer) to service_role;
 
 create table if not exists business_login_tokens (
   id uuid primary key default gen_random_uuid(),

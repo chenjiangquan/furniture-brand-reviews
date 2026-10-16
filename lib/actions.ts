@@ -1316,7 +1316,12 @@ export async function moderateBusinessClaim(formData: FormData) {
 
   const { error: updateError } = await supabase
     .from("business_claims")
-    .update({ status: "approved", company_id: approvedCompanyId })
+    .update({
+      status: "approved",
+      company_id: approvedCompanyId,
+      approved_at: new Date().toISOString(),
+      widget_followup_status: "pending"
+    })
     .eq("id", claimId);
 
   if (updateError) {

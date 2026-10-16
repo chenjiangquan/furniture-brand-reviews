@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/generate-blog-draft",
       "schedule": "0 9 */2 * *"
+    },
+    {
+      "path": "/api/cron/business-widget-followup",
+      "schedule": "0 10 * * *"
     }
   ]
 }
