@@ -1011,8 +1011,11 @@ export async function moderateReview(formData: FormData) {
   let approvedCompanySlug: string | null = null;
   let approvedCompanyName: string | null = null;
 
-  if (action === "approve") {
-    updatePayload = { status: "approved" };
+  if (action === "approve" || action === "approve-verified") {
+    updatePayload = {
+      status: "approved",
+      ...(action === "approve-verified" ? { is_verified: true } : {})
+    };
 
     if (!review.company_id && review.pending_brand_slug) {
       const pendingBrandName = review.pending_brand_name || review.pending_brand_slug;
@@ -1088,10 +1091,6 @@ export async function moderateReview(formData: FormData) {
     adminRedirect(password);
   }
 
-  if (action === "verify") {
-    updatePayload = { is_verified: true };
-  }
-
   if (!updatePayload) {
     adminRedirect(password, { error: "Unknown moderation action." });
   }
@@ -1115,7 +1114,7 @@ export async function moderateReview(formData: FormData) {
   revalidatePath("/brands");
 
   const companyRelation = Array.isArray(review.companies) ? review.companies[0] : review.companies;
-  if (action === "approve") {
+  if (action === "approve" || action === "approve-verified") {
     const approvedCompanyId = updatePayload.company_id ?? review.company_id;
     if (approvedCompanyId) {
       await createAutoReplyForReview(supabase, {

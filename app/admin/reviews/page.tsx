@@ -100,13 +100,13 @@ export default async function AdminReviewsPage({
                 <td className="px-4 py-3">{new Intl.DateTimeFormat("en-GB").format(new Date(review.created_at))}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
-                    {["approve", "reject", "delete", "spam", "verify"].map((actionName) => (
+                    {["approve", "approve-verified", "reject", "delete", "spam"].map((actionName) => (
                       <form key={actionName} action={moderateReview}>
                         <input type="hidden" name="password" value={password} />
                         <input type="hidden" name="reviewId" value={review.id} />
                         <input type="hidden" name="action" value={actionName} />
                         <button className="rounded-full border border-line px-3 py-2 font-semibold capitalize hover:border-trust hover:text-trust-dark">
-                          {actionName === "verify" ? "Mark as verified" : actionName === "spam" ? "Mark as spam" : actionName}
+                          {actionName === "approve-verified" ? "Approve as verified" : actionName === "spam" ? "Mark as spam" : actionName}
                         </button>
                       </form>
                     ))}
