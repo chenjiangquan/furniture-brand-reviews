@@ -273,6 +273,22 @@ export default async function BusinessDashboardPage({
               <p className="mt-2 text-muted">
                 Send a verified review invitation to a recent customer, or copy the neutral public invitation text below.
               </p>
+              <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-purple-100 bg-wash p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="font-bold text-ink">Using Shopify?</h3>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">
+                    Connect your store with the Furniture Brand Reviews Shopify app to manage review collection from Shopify.
+                  </p>
+                </div>
+                <a
+                  href="https://apps.shopify.com/furniture-brand-reviews"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-bold text-white hover:bg-trust-dark"
+                >
+                  Install Shopify app
+                </a>
+              </div>
               <div className="mt-5 grid gap-5">
                 <form action={sendBusinessReviewInvitation} className="grid gap-4 rounded-2xl border border-purple-100 bg-wash p-4">
                   <input type="hidden" name="email" value={email} />
