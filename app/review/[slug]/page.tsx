@@ -24,6 +24,7 @@ import { shouldIndexBrandPage } from "@/lib/indexing-rules";
 import { buildReviewIntelligence, getReviewsForIntelligence } from "@/lib/review-intelligence";
 import { formatReviewDate } from "@/lib/format";
 import { createNoIndexMetadata, siteUrl } from "@/lib/seo";
+import { getAwinAffiliateUrl } from "@/lib/awin";
 import type { ReviewWithReply } from "@/lib/types";
 
 type Props = { params: { slug: string } };
@@ -164,6 +165,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CompanyReviewPage({ params }: Props) {
   const company = await getCompanyBySlug(params.slug);
   if (!company) notFound();
+  const affiliateWebsiteUrl = company.website ? getAwinAffiliateUrl(company.website) : null;
+  const websiteUrl = affiliateWebsiteUrl ?? company.website;
+  const websiteRel = affiliateWebsiteUrl ? "sponsored nofollow noopener noreferrer" : "noopener noreferrer";
 
   const reviews = await getApprovedReviewsForCompany(company.id);
   const approvedReviewStats = await getApprovedReviewStatsForCompany(company.id);
@@ -233,11 +237,11 @@ export default async function CompanyReviewPage({ params }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex flex-col items-center gap-5 text-center md:flex-row md:items-start md:text-left">
-                {company.website ? (
+                {websiteUrl ? (
                   <a
-                    href={company.website}
+                    href={websiteUrl}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel={websiteRel}
                     aria-label={`Visit ${company.name} website`}
                     title={`Visit ${company.name} website`}
                     className="shrink-0 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trust"
@@ -266,11 +270,11 @@ export default async function CompanyReviewPage({ params }: Props) {
                       Share your experience
                     </Link>
                   </div>
-                  {company.website && (
+                  {websiteUrl && (
                     <a
-                      href={company.website}
+                      href={websiteUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel={websiteRel}
                       className="mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold text-muted hover:text-trust-dark md:justify-start"
                     >
                       <Globe2 size={16} />
@@ -286,11 +290,11 @@ export default async function CompanyReviewPage({ params }: Props) {
                   <Link href={`/review/${company.slug}/write`} className="rounded-full bg-trust px-5 py-3 text-center font-bold text-white hover:bg-trust-dark">
                     Write a review
                   </Link>
-                  {company.website && (
+                  {websiteUrl && (
                     <a
-                      href={company.website}
+                      href={websiteUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel={websiteRel}
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 font-bold text-ink hover:border-trust hover:text-trust-dark"
                     >
                       Visit website <ExternalLink size={16} />
