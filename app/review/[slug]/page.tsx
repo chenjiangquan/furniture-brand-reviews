@@ -473,8 +473,8 @@ export default async function CompanyReviewPage({ params }: Props) {
                 <p className="mt-2 leading-6 text-muted">{aboutText}</p>
               </div>
               <div className="grid gap-3">
-                {company.website && (
-                  <a href={company.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-muted hover:text-trust-dark">
+                {websiteUrl && (
+                  <a href={websiteUrl} target="_blank" rel={websiteRel} className="flex items-center gap-2 text-muted hover:text-trust-dark">
                     <Globe2 size={16} />
                     Website
                   </a>
